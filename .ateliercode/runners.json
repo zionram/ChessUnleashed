@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ateliercode.dev/schemas/runners.v1.json",
+  "configs": [
+    {
+      "name": "Dev",
+      "command": "npm run dev"
+    },
+    {
+      "name": "Server",
+      "command": "/server chessServer.js"
+    }
+  ],
+  "default": "Dev"
+}

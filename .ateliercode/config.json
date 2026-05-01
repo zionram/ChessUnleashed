@@ -1,0 +1,14 @@
+{
+  "$schema": "https://ateliercode.dev/schemas/config.v1.json",
+  "agent": {
+    "type": "gemini",
+    "autoLaunch": true,
+    "flags": [
+      "yolo"
+    ]
+  },
+  "terminal": {
+    "defaultShell": "powershell",
+    "notificationSound": "chime"
+  }
+}

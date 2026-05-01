@@ -4,6 +4,7 @@ import { useSettings } from '../context/SettingsContext';
 import { getRegisteredSettingsTemplate } from '../registry/SettingsTemplateRegistry';
 import { SettingsFieldRenderer, SettingsFieldShell, type SupportedSettingsFieldType } from '../components/settings/SettingsFieldRenderer';
 import { buildExperiencePackage, createExperiencePackageZip, readExperiencePackageZip, validateExperiencePackage, type ExperiencePackage } from '../packages/ExperiencePackage';
+import type { ImportedAssetRegistryEntry } from '../electron-assets';
 import ThemeEditorView from './ThemeEditorView';
 
 type SettingsRendererField = {
@@ -203,6 +204,10 @@ const SettingsPanelShellView: React.FC = () => {
   const [activeSection, setActiveSection] = useState<'settings-lets-play' | 'settings-environment' | 'settings-tools' | 'settings-advanced'>('settings-lets-play');
   const [importValidationMessage, setImportValidationMessage] = useState<string | null>(null);
   const [validatedImportPackage, setValidatedImportPackage] = useState<ExperiencePackage | null>(null);
+  const [validatedImportAssets, setValidatedImportAssets] = useState<ImportedAssetRegistryEntry[]>([]);
+  const [packagePrepareStatus, setPackagePrepareStatus] = useState<string | null>(null);
+  const [preparedPackageBlob, setPreparedPackageBlob] = useState<Blob | null>(null);
+  const [isPreparingPackage, setIsPreparingPackage] = useState(false);
   const { getCurrentProfile, applyProfile } = useAudio();
   const {
     settings,
@@ -213,7 +218,8 @@ const SettingsPanelShellView: React.FC = () => {
     updateBotSettings,
     setGameMode,
     setTrainingWheels,
-    setThemeDraft
+    setThemeDraft,
+    importSettingsCategories
   } = useSettings();
   const letsPlayTemplate = getRegisteredSettingsTemplate('settings-lets-play');
   const environmentTemplate = getRegisteredSettingsTemplate('settings-environment');
@@ -250,7 +256,10 @@ const SettingsPanelShellView: React.FC = () => {
     });
   };
 
-  const downloadExperiencePackage = async () => {
+  const prepareExperiencePackage = async () => {
+    setPreparedPackageBlob(null);
+    setIsPreparingPackage(true);
+    setPackagePrepareStatus('Gathering selected settings');
     const experiencePackage = buildExperiencePackage(settings, {
       audio: getCurrentProfile()
     });
@@ -258,17 +267,27 @@ const SettingsPanelShellView: React.FC = () => {
     if (!validation.valid) {
       console.warn('ExperiencePackage export blocked:', validation.issues);
       alert(`Experience package export blocked:\n${validation.issues.join('\n')}`);
+      setIsPreparingPackage(false);
       return;
     }
-    let blob: Blob;
     try {
-      blob = await createExperiencePackageZip(experiencePackage);
+      const blob = await createExperiencePackageZip(experiencePackage, {
+        onProgress: progress => setPackagePrepareStatus(progress.message)
+      });
+      setPreparedPackageBlob(blob);
+      setPackagePrepareStatus(`Package ready (${(blob.size / (1024 * 1024)).toFixed(2)} MB).`);
     } catch (error) {
       console.warn('ExperiencePackage asset export blocked:', error);
-      alert(error instanceof Error ? error.message : 'Experience package asset export failed.');
+      setPackagePrepareStatus('Package preparation failed. Try fewer categories or smaller media files.');
       return;
+    } finally {
+      setIsPreparingPackage(false);
     }
-    const url = URL.createObjectURL(blob);
+  };
+
+  const savePreparedExperiencePackage = () => {
+    if (!preparedPackageBlob) return;
+    const url = URL.createObjectURL(preparedPackageBlob);
     const link = document.createElement('a');
     link.href = url;
     link.download = 'chess-unleashed-experience.zip';
@@ -293,10 +312,14 @@ const SettingsPanelShellView: React.FC = () => {
       setTrainingWheels(contents.rules.trainingWheels);
     }
     if (contents.audio) applyProfile(contents.audio);
+    if (validatedImportAssets.length) {
+      importSettingsCategories({ importedAssets: validatedImportAssets });
+    }
     setThemeDraft(null);
 
     setImportValidationMessage(`Applied package: ${validatedImportPackage.metadata.name}`);
     setValidatedImportPackage(null);
+    setValidatedImportAssets([]);
   };
 
   const handleExperiencePackageImportSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -304,19 +327,23 @@ const SettingsPanelShellView: React.FC = () => {
     if (!file) return;
 
     try {
-      const parsed = file.name.toLowerCase().endsWith('.zip')
-        ? (await readExperiencePackageZip(file, { loadAssets: true })).package
-        : JSON.parse(await file.text());
-      const validation = validateExperiencePackage(parsed);
+      const zipImport = file.name.toLowerCase().endsWith('.zip')
+        ? await readExperiencePackageZip(file, { loadAssets: true })
+        : null;
+      const parsedPackage = zipImport?.package ?? JSON.parse(await file.text());
+      const validation = validateExperiencePackage(parsedPackage);
       if (validation.valid) {
-        setValidatedImportPackage(parsed as ExperiencePackage);
-        setImportValidationMessage(`Valid package: ${parsed.metadata?.name ?? 'Unnamed package'}`);
+        setValidatedImportPackage(parsedPackage as ExperiencePackage);
+        setValidatedImportAssets(zipImport?.importedAssets ?? []);
+        setImportValidationMessage(`Valid package: ${parsedPackage.metadata?.name ?? 'Unnamed package'}`);
       } else {
         setValidatedImportPackage(null);
+        setValidatedImportAssets([]);
         setImportValidationMessage(`Invalid package: ${validation.issues.join(' ')}`);
       }
     } catch {
       setValidatedImportPackage(null);
+      setValidatedImportAssets([]);
       setImportValidationMessage(file.name.toLowerCase().endsWith('.zip') ? 'Invalid package zip.' : 'Invalid JSON file.');
     }
     e.target.value = '';
@@ -671,25 +698,49 @@ const SettingsPanelShellView: React.FC = () => {
       manualContent: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ fontSize: '0.8rem', color: '#5d6d7e' }}>
-            Export the current experience as a portable JSON package.
+            Prepare the current experience as a shareable .zip package with selected settings and real media files.
           </div>
           <button
-            onClick={downloadExperiencePackage}
+            onClick={prepareExperiencePackage}
+            disabled={isPreparingPackage}
             style={{
               alignSelf: 'flex-start',
               padding: '8px 12px',
               borderRadius: 6,
               border: '1px solid #d0d7de',
-              background: '#fff',
+              background: isPreparingPackage ? '#f1f5f9' : '#fff',
               color: '#2c3e50',
-              cursor: 'pointer',
+              cursor: isPreparingPackage ? 'not-allowed' : 'pointer',
               fontSize: '0.8rem'
             }}
           >
-            Export Experience Package
+            {isPreparingPackage ? 'Preparing Package...' : 'Prepare Package'}
           </button>
+          {packagePrepareStatus && (
+            <div style={{ fontSize: '0.75rem', color: preparedPackageBlob ? '#1f7a1f' : '#5d6d7e' }}>
+              {packagePrepareStatus}
+            </div>
+          )}
+          {preparedPackageBlob && (
+            <button
+              onClick={savePreparedExperiencePackage}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '8px 12px',
+                borderRadius: 6,
+                border: '1px solid #16a34a',
+                background: '#f0fdf4',
+                color: '#166534',
+                cursor: 'pointer',
+                fontSize: '0.8rem',
+                fontWeight: 700
+              }}
+            >
+              Save Package
+            </button>
+          )}
           <div style={{ fontSize: '0.8rem', color: '#5d6d7e' }}>
-            Select an experience package JSON file to validate it before import.
+            Select an experience package .zip or compatible JSON file to validate it before import.
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button

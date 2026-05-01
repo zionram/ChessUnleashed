@@ -1,53 +1,69 @@
 # AI Handoff Protocol
 
-Status: Current guidance
+Status: Active instructions for future AI/dev work
 
-Use this when handing Chess Unleashed to another AI assistant or future chat.
+Chess Unleashed is a functioning release-candidate project. Treat it as existing software with working systems, not a greenfield rebuild.
 
-## Before Changing Code
+## Start Here
 
-1. Read `docs/00_PROJECT_OVERVIEW.md`.
-2. Read `docs/01_ARCHITECTURE_RULES.md`.
-3. Read the system-specific doc for the task.
-4. Inspect only the files needed for the prompt.
-5. Confirm current ownership boundaries before editing.
+1. Read this file and `docs/00_PROJECT_OVERVIEW.md`.
+2. Read the relevant system doc for the requested area.
+3. Use `rg` or targeted file reads to confirm current code before editing.
+4. Keep changes scoped to the prompt.
+5. Run the build after code changes.
 
-## Working Rules
+## Rules
 
-- Treat the app as functioning software.
-- Make minimal scoped changes.
-- Do not rebuild systems unless explicitly requested.
-- Do not create duplicate state or parallel systems.
-- Preserve Standard Chess unless the task explicitly targets it.
-- Preserve ExperiencePackage vs Game Snapshot separation.
-- Keep Event Log and Troubleshooter separate.
-- Use existing panel/view/menu patterns.
-- Avoid duplicate panel titles.
-- Avoid browser prompts where in-game modal/panel confirmation is expected.
-- Run build after app code changes.
+- Do not rebuild working systems.
+- Do not create duplicate state.
+- Do not create duplicate systems.
+- Do not perform broad refactors unless explicitly requested.
+- Do not inspect unrelated files unless needed to solve the task.
+- Do not use browser/window prompts when an in-app panel/modal is expected.
+- Do not add duplicate panel titles.
+- Do not mix Game Snapshot runtime state into ExperiencePackage exports by default.
+- Do not store media binaries as giant JSON/base64/localStorage strings.
+- Preserve Standard Chess behavior unless the task explicitly targets it.
+- Preserve Stockfish/worker bot support when touching bots.
+- Preserve Package Manager real-file zip behavior when touching packages.
+- Preserve Sound Rules and Animation Rules when touching Event Builder.
 
-## Prompt Rules
+## Current Release-Candidate Watch Areas
 
-- Prompt IDs are unique. Do not reuse an older prompt ID for new requirements.
-- If multiple versions of a prompt exist, use the latest explicitly corrected instruction only.
-- If a task says documentation-only, do not edit app source.
+- Package Manager Load/Save/Extract must keep visible progress/status/error handling.
+- Package exports must exclude live game state by default.
+- Electron splash and packaged app loading must not regress.
+- Local/player movement animation and bot delay timing must not regress.
+- Check/in-check sound rules must pause/resume background music correctly.
+- Event Builder, Sound Editor, and Animation Builder are complex center-panel tools.
+- Piece Set and Layer edits must merge into the same theme draft without overwriting each other.
+- Frame sizing/lock and welcome sidebar color controls should work in packaged Electron, not only browser mode.
 
-## Recommended Verification Pattern
+## Build Expectations
 
-- `rg` targeted symbols/files first.
-- Use existing tests/build commands if relevant.
-- For docs-only work, build is not required unless docs are part of build.
-- If uncertain, write Needs verification instead of guessing.
+After app source changes:
 
-## Handoff Summary Template
-
-```md
-Prompt:
-Files touched:
-Systems touched:
-What changed:
-Verification:
-Known limitations:
-Next recommended step:
+```powershell
+npm.cmd run build
 ```
 
+For packaging changes, also use the relevant packaging command when feasible:
+
+```powershell
+npm.cmd run dist:portable
+```
+
+Docs-only changes do not require a build unless docs become part of the build.
+
+## Handoff Format
+
+When handing work to another AI/dev, include:
+
+- prompt ID
+- exact files changed
+- what changed
+- what was verified
+- build command/result
+- known limitations or follow-up
+
+If uncertain, say Needs verification instead of guessing.

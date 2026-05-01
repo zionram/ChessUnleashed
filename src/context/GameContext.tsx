@@ -325,6 +325,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           .forEach(rule => {
             const animation = settings.animationDefinitions.find(item => item.id === rule.animationId && item.enabled);
             if (!animation) return;
+            const payloadTeam = (event.payload as any)?.team;
+            if (rule.scope === 'white-pieces' && payloadTeam !== 'w' && payloadTeam !== 'white') return;
+            if (rule.scope === 'black-pieces' && payloadTeam !== 'b' && payloadTeam !== 'black') return;
             eventBus.emit({
               type: 'animation.play',
               payload: {
@@ -443,6 +446,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const lastGameEndEventKey = useRef('');
   const awaitingClockPress = !!pendingClockPress;
   const hasTerminalResult = !!timeoutResult || !!resignationResult || gameState.isCheckmate || gameState.isDraw;
+  const botMoveStartDelayMs = settings.pieceAnimations.enabled && settings.pieceAnimations.movementSpeedMs > 0
+    ? settings.pieceAnimations.movementSpeedMs + 120
+    : 0;
 
   useEffect(() => {
     if (socket || roomId) return;
@@ -666,106 +672,117 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setOpponentProfile = (updates: Partial<OpponentProfile>) => setOpponentProfileState(prev => ({ ...prev, ...updates }));
 
   useEffect(() => {
+    let cancelled = false;
+    let workerRequest: ReturnType<typeof createUciWorkerBestMoveRequest> | null = null;
+    let thinkTimer: number | null = null;
+
     if (!timeoutResult && !resignationResult && !awaitingClockPress && vsComputer && gameState.turn === computerSide && !gameState.isCheckmate && !gameState.isDraw) {
-      const params = translateBotSettings(settings.activeEngineId, settings.botSettings, engine.capabilities || {});
-      const activeBotConfig = settings.registeredBots.find(bot => bot.id === settings.activeEngineId);
-      if (activeBotConfig && activeBotConfig.type !== 'mock') {
-        let cancelled = false;
-        setBotRuntimeStatus({ state: 'thinking', message: `${activeBotConfig.name} is thinking...` });
-        let request: ReturnType<typeof createUciWorkerBestMoveRequest>;
-        try {
-          request = createUciWorkerBestMoveRequest(activeBotConfig.path, gameState.fen, params.depth ?? settings.botSettings.depth ?? 1);
-        } catch {
-          setBotRuntimeStatus({ state: 'failed', message: 'Could not load this engine. Check that the file path is correct.' });
-          return;
-        }
-        request.promise
-          .then(result => {
-            if (cancelled) return;
-            const move = {
-              from: result.bestMove.slice(0, 2),
-              to: result.bestMove.slice(2, 4),
-              ...(result.bestMove.length > 4 ? { promotion: result.bestMove.slice(4, 5) } : {})
-            };
-            const moveSuccess = makeMove(move);
-            setBotRuntimeStatus({
-              state: moveSuccess ? 'move-received' : 'failed',
-              message: moveSuccess
-                ? `${activeBotConfig.name} played ${result.bestMove}.`
-                : `${activeBotConfig.name} returned ${result.bestMove}, but it was not legal in this position.`
-            });
-      if (moveSuccess) {
-        eventBus.emit({
-          type: "move.made",
-          payload: {
-                  ...move,
-                  move,
-                  engineId: settings.activeEngineId,
-                  team: computerSide,
-                  isCheck: engine.getGameState().isCheck,
-                  isCheckmate: engine.getGameState().isCheckmate
-                }
-              });
-            }
-          })
-          .catch(error => {
-            if (cancelled) return;
-            setBotRuntimeStatus({
-              state: 'failed',
-              message: error instanceof Error
-                ? error.message
-                : 'Worker engine failed. Switch bots or check the engine file path.'
-            });
-          });
-        return () => {
-          cancelled = true;
-          request.cancel();
-        };
-      }
-
-      const timer = setTimeout(() => {
-        if (!engine) return;
-        setBotRuntimeStatus({ state: 'thinking', message: 'Built-in bot is thinking...' });
-
-        const topLines = engine.getTopLines(
-          3,
-          params.depth ?? 2,
-          { ...settings.botSettings, depth: params.depth ?? settings.botSettings.depth }
-        );
-
-        if (!topLines || topLines.length === 0) {
-          setBotRuntimeStatus({ state: 'failed', message: 'Built-in bot did not return any legal moves.' });
-          return;
-        }
-
-        const chosen = topLines[Math.floor(Math.random() * topLines.length)];
-
-        const moveSuccess = makeMove(chosen.move);
-        setBotRuntimeStatus({
-          state: moveSuccess ? 'move-received' : 'failed',
-          message: moveSuccess ? 'Built-in bot move received.' : 'Built-in bot returned an illegal move.'
-        });
-
-        console.log("DEBUG: Engine accepted bot move?", moveSuccess, "Move details:", chosen.move);
-
-        eventBus.emit({
-          type: "move.made",
-          payload: {
-            ...chosen.move,
-            move: chosen.move,
-            engineId: settings.activeEngineId,
-            team: computerSide,
-            isCheck: engine.getGameState().isCheck,
-            isCheckmate: engine.getGameState().isCheckmate
+      const startBotTurn = () => {
+        if (cancelled) return;
+        const params = translateBotSettings(settings.activeEngineId, settings.botSettings, engine.capabilities || {});
+        const activeBotConfig = settings.registeredBots.find(bot => bot.id === settings.activeEngineId);
+        if (activeBotConfig && activeBotConfig.type !== 'mock') {
+          setBotRuntimeStatus({ state: 'thinking', message: `${activeBotConfig.name} is thinking...` });
+          try {
+            workerRequest = createUciWorkerBestMoveRequest(activeBotConfig.path, gameState.fen, params.depth ?? settings.botSettings.depth ?? 1);
+          } catch {
+            setBotRuntimeStatus({ state: 'failed', message: 'Could not load this engine. Check that the file path is correct.' });
+            return;
           }
-        });
+          workerRequest.promise
+            .then(result => {
+              if (cancelled) return;
+              const move = {
+                from: result.bestMove.slice(0, 2),
+                to: result.bestMove.slice(2, 4),
+                ...(result.bestMove.length > 4 ? { promotion: result.bestMove.slice(4, 5) } : {})
+              };
+              const moveSuccess = makeMove(move);
+              setBotRuntimeStatus({
+                state: moveSuccess ? 'move-received' : 'failed',
+                message: moveSuccess
+                  ? `${activeBotConfig.name} played ${result.bestMove}.`
+                  : `${activeBotConfig.name} returned ${result.bestMove}, but it was not legal in this position.`
+              });
+              if (moveSuccess) {
+                eventBus.emit({
+                  type: "move.made",
+                  payload: {
+                    ...move,
+                    move,
+                    engineId: settings.activeEngineId,
+                    team: computerSide,
+                    isCheck: engine.getGameState().isCheck,
+                    isCheckmate: engine.getGameState().isCheckmate
+                  }
+                });
+              }
+            })
+            .catch(error => {
+              if (cancelled) return;
+              setBotRuntimeStatus({
+                state: 'failed',
+                message: error instanceof Error
+                  ? error.message
+                  : 'Worker engine failed. Switch bots or check the engine file path.'
+              });
+            });
+          return;
+        }
 
-      }, params.thinkTime);
+        setBotRuntimeStatus({ state: 'thinking', message: 'Built-in bot is thinking...' });
+        thinkTimer = window.setTimeout(() => {
+          if (cancelled || !engine) return;
+          const topLines = engine.getTopLines(
+            3,
+            params.depth ?? 2,
+            { ...settings.botSettings, depth: params.depth ?? settings.botSettings.depth }
+          );
 
-      return () => clearTimeout(timer);
+          if (!topLines || topLines.length === 0) {
+            setBotRuntimeStatus({ state: 'failed', message: 'Built-in bot did not return any legal moves.' });
+            return;
+          }
+
+          const chosen = topLines[Math.floor(Math.random() * topLines.length)];
+          const moveSuccess = makeMove(chosen.move);
+          setBotRuntimeStatus({
+            state: moveSuccess ? 'move-received' : 'failed',
+            message: moveSuccess ? 'Built-in bot move received.' : 'Built-in bot returned an illegal move.'
+          });
+
+          console.log("DEBUG: Engine accepted bot move?", moveSuccess, "Move details:", chosen.move);
+
+          eventBus.emit({
+            type: "move.made",
+            payload: {
+              ...chosen.move,
+              move: chosen.move,
+              engineId: settings.activeEngineId,
+              team: computerSide,
+              isCheck: engine.getGameState().isCheck,
+              isCheckmate: engine.getGameState().isCheckmate
+            }
+          });
+        }, params.thinkTime);
+      };
+
+      const timer = window.setTimeout(startBotTurn, botMoveStartDelayMs);
+      return () => {
+        cancelled = true;
+        window.clearTimeout(timer);
+        if (thinkTimer) window.clearTimeout(thinkTimer);
+        workerRequest?.cancel();
+      };
     }
+
     setBotRuntimeStatus(status => status.state === 'thinking' ? { state: 'idle', message: '' } : status);
-  }, [timeoutResult, resignationResult, awaitingClockPress, vsComputer, gameState.turn, gameState.fen, computerSide, gameState.isCheckmate, gameState.isDraw, engine, settings.botSettings, settings.activeEngineId, settings.registeredBots]);
+    return () => {
+      cancelled = true;
+      if (thinkTimer) window.clearTimeout(thinkTimer);
+      workerRequest?.cancel();
+    };
+  }, [timeoutResult, resignationResult, awaitingClockPress, vsComputer, gameState.turn, gameState.fen, computerSide, gameState.isCheckmate, gameState.isDraw, engine, settings.botSettings, settings.activeEngineId, settings.registeredBots, botMoveStartDelayMs]);
 
   const syncGame = (fen: string, isMove: boolean = false, lastMove?: any) => {
     engine.initialize(fen);
@@ -779,13 +796,20 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const triggerMoveSound = (move: any, state: GameState) => {
-    if (state.isCheckmate) playEvent('checkmate');
-    else if (state.isDraw) playEvent('draw');
-    else if (state.isCheck) playEvent('check');
+    if (state.isCheckmate) {
+      playEvent('check', { active: false });
+      playEvent('checkmate');
+    }
+    else if (state.isDraw) {
+      playEvent('check', { active: false });
+      playEvent('draw');
+    }
+    else if (state.isCheck) playEvent('check', { active: true });
     else if (move.captured || move.flags?.includes('c')) playEvent('capture');
     else if (move.flags?.includes('k') || move.flags?.includes('q')) playEvent('castle');
     else if (move.flags?.includes('p')) playEvent('promotion');
     else playEvent('move');
+    if (!state.isCheck) playEvent('check', { active: false });
   };
 
   const handleMessage = (e: MessageEvent) => {

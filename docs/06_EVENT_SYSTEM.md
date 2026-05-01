@@ -1,31 +1,22 @@
 # Event System
 
-Status: Current with planned tactical expansion
+Status: Current with limited tactical detection
 
-The Event system has three distinct pieces:
-
-- Event Builder: reusable custom event definitions.
-- Event Log: gameplay/system action history.
-- Troubleshooter: error/debug reports.
-
-Event Log and Troubleshooter must remain separate.
+The event system lets users define reusable custom event definitions, test them, and attach sound or animation actions. Event Log and Troubleshooter remain separate.
 
 ## Event Builder
 
-`src/views/EventBuilderView.tsx` manages custom event definitions. It uses Simple / Advanced / System layers.
+Event Builder is under Advanced -> Gaming and opens as a center-panel tool. It uses Simple, Advanced, and System layers:
 
-Current capabilities:
+- Simple: guided templates and common filters.
+- Advanced: condition groups and condition summaries.
+- System: raw JSON preview, validation/status, diagnostics, and copy JSON.
 
-- create/edit/delete custom events
-- templates
-- validation
-- test/simulate event payloads
-- condition matching
-- Attach Sound workflow
-- Attach Animation workflow
-- raw JSON preview/copy
+Event Builder should not render a duplicate internal title when the panel shell already owns the title.
 
-Supported simple triggers include:
+## Supported Runtime Events
+
+Current simple event support includes, where runtime payloads provide the needed data:
 
 - after move
 - piece moved
@@ -37,43 +28,48 @@ Supported simple triggers include:
 - game end
 - panel opened
 
-Supported condition fields include:
+Limited tactical support exists for:
 
-- piece type
-- team
-- from square
-- to square
-- captured piece
-- attacked piece
-- panel/view id
-- trigger type
-
-## Tactical Events
-
-Current limited tactical support:
-
-- piece attacks target piece
-- piece is attacked
+- piece attacked
+- queen attacked through attacked-piece matching
 - simple fork
 
-Planned/future tactical support:
+Simple fork is intentionally limited: a piece attacks two or more valuable enemy pieces after a move. It is not a full tactical engine.
+
+## Future / Unsupported Tactical Events
+
+These remain planned/future and must not falsely fire:
 
 - pin
 - trapped piece
 - no safe move
 
-Future-only tactical events must not falsely fire.
+If surfaced in UI, they should be marked Future-only or Unsupported.
 
-## Runtime Integration
+## Sound and Animation Actions
 
-Runtime event evaluation is handled through the custom event runtime and Standard Chess event emission. Sound Rules and Animation Rules can listen to active custom events.
+Valid active events can attach:
+
+- Sound Rules through Sound Editor.
+- Animation Rules through Animation Builder/Event Builder attachment flow.
+
+Future-only or invalid events should block or clearly warn before attachment.
+
+## Event Log
+
+Event Log records gameplay/system actions, including custom event fires and lightweight sound/animation feedback. It is not for errors.
+
+## Troubleshooter
+
+Troubleshooter records errors/debug reports. Do not merge it with Event Log.
 
 ## Related Files
 
 - `src/views/EventBuilderView.tsx`
 - `src/events/CustomEventRuntime.ts`
-- `src/context/GameContext.tsx`
+- `src/events/EventBus.ts`
+- `src/events/EventLogger.ts`
+- `src/events/EventTriggerSystem.ts`
 - `src/views/EventLogView.tsx`
 - `src/views/TroubleshooterView.tsx`
-- `src/utils/ErrorLog.ts`
-
+- `src/context/GameContext.tsx`

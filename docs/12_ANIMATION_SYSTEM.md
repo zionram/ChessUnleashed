@@ -1,42 +1,64 @@
 # Animation System
 
-Status: Current foundation
+Status: Current foundation with event-triggered overlays
 
-Animation has two related but separate systems:
+Chess Unleashed has two animation concepts:
 
 - Animation Settings: user defaults for normal movement animation.
-- Animation Builder: reusable named animation definitions.
+- Animation Builder: reusable named animation definitions that can be called by event actions.
 
 ## Animation Settings
 
-Environment → Look → Animation controls defaults such as movement animation behavior. Settings persist through `SettingsContext`.
+Environment -> Look -> Animation controls the default movement animation.
 
-Standard Chess movement animation is current. Snap/no-animation should behave as instant movement.
+Current settings include:
+
+- enabled/disabled
+- selected default movement animation
+- movement speed/duration
+- easing where supported
+- capture/promotion animation flags where supported
+- movement scope: all/both sides, my pieces, opponent pieces, white pieces, black pieces
+- active-state/apply feedback
+
+The UI should show the current effective default clearly. Snap/no animation is the fallback when animations are disabled or Snap is selected.
+
+## Standard Chess Movement Animation
+
+Standard Chess piece movement animation applies to both local/player moves and opponent/bot moves when enabled and within scope. Local moves use the same visual staging path as bot/opponent moves.
+
+Bot/opponent turn response is delayed until the player's configured movement animation finishes, unless animation is disabled or Snap/no animation is selected.
+
+Captures and promotions should continue to use legal game state and should not break animation.
+
+## Priority
+
+Animation priority:
+
+1. Event-triggered Animation Rules / special overlays
+2. Variant/special animation support if present
+3. Default movement animation from Environment -> Look -> Animation
+4. Snap/no animation fallback
+
+Event-triggered animations are visual overlays and should not mutate game state or block normal moves.
 
 ## Animation Builder
 
-Animation Builder is under Advanced → Gaming and opens as a center-panel workflow. It manages reusable `AnimationDefinition` records with stable IDs.
+Animation Builder is under Advanced -> Gaming and opens as a center-panel workflow similar to Sound Editor.
 
-Current built-in protected presets include:
+It manages reusable Animation Definitions:
 
-- Snap / No Animation
-- Slide
-- Fast Slide
-- Bounce
-- Hop
-- Shake
-- Pulse
-- Capture Pop
-- Promotion Glow
-- Board Flash
+- built-in protected presets
+- custom named animations
+- create/edit/delete/duplicate/test controls
+- Simple / Advanced / System editor layers
+- preview through `AnimationPreviewCard`
 
-Custom animations can be created, duplicated from built-ins, edited, deleted, and previewed.
+Built-ins are protected from destructive edits. Users can duplicate built-ins into custom definitions.
 
-## Event-Triggered Animations
+## Event Animation Rules
 
-Animation Rules connect custom/built-in events to animation definitions. Event Builder supports Attach Animation for active events.
-
-Initial targets include:
+Animation Rules connect events to named animations. Initial target options include:
 
 - moved piece
 - captured piece
@@ -44,20 +66,14 @@ Initial targets include:
 - target square
 - board
 
-Triggered animations use transient overlay/playback and must not mutate game state or block normal movement.
-
-## Limitations
-
-- Full keyframe/timeline scripting is Planned.
-- Custom Game animation support may be limited.
-- Unsupported/future-only events should not pretend to trigger animations.
+If runtime target data is unavailable, the rule should fail safely with lightweight feedback, not crash.
 
 ## Related Files
 
 - `src/views/AnimationSettingsView.tsx`
 - `src/views/AnimationBuilderView.tsx`
 - `src/components/animation/AnimationPreviewCard.tsx`
-- `src/views/EventBuilderView.tsx`
-- `src/context/SettingsContext.tsx`
+- `src/components/board/ChessBoard.tsx`
 - `src/context/GameContext.tsx`
-
+- `src/context/SettingsContext.tsx`
+- `src/views/EventBuilderView.tsx`

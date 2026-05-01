@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { useAudio, type AudioRule, type SoundAsset } from '../context/AudioContext';
+import { isSupportedAudioFile, useAudio, type AudioRule, type SoundAsset } from '../context/AudioContext';
 import { useSettings } from '../context/SettingsContext';
 import { getCustomEventStatus } from '../events/CustomEventRuntime';
 
@@ -116,7 +116,9 @@ const createDefaultDraft = (library: SoundAsset[]): RuleDraft => ({
     stopOtherSounds: false,
     duckMusic: false,
     pauseMusic: false,
-    resumeMusicAfter: true
+    resumeMusicAfter: true,
+    loopWhileEventTrue: false,
+    stopWhenEventEnds: false
   }
 });
 
@@ -138,7 +140,9 @@ const getPlaybackSummary = (rule: AudioRule) => {
     playback.playOnceUntilReset ? 'Once' : '',
     playback.stopOtherSounds ? 'Stop other effects' : '',
     playback.duckMusic ? 'Lower music' : '',
-    playback.pauseMusic ? 'Pause music' : ''
+    playback.pauseMusic ? 'Pause music' : '',
+    playback.loopWhileEventTrue ? 'Loop while active' : '',
+    playback.stopWhenEventEnds ? 'Stop when event ends' : ''
   ].filter(Boolean);
   return labels.length ? labels.join(', ') : 'Default';
 };
@@ -177,6 +181,7 @@ const SoundEditorView: React.FC = () => {
   const [ruleDraft, setRuleDraft] = useState<RuleDraft>(() => createDefaultDraft(library));
   const [ruleEditorOpen, setRuleEditorOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
 
   const categories = useMemo(() => {
     const savedCategories = ruleCategories.map(normalizeCategory);
@@ -203,7 +208,14 @@ const SoundEditorView: React.FC = () => {
   const selectedCustomEventStatus = selectedCustomEvent ? getCustomEventStatus(selectedCustomEvent, settings.customEvents) : null;
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
+    const allFiles = Array.from(event.target.files ?? []);
+    const files = allFiles.filter(isSupportedAudioFile);
+    const rejected = allFiles.filter(file => !isSupportedAudioFile(file));
+    if (rejected.length) {
+      setUploadMessage(`Unsupported file skipped: ${rejected.map(file => file.name).join(', ')}. Use MP3, WAV, OGG, M4A, MID, or MIDI.`);
+    } else {
+      setUploadMessage('');
+    }
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => addSound(file.name.replace(/\.[^/.]+$/, ''), ev.target?.result as string, getFileType(file));
@@ -236,7 +248,9 @@ const SoundEditorView: React.FC = () => {
         stopOtherSounds: rule.playback?.stopOtherSounds ?? false,
         duckMusic: rule.playback?.duckMusic ?? false,
         pauseMusic: rule.playback?.pauseMusic ?? false,
-        resumeMusicAfter: rule.playback?.resumeMusicAfter ?? true
+        resumeMusicAfter: rule.playback?.resumeMusicAfter ?? true,
+        loopWhileEventTrue: rule.playback?.loopWhileEventTrue ?? false,
+        stopWhenEventEnds: rule.playback?.stopWhenEventEnds ?? false
       }
     });
     setRuleEditorOpen(true);
@@ -275,7 +289,8 @@ const SoundEditorView: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', padding: 14, boxSizing: 'border-box', gap: 12 }}>
-      <input ref={fileInputRef} type="file" accept="audio/*,.mid,.midi" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
+      <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
+      {uploadMessage && <div style={{ fontSize: '0.72rem', color: '#9a3412', marginBottom: 8 }}>{uploadMessage}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         <button type="button" onClick={openNewRule} style={{ padding: '10px', borderRadius: 8, border: '1px solid #2c3e50', background: '#2c3e50', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
@@ -467,7 +482,9 @@ const SoundEditorView: React.FC = () => {
                   ['stopOtherSounds', 'Stop other sound effects before playing'],
                   ['duckMusic', 'Lower background music while playing'],
                   ['pauseMusic', 'Pause background music while playing'],
-                  ['resumeMusicAfter', 'Resume music after sound ends']
+                  ['resumeMusicAfter', 'Resume music after sound ends'],
+                  ['loopWhileEventTrue', 'Loop while event remains true'],
+                  ['stopWhenEventEnds', 'Stop when event condition ends']
                 ].map(([key, label]) => (
                   <label key={key} style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: '0.76rem', color: '#475569' }}>
                     <input
@@ -479,6 +496,11 @@ const SoundEditorView: React.FC = () => {
                   </label>
                 ))}
               </div>
+              {(ruleDraft.playback?.loopWhileEventTrue || ruleDraft.playback?.stopWhenEventEnds) && ruleDraft.event !== 'check' && (
+                <div style={{ marginTop: 8, fontSize: '0.68rem', color: '#9a3412' }}>
+                  Stateful stop is currently supported for Check / in-check events. Other event states are saved for future support.
+                </div>
+              )}
             </section>
 
             <section style={{ padding: 10, border: '1px dashed #cbd5e1', borderRadius: 8, color: '#64748b', fontSize: '0.76rem' }}>

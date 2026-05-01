@@ -8,17 +8,19 @@ interface ImageInputProps {
   onImageChange: (dataUrl: string) => void;
   onClear: () => void;
   inputId: string;
+  maxSize?: number;
 }
 
-const ImageInput: React.FC<ImageInputProps> = ({ label, imageValue, onImageChange, onClear, inputId }) => {
+const ImageInput: React.FC<ImageInputProps> = ({ label, imageValue, onImageChange, onClear, inputId, maxSize = 3 * 1024 * 1024 }) => {
   const [status, setStatus] = useState<{ name: string; loading: boolean }>({ name: '', loading: false });
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const MAX_SIZE = 3 * 1024 * 1024;
-    if (!file.type.startsWith('image/') || file.size > MAX_SIZE) {
-      alert("Invalid file: Must be an image < 3MB.");
+    
+    if (!file.type.startsWith('image/') || file.size > maxSize) {
+      const mb = Math.round(maxSize / (1024 * 1024));
+      alert(`Invalid file: Must be an image < ${mb}MB.`);
       return;
     }
     setStatus({ name: file.name, loading: true });
@@ -58,6 +60,8 @@ interface LayerEditorProps {
   onUpdate: (updates: Partial<LayerConfig>) => void;
   inputId: string;
   showColor?: boolean;
+  maxSize?: number;
+  showLockToBoard?: boolean;
 }
 
 const LayerEditor: React.FC<LayerEditorProps> = ({
@@ -65,7 +69,9 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
   config,
   onUpdate,
   inputId,
-  showColor = true
+  showColor = true,
+  maxSize,
+  showLockToBoard = false
 }) => {
   const displayColor = config.color === 'transparent' ? '#ffffff' : config.color;
 
@@ -76,7 +82,7 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
         <button onClick={() => onUpdate({ xOffset: 0, yOffset: 0, scale: 100 })} style={{ fontSize: '0.6rem', padding: '1px 4px', cursor: 'pointer', opacity: 0.7 }}>Reset</button>
       </div>
 
-      <ImageInput label="Texture" imageValue={config.image} inputId={inputId} onImageChange={(img) => onUpdate({ image: img })} onClear={() => onUpdate({ image: '' })} />
+      <ImageInput label="Texture" imageValue={config.image} inputId={inputId} onImageChange={(img) => onUpdate({ image: img })} onClear={() => onUpdate({ image: '' })} maxSize={maxSize} />
 
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '8px' }}>
         {showColor && (
@@ -126,19 +132,59 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
           <option value="10%">Mode: 10%</option>
         </select>
       </div>
+
+      {showLockToBoard && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', fontSize: '0.72rem', color: '#334155' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            Frame size mode
+            <select
+              value={config.frameSizeMode ?? (config.lockToBoard ? 'match-board' : 'responsive')}
+              onChange={(e) => onUpdate({ frameSizeMode: e.target.value as LayerConfig['frameSizeMode'], lockToBoard: e.target.value === 'match-board' })}
+              style={{ padding: '4px', fontSize: '0.72rem' }}
+            >
+              <option value="responsive">Responsive to center panel</option>
+              <option value="match-board">Match board / lock to board</option>
+              <option value="fixed">Fixed size</option>
+            </select>
+          </label>
+          {(config.frameSizeMode ?? (config.lockToBoard ? 'match-board' : 'responsive')) === 'fixed' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+              <label>
+                Width
+                <input type="number" min="100" value={config.fixedWidth || 560} onChange={(e) => onUpdate({ fixedWidth: parseInt(e.target.value, 10) || 560 })} style={{ width: '100%', boxSizing: 'border-box', fontSize: '0.7rem' }} />
+              </label>
+              <label>
+                Height
+                <input type="number" min="100" value={config.fixedHeight || 560} onChange={(e) => onUpdate({ fixedHeight: parseInt(e.target.value, 10) || 560 })} style={{ width: '100%', boxSizing: 'border-box', fontSize: '0.7rem' }} />
+              </label>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
 const LayersView: React.FC = () => {
-  const { settings, updateTemplate } = useSettings();
-  const [draft, setDraft] = useState<Template>(JSON.parse(JSON.stringify(settings.template)));
-  const [lastCommitted, setLastCommitted] = useState<Template>(JSON.parse(JSON.stringify(settings.template)));
+  const { settings, updateTemplate, updateThemeDraft } = useSettings();
+  const activeTemplate = settings.themeDraft ?? settings.template;
+  const [draft, setDraft] = useState<Template>(JSON.parse(JSON.stringify(activeTemplate)));
+  const [lastCommitted, setLastCommitted] = useState<Template>(JSON.parse(JSON.stringify(activeTemplate)));
   const { background, frameLayer, boardOverlay } = draft;
   const hasUnappliedChanges = JSON.stringify(draft) !== JSON.stringify(lastCommitted);
+  const BACKGROUND_MAX_SIZE = 20 * 1024 * 1024;
 
   useEffect(() => {
-    updateTemplate(draft);
+    if (settings.themeDraft) updateThemeDraft({
+      boardOverlay: draft.boardOverlay,
+      background: draft.background,
+      frameLayer: draft.frameLayer
+    });
+    else updateTemplate({
+      boardOverlay: draft.boardOverlay,
+      background: draft.background,
+      frameLayer: draft.frameLayer
+    });
   }, [draft]);
 
   const updateLayer = (key: keyof Template, updates: any) => {
@@ -149,14 +195,32 @@ const LayersView: React.FC = () => {
   };
 
   const applyLayerChanges = () => {
-    updateTemplate(draft);
+    if (settings.themeDraft) updateThemeDraft({
+      boardOverlay: draft.boardOverlay,
+      background: draft.background,
+      frameLayer: draft.frameLayer
+    });
+    else updateTemplate({
+      boardOverlay: draft.boardOverlay,
+      background: draft.background,
+      frameLayer: draft.frameLayer
+    });
     setLastCommitted(JSON.parse(JSON.stringify(draft)));
   };
 
   const discardLayerChanges = () => {
     const restored = JSON.parse(JSON.stringify(lastCommitted));
     setDraft(restored);
-    updateTemplate(restored);
+    if (settings.themeDraft) updateThemeDraft({
+      boardOverlay: restored.boardOverlay,
+      background: restored.background,
+      frameLayer: restored.frameLayer
+    });
+    else updateTemplate({
+      boardOverlay: restored.boardOverlay,
+      background: restored.background,
+      frameLayer: restored.frameLayer
+    });
   };
 
   return (
@@ -188,11 +252,11 @@ const LayersView: React.FC = () => {
           <input type="range" min="0" max="1" step="0.1" value={boardOverlay.opacity} onChange={(e) => updateLayer('boardOverlay', { opacity: parseFloat(e.target.value) })} style={{ flex: 1 }} />
           <span style={{ fontSize: '0.75rem' }}>Opacity</span>
         </div>
-        <ImageInput label="Texture" imageValue={boardOverlay.image} inputId="overlay-img" onImageChange={(img) => updateLayer('boardOverlay', { image: img })} onClear={() => updateLayer('boardOverlay', { image: '' })} />
+        <ImageInput label="Texture" imageValue={boardOverlay.image} inputId="overlay-img" onImageChange={(img) => updateLayer('boardOverlay', { image: img })} onClear={() => updateLayer('boardOverlay', { image: '' })} maxSize={BACKGROUND_MAX_SIZE} />
       </section>
 
-      <LayerEditor label="Frame Layer" config={frameLayer} onUpdate={(u) => updateLayer('frameLayer', u)} inputId="frame-img" showColor={false} />
-      <LayerEditor label="Background" config={background} onUpdate={(u) => updateLayer('background', u)} inputId="bg-img" showColor={true} />
+      <LayerEditor label="Frame Layer" config={frameLayer} onUpdate={(u) => updateLayer('frameLayer', u)} inputId="frame-img" showColor={false} maxSize={BACKGROUND_MAX_SIZE} showLockToBoard />
+      <LayerEditor label="Background" config={background} onUpdate={(u) => updateLayer('background', u)} inputId="bg-img" showColor={true} maxSize={BACKGROUND_MAX_SIZE} />
     </div>
   );
 };

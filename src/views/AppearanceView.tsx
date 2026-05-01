@@ -4,7 +4,8 @@ import { useSettings } from '../context/SettingsContext';
 import { useGame } from '../context/GameContext';
 import { useAudio } from '../context/AudioContext';
 import { type Template} from '../templates';
-import { PACKAGE_CATEGORIES, unwrapPackageInput, wrapPackageOutput } from '../registry/PackageRegistry';
+import { PACKAGE_CATEGORIES, unwrapPackageInput } from '../registry/PackageRegistry';
+import { buildExperiencePackage, createExperiencePackageZip, type ExperiencePackageContents } from '../packages/ExperiencePackage';
 
 
 
@@ -48,19 +49,24 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
   };
 
   const exportPackage = async () => {
-    const pkg: any = { name: draft.name, version: '2.0', categories: selectedCats };
-    PACKAGE_CATEGORIES.forEach(cat => {
-       if (selectedCats.includes(cat.id)) cat.keys.forEach(k => pkg[k] = (draft as any)[k]);
+    const experiencePackage = buildExperiencePackage({ ...settings, template: draft }, {
+      audio: getCurrentProfile(),
+      metadata: {
+        name: draft.name || 'Chess Unleashed Package',
+        description: 'Package saved from the Environment package workflow.'
+      }
     });
-    if (selectedCats.includes('audio')) pkg.audio = getCurrentProfile();
-
-    const zip = new JSZip();
-    const wrapped = wrapPackageOutput(pkg);
-    zip.file("theme.json", JSON.stringify(wrapped, null, 2));
-    const content = await zip.generateAsync({ type: "blob" });
+    const selectedContents: ExperiencePackageContents = {
+      ...(selectedCats.some(category => category !== 'audio') ? { template: draft } : {}),
+      ...(selectedCats.includes('audio') && experiencePackage.contents.audio ? { audio: experiencePackage.contents.audio } : {})
+    };
+    const content = await createExperiencePackageZip({
+      ...experiencePackage,
+      contents: selectedContents
+    });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(content);
-    link.download = `${(draft.name || 'custom').replace(/\s+/g, '_').toLowerCase()}_pkg.zip`;
+    link.download = `${(draft.name || 'chess-unleashed').replace(/\s+/g, '-').toLowerCase()}-package.zip`;
     link.click();
     setShowBuilder(false);
   };
@@ -122,7 +128,9 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
 
     return (
       <div className="view-container">
-        <h3>{isImport ? 'Import Package' : 'Save Theme'}</h3>
+        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2c3e50', marginBottom: '8px' }}>
+          {isImport ? 'Load / Save Sets' : 'Load / Save Sets'}
+        </div>
         {isImport && (
           <div style={{ fontSize: '0.8rem', color: '#2c3e50', marginBottom: '6px', fontWeight: 700 }}>
             {packageName}
@@ -146,7 +154,7 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
            </label>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={isImport ? applyImport : exportPackage} style={{ flex: 2, padding: '10px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}>{isImport ? 'Apply Package' : 'Download Theme'}</button>
+          <button onClick={isImport ? applyImport : exportPackage} style={{ flex: 2, padding: '10px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}>{isImport ? 'Apply Package' : 'Save Package'}</button>
           <button onClick={() => { setShowBuilder(false); setImportData(null); }} style={{ flex: 1, padding: '10px', background: '#eee', border: 'none', borderRadius: '4px' }}>Cancel</button>
         </div>
       </div>
@@ -156,10 +164,10 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
   return (
     <div className="view-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-        <h3 style={{ margin: 0 }}>Themes</h3>
+        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2c3e50' }}>Theme Packages</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          <button onClick={() => document.getElementById('pkg-up')?.click()} style={{ padding: '10px 12px', background: '#34495e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>Load Set</button>
-          <button onClick={() => setShowBuilder(true)} style={{ padding: '10px 12px', background: '#e67e22', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>Save Set</button>
+          <button onClick={() => document.getElementById('pkg-up')?.click()} style={{ padding: '10px 12px', background: '#34495e', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>Load Package</button>
+          <button onClick={() => setShowBuilder(true)} style={{ padding: '10px 12px', background: '#e67e22', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}>Save Package</button>
           <input id="pkg-up" type="file" accept=".zip" onChange={handleImportFile} style={{ display: 'none' }} />
         </div>
       </div>

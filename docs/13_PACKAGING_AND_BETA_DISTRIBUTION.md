@@ -1,12 +1,12 @@
-# Packaging And Beta Distribution
+# Packaging and Beta Distribution
 
-Status: Current
+Status: Current release-candidate flow
 
-Electron beta packaging has been updated so the packaged app loads the built Vite output instead of a blank screen.
+Chess Unleashed is packaged as an Electron desktop app for beta testers. A tester should not need npm, terminal commands, or developer setup.
 
 ## Developer Commands
 
-Common commands:
+Use these commands from the project root:
 
 ```powershell
 npm run build
@@ -15,35 +15,56 @@ npm run dist:portable
 npm run dist
 ```
 
-`npm run build` creates the frontend build. Electron production loads `dist/index.html`.
+Expected release flow:
 
-`npm run dist:portable` creates a portable Windows build where configured.
+1. Run `npm run build`.
+2. Run `npm run dist:portable` for the portable Windows executable.
+3. Smoke test the packaged executable.
+4. Upload the portable `.exe` through GitHub Releases.
 
-`npm run dist` creates distributable Electron artifacts through electron-builder.
+Do not commit `dist/`, `release/`, `node_modules/`, or large `.exe` files.
 
-## Distribution Rules
+## Electron Loading
 
-- Release portable `.exe` files through GitHub Releases.
-- Do not commit `dist/`.
-- Do not commit `release/`.
-- Do not commit `node_modules/`.
-- Do not commit large `.exe` release artifacts.
-- Do not commit Stockfish Windows `.exe` binaries.
+Development Electron may load the Vite dev server. Production/package builds must load the built `dist/index.html` with relative asset paths.
 
-## Stockfish Browser Worker
+Vite base/path behavior is important for packaged Electron. A blank packaged window usually means the renderer, assets, or base paths did not load correctly.
 
-Default browser-worker path:
+## Startup Splash Screen
+
+The Electron main process shows a splash window quickly while the main app loads. The splash uses real HTML/CSS status text and an animated loading bar, not text baked into the artwork.
+
+Splash-related files:
+
+- `electron/main.js`
+- `electron/splash.html`
+- `electron/preload.js`
+- optional artwork at `public/splash/chess-unleashed-splash.png`
+
+The app should avoid multiple confusing startup windows. Single-instance behavior should focus the existing app/splash when practical.
+
+## Stockfish
+
+The default browser-worker Stockfish path is:
 
 `/engines/stockfish/stockfish-18-lite-single.js`
 
-Expected bundled files:
+The matching `.wasm` file must be present beside it when required by the worker. The app does not download Stockfish automatically at runtime.
 
-- `public/engines/stockfish/stockfish-18-lite-single.js`
-- `public/engines/stockfish/stockfish-18-lite-single.wasm`
+Do not commit Stockfish Windows `.exe` binaries. Browser-worker JS/WASM assets belong in public assets if they are part of the beta package.
 
-## Bundled Server
+## Local Multiplayer Server
 
-Electron starts the local multiplayer server from `server/chessServer.js` where configured. This is for local/beta convenience and is not an official hosted service.
+`server/chessServer.js` is the local server. Electron startup may bundle/start local server support where safe. Multiplayer still needs broader release testing.
+
+## Package Assets
+
+Packaged builds must support:
+
+- public assets
+- Stockfish worker files
+- splash artwork
+- durable imported assets written under app user data, not the install directory
 
 ## Related Files
 
@@ -51,6 +72,6 @@ Electron starts the local multiplayer server from `server/chessServer.js` where 
 - `vite.config.ts`
 - `electron/main.js`
 - `electron/preload.js`
+- `electron/splash.html`
 - `server/chessServer.js`
-- `docs/BETA_PACKAGING.md`
-
+- `public/engines/stockfish/`

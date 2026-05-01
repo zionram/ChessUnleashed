@@ -4,6 +4,7 @@ import { useGame } from '../context/GameContext';
 import { type PieceThemeConfig } from '../templates';
 import { SettingsFieldRenderer } from '../components/settings/SettingsFieldRenderer';
 import { getRegisteredSettingsField } from '../registry/SettingsRegistry';
+import { createExperiencePackageZip, type ExperiencePackage } from '../packages/ExperiencePackage';
 
 type PieceSidePrefix = 'w' | 'b';
 type BulkApplyTarget = 'white' | 'black' | 'both';
@@ -97,9 +98,6 @@ const ThemeEditorView: React.FC = () => {
 
   const activeConfig = getActiveConfig();
   if (!activeConfig) return null;
-  const hasCustomPieceAssets = (config: PieceThemeConfig) =>
-    Object.values(config.customPieces ?? {}).some(Boolean) ||
-    Object.values(config.customVariants ?? {}).some(rules => rules.some(rule => Boolean(rule.image)));
   const currentAppliedSetLabel = liveTemplate.pieceThemeMode === 'team'
     ? `White: ${liveTemplate.whitePieceTheme?.builtinSet || liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet}, Black: ${liveTemplate.blackPieceTheme?.builtinSet || liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet}`
     : liveTemplate.pieceTheme.type === 'custom'
@@ -146,6 +144,7 @@ const ThemeEditorView: React.FC = () => {
   const variantCount = Object.values(activeConfig.customVariants ?? {}).reduce((count, rules) => count + rules.filter(rule => Boolean(rule.image)).length, 0);
   const fallbackCount = Math.max(0, 12 - customPieceCount);
   const builtInSetConfig = getRegisteredSettingsField('pieces.builtinSet');
+  const showBaseAssignmentPreview = bulkImportFiles.length > 0 || Boolean(stagedBuiltInSet) || hasChanges;
 
   const builtInSetField = {
     key: builtInSetConfig?.id ?? 'piece-theme-builtin-set',
@@ -156,12 +155,29 @@ const ThemeEditorView: React.FC = () => {
     options: builtInSetConfig?.options ?? ['cburnett', 'alpha', 'merida', 'fresca', 'caliente'].map(s => ({ label: s.toUpperCase(), value: s }))
   };
 
-  const saveUnifiedSet = () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(activeConfig, null, 2));
+  const saveUnifiedSet = async () => {
+    const packageTemplate = {
+      ...draft,
+      name: `${draft.name || 'Custom'} Piece Set`
+    };
+    const piecePackage: ExperiencePackage = {
+      format: 'chess-unleashed-experience',
+      metadata: {
+        name: packageTemplate.name,
+        version: '1.0.0',
+        description: 'Chess Unleashed piece set package.'
+      },
+      contents: {
+        template: packageTemplate
+      }
+    };
+    const blob = await createExperiencePackageZip(piecePackage);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute("href", dataStr);
-    link.setAttribute("download", `unified_piece_set.json`);
+    link.href = url;
+    link.download = `${(packageTemplate.name || 'piece-set').replace(/\s+/g, '-').toLowerCase()}-piece-set.zip`;
     link.click();
+    URL.revokeObjectURL(url);
   };
 
   const loadUnifiedSet = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -386,7 +402,9 @@ const ThemeEditorView: React.FC = () => {
     if (!stagedBuiltInSet) return;
     updateActiveConfig({
       builtinSet: stagedBuiltInSet,
-      type: hasCustomPieceAssets(activeConfig) ? 'custom' : 'builtin'
+      type: 'builtin',
+      customPieces: {},
+      customVariants: {}
     });
     setPieceSetStep('arrange');
   };
@@ -600,7 +618,7 @@ const ThemeEditorView: React.FC = () => {
             onClick={saveUnifiedSet}
             style={{ flex: '1 1 140px', padding: '10px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            Save Current Staged Piece Set
+            Save Piece Set Package
           </button>
         </div>
         <input id="set-load-in" type="file" accept=".json" onChange={loadUnifiedSet} style={{ display: 'none' }} />
@@ -654,18 +672,18 @@ const ThemeEditorView: React.FC = () => {
           <button onClick={() => setPieceSetStep('source')} style={{ padding: '7px 10px', border: '1px solid #d0d7de', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}>Back to Source</button>
           <button onClick={() => setPieceSetStep('finalize')} style={{ padding: '7px 10px', border: '1px solid #2c3e50', borderRadius: '6px', background: '#2c3e50', color: '#fff', cursor: 'pointer' }}>Finalize</button>
         </div>
-        {bulkImportFiles.length === 0 && (
+        {!showBaseAssignmentPreview && (
           <div style={{ marginTop: '10px', fontSize: '0.72rem', color: '#8a94a6' }}>
             No staged images yet. Nothing will change in the current piece set until you add staged images to the draft.
           </div>
         )}
-        {bulkImportFiles.length > 0 && (
+        {showBaseAssignmentPreview && (
           <>
             <div style={{ marginTop: '10px', fontSize: '0.75rem', fontWeight: 600, color: '#2c3e50' }}>
               Base Piece Assignment Preview
             </div>
             <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#5d6d7e' }}>
-              Click Auto Assign or choose piece slots manually. Assigned images become the main piece images in the staged preview.
+              Built-in sets fill fallback slots. Assigned custom images become the main piece images in the staged preview.
             </div>
             <div style={{ marginTop: '8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: '8px' }}>
               {bulkAssignmentPreview.map(entry => (
@@ -826,6 +844,7 @@ const ThemeEditorView: React.FC = () => {
             <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#5d6d7e' }}>
               Change which base piece slot each staged image should fill before applying it to the draft.
             </div>
+            {bulkImportFiles.length > 0 ? (
             <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {bulkImportFiles.map(file => (
                 <div key={file.name} style={{ display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #e3e8ee', borderRadius: '6px', padding: '8px', background: '#fff' }}>
@@ -850,6 +869,11 @@ const ThemeEditorView: React.FC = () => {
                 </div>
               ))}
             </div>
+            ) : (
+              <div style={{ marginTop: '8px', padding: '8px', borderRadius: '6px', border: '1px solid #e3e8ee', background: '#fff', color: '#5d6d7e', fontSize: '0.7rem' }}>
+                No custom images are staged. The draft preview is using the selected built-in set.
+              </div>
+            )}
             {availableExtraStyleFiles.length > 0 && (
               <div style={{ marginTop: '12px', fontSize: '0.68rem', color: '#5d6d7e' }}>
                 {availableExtraStyleFiles.length} unassigned image{availableExtraStyleFiles.length === 1 ? '' : 's'} available for per-piece variants. Use Add Variants under a base slot to attach them.
@@ -864,7 +888,7 @@ const ThemeEditorView: React.FC = () => {
         <section style={{ marginBottom: '15px', padding: '12px', border: '1px solid #d7e0e7', borderRadius: '8px', background: '#fff' }}>
           <h4 style={{ margin: '0 0 8px 0' }}>Finalize Piece Set</h4>
           <div style={{ fontSize: '0.72rem', color: '#5d6d7e', marginBottom: '12px' }}>
-            Step 3: review the staged piece set, apply it to the game, or save the mixed piece set as JSON.
+            Step 3: review the staged piece set, apply it to the game, or save the mixed piece set as a package zip.
           </div>
           <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
             <div style={{ padding: '8px', borderRadius: '6px', background: '#f8f9fa', border: '1px solid #e3e8ee', fontSize: '0.75rem' }}>
@@ -878,7 +902,7 @@ const ThemeEditorView: React.FC = () => {
             </div>
           </div>
           <div style={{ fontSize: '0.68rem', color: '#5d6d7e', marginBottom: '12px' }}>
-            Save Piece Set exports the current staged mixed set supported by the existing piece set JSON format.
+            Save Piece Set exports a Chess Unleashed package zip with real media files under assets/.
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button

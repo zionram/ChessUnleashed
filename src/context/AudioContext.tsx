@@ -34,6 +34,8 @@ export interface AudioRule {
     duckMusic?: boolean;
     pauseMusic?: boolean;
     resumeMusicAfter?: boolean;
+    loopWhileEventTrue?: boolean;
+    stopWhenEventEnds?: boolean;
   };
 }
 
@@ -111,7 +113,7 @@ interface AudioContextType {
   updateController: (updates: Partial<AudioControllerSettings>) => void;
   updateCategory: (eventName: string, updates: Partial<AudioCategorySetting>) => void;
   
-  playEvent: (event: string, context?: { piece?: string; side?: string; mode?: string }) => void;
+  playEvent: (event: string, context?: { piece?: string; side?: string; mode?: string; active?: boolean }) => void;
   playLibrarySound: (id: string) => void;
   stopPreview: () => void;
   
@@ -150,6 +152,14 @@ const DEFAULT_CONTROLLER: AudioControllerSettings = {
     gameStart: { enabled: true, volume: 1 },
     checkmate: { enabled: true, volume: 1 }
   }
+};
+
+export const SUPPORTED_AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'm4a', 'mid', 'midi'];
+
+export const isSupportedAudioFile = (file: File) => {
+  const extension = file.name.toLowerCase().split('.').pop() ?? '';
+  if (SUPPORTED_AUDIO_EXTENSIONS.includes(extension)) return true;
+  return file.type.startsWith('audio/');
 };
 
 const AUDIO_PROFILE_STORAGE_KEY = 'chess-unleashed.audio-profile.v1';
@@ -203,6 +213,11 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   const musicRef = useRef<HTMLAudioElement | null>(null);
   const previewRef = useRef<HTMLAudioElement | null>(null);
+  const statefulEffectRefs = useRef<Record<string, {
+    audio: HTMLAudioElement;
+    playback: NonNullable<AudioRule['playback']>;
+    musicWasPlaying: boolean;
+  }>>({});
 
   useEffect(() => {
     if (bgMusic) {
@@ -293,7 +308,25 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     audio.play().catch(() => {});
   };
 
-  const playEvent = (eventName: string, context?: { piece?: string; side?: string; mode?: string }) => {
+  const stopStatefulEffect = (eventName: string) => {
+    const stateful = statefulEffectRefs.current[eventName];
+    if (!stateful) return;
+    stateful.audio.pause();
+    stateful.audio.currentTime = 0;
+    if (stateful.playback.duckMusic && musicRef.current) {
+      musicRef.current.volume = controller.muted ? 0 : masterVolume * musicVolume;
+    }
+    if (stateful.playback.pauseMusic && stateful.playback.resumeMusicAfter && stateful.musicWasPlaying) {
+      musicRef.current?.play().catch(() => {});
+    }
+    delete statefulEffectRefs.current[eventName];
+  };
+
+  const playEvent = (eventName: string, context?: { piece?: string; side?: string; mode?: string; active?: boolean }) => {
+    if (context?.active === false) {
+      stopStatefulEffect(eventName);
+      return;
+    }
     const category = controller.categories[eventName] ?? { enabled: true, volume: 1 };
     if (!category.enabled) return;
 
@@ -311,7 +344,37 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (matches.length > 0) {
       const sound = library.find(s => s.id === matches[0].soundId);
       if (sound) {
-        playFile(sound.url, category.volume, matches[0].playback);
+        const playback = matches[0].playback;
+        if (playback?.loopWhileEventTrue || playback?.stopWhenEventEnds) {
+          if (statefulEffectRefs.current[eventName]) return;
+          const musicWasPlaying = !!musicRef.current && !musicRef.current.paused;
+          if (playback.pauseMusic) musicRef.current?.pause();
+          else if (playback.duckMusic && musicRef.current) musicRef.current.volume = masterVolume * musicVolume * 0.35;
+          const audio = new Audio(sound.url);
+          audio.loop = !!playback.loopWhileEventTrue;
+          audio.volume = masterVolume * sfxVolume * category.volume;
+          statefulEffectRefs.current[eventName] = {
+            audio,
+            playback,
+            musicWasPlaying
+          };
+          audio.onended = () => {
+            if (!audio.loop) {
+              if (playback.duckMusic && musicRef.current) {
+                musicRef.current.volume = controller.muted ? 0 : masterVolume * musicVolume;
+              }
+              if (playback.pauseMusic && playback.resumeMusicAfter && musicWasPlaying) {
+                musicRef.current?.play().catch(() => {});
+              }
+              delete statefulEffectRefs.current[eventName];
+            }
+          };
+          audio.play().catch(() => {
+            delete statefulEffectRefs.current[eventName];
+          });
+        } else {
+          playFile(sound.url, category.volume, playback);
+        }
         eventBus.emit({
           type: 'sound.rule.played',
           payload: {

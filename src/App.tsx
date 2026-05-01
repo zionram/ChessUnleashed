@@ -28,9 +28,11 @@ import TimerView from './views/TimerView';
 import PlatformAppearanceView from './views/PlatformAppearanceView';
 import AnimationSettingsView from './views/AnimationSettingsView';
 import AnimationBuilderView from './views/AnimationBuilderView';
+import AboutSupportView from './views/AboutSupportView';
 import ProfileView from './views/ProfileView';
 import RuleBuilderView from './views/RuleBuilderView';
 import CustomGameRuntimeView from './views/CustomGameRuntimeView';
+import LetsPlaySetupView from './views/LetsPlaySetupView';
 import ChatContainer from './components/layout/ChatContainer';
 import AudioController from './components/layout/AudioController';
 import GameEndOverlay from './components/layout/GameEndOverlay';
@@ -64,7 +66,7 @@ registerView({ id: 'rule-builder', name: 'Rule Builder', component: RuleBuilderV
 registerView({ id: 'timer', name: 'Timer', component: TimerRight, defaultEnabled: false, position: 'right' });
 registerView({ id: 'timer-settings', name: 'Timer Settings', component: TimerSettingsView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'event-log', name: 'Event Log', component: EventLogView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'event-builder', name: 'Event Builder', component: EventBuilderView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'event-builder', name: 'Event Builder', component: EventBuilderView, defaultEnabled: false, position: 'center' });
 registerView({ id: 'troubleshooter', name: 'Troubleshooter', component: TroubleshooterView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'stats', name: 'Stats', component: StatsView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'theme-editor', name: 'Piece Editor', component: ThemeEditorView, defaultEnabled: false, position: 'right' });
@@ -77,7 +79,8 @@ registerView({ id: 'layers', name: 'Layers', component: LayersView, defaultEnabl
 registerView({ id: 'audio', name: 'Audio Settings', component: AudioView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'platform-appearance', name: 'Platform UI', component: PlatformAppearanceView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'animation-settings', name: 'Animation', component: AnimationSettingsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'animation-builder', name: 'Animation Builder', component: AnimationBuilderView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'animation-builder', name: 'Animation Builder', component: AnimationBuilderView, defaultEnabled: false, position: 'center' });
+registerView({ id: 'about-support', name: 'About / Support', component: AboutSupportView, defaultEnabled: false, position: 'right' });
 
 function MainLayout() {
   const { settings, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
@@ -89,6 +92,7 @@ function MainLayout() {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
+  const [newGameOverlayOpen, setNewGameOverlayOpen] = useState(false);
   const [activeCustomRulesetId, setActiveCustomRulesetId] = useState<string | null>(() => {
     const snapshot = readGameSnapshot();
     return snapshot?.gameType === 'custom' ? snapshot.selectedCustomRulesetId : null;
@@ -237,6 +241,7 @@ function MainLayout() {
       case 'toggle-platform-appearance': toggleView('platform-appearance'); break;
       case 'toggle-animation-settings': toggleView('animation-settings'); break;
       case 'toggle-animation-builder': toggleView('animation-builder'); break;
+      case 'toggle-about-support': toggleView('about-support'); break;
       case 'toggle-sound-editor': toggleView('sound-editor'); break;
       case 'toggle-multiplayer': toggleView('multiplayer'); break;
       case 'toggle-computer': toggleView('computer-opponent'); break;
@@ -272,17 +277,14 @@ function MainLayout() {
   const showGameEndOverlay = isTerminalGame && !dismissedGameEndOverlay;
   const handleNewGame = () => {
     setDismissedGameEndOverlay(true);
-    setRightPanelOpen(true);
-    setRightPanelCollapsed(false);
-    if (multiplayer.isConnected) {
-      if (!settings.activeViews.includes('multiplayer')) toggleView('multiplayer');
-      return;
-    }
-    if (!settings.activeViews.includes('computer-opponent')) toggleView('computer-opponent');
+    setNewGameOverlayOpen(true);
   };
 
-  const { background, frameLayer } = settings.template;
+  const activeTemplate = settings.themeDraft ?? settings.template;
+  const { background, frameLayer } = activeTemplate;
   const isSoundEditorActive = settings.activeViews.includes('sound-editor');
+  const isEventBuilderActive = settings.activeViews.includes('event-builder');
+  const isAnimationBuilderActive = settings.activeViews.includes('animation-builder');
   const isUnified = multiplayer.isConnected && multiplayer.enforceSharedExp;
   const timerPlacement = settings.timeControl.placement;
   const showBoardTimer = settings.timeControl.enabled && timerPlacement !== 'right-panel';
@@ -300,12 +302,21 @@ function MainLayout() {
       const boardRect = boardWrapperRef.current?.getBoundingClientRect();
       if (!centerRect || !boardRect) return;
 
-      setFrameAnchor({
-        x: boardRect.left - centerRect.left + boardRect.width / 2,
-        y: boardRect.top - centerRect.top + boardRect.height / 2,
-        width: centerRect.width,
-        height: centerRect.height
-      });
+        const sizeMode = frameLayer.frameSizeMode ?? (frameLayer.lockToBoard ? 'match-board' : 'responsive');
+        setFrameAnchor({
+          x: boardRect.left - centerRect.left + boardRect.width / 2,
+          y: boardRect.top - centerRect.top + boardRect.height / 2,
+          width: sizeMode === 'match-board'
+            ? boardRect.width
+            : sizeMode === 'fixed'
+              ? (frameLayer.fixedWidth || boardRect.width)
+              : centerRect.width,
+          height: sizeMode === 'match-board'
+            ? boardRect.height
+            : sizeMode === 'fixed'
+              ? (frameLayer.fixedHeight || boardRect.height)
+              : centerRect.height
+        });
     };
 
     updateFrameAnchor();
@@ -318,7 +329,7 @@ function MainLayout() {
       window.removeEventListener('resize', updateFrameAnchor);
       observer.disconnect();
     };
-  }, [leftPanelCollapsed, rightPanelCollapsed, leftWidth, rightWidth, showBoardTimer, timerPlacement, isSoundEditorActive]);
+  }, [leftPanelCollapsed, rightPanelCollapsed, leftWidth, rightWidth, showBoardTimer, timerPlacement, isSoundEditorActive, frameLayer.lockToBoard, frameLayer.frameSizeMode, frameLayer.fixedWidth, frameLayer.fixedHeight]);
 
   const getLayerImageStyles = (layer: any): CSSProperties => {
     const isCentered = layer.repeat === 'centered';
@@ -357,6 +368,21 @@ function MainLayout() {
     backgroundColor: layer.color,
     pointerEvents: 'none'
   });
+
+  const getWelcomeContainerStyles = (): CSSProperties => {
+    const mode = settings.uiAppearance.welcomeSidebarContainerFrameMode;
+    const frameColor = mode === 'none'
+      ? 'transparent'
+      : mode === 'accent'
+        ? settings.uiAppearance.accentColor
+        : settings.uiAppearance.welcomeSidebarContainerFrameColor || '#eee8d5';
+    return {
+      padding: '20px',
+      marginTop: 'auto',
+      background: settings.uiAppearance.welcomeSidebarContainerColor || 'transparent',
+      borderTop: `1px solid ${frameColor}`
+    };
+  };
 
   return (
     <div
@@ -468,6 +494,14 @@ function MainLayout() {
         </div>
       </Overlay>
 
+      <Overlay
+        isOpen={newGameOverlayOpen}
+        onClose={() => setNewGameOverlayOpen(false)}
+        title="Let's Play!"
+      >
+        <LetsPlaySetupView closeOverlay={() => setNewGameOverlayOpen(false)} />
+      </Overlay>
+
       {activeMobileSection && (
         <MobileMenuSheet
           sectionId={activeMobileSection}
@@ -515,7 +549,7 @@ function MainLayout() {
               <DynamicMenu items={MENU_SCHEMA} onAction={handleMenuAction} />
               <div
                 className="welcome-sidebar-container"
-                style={{ padding: '20px', borderTop: '1px solid #eee', marginTop: 'auto' }}
+                style={getWelcomeContainerStyles()}
               >
                 <WelcomeView />
               </div>
@@ -560,6 +594,10 @@ function MainLayout() {
           >
             {isSoundEditorActive ? (
               <SoundEditorView />
+            ) : isEventBuilderActive ? (
+              <EventBuilderView />
+            ) : isAnimationBuilderActive ? (
+              <AnimationBuilderView />
             ) : (
               <div ref={timerDragBounds} data-layer="outer-wrapper" style={{ position: 'relative', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '100%', boxSizing: 'border-box' }}>
                 {/* TODO: future timer behavior modes can add jumping or event-driven placement without changing TimerView. */}

@@ -1,76 +1,70 @@
 # User Help Index
 
-Status: Current user-facing navigation guide
+Status: Current release-candidate navigation guide
 
-## Start A Game
+This is a practical index for where users should look in the app.
 
-Go to Let’s Play.
+## Play
 
-- Standard Chess starts the normal chess game.
-- Play vs Bot lets you choose side and bot/engine.
-- Custom Game shows approved custom games and starts only supported ready-to-play rulesets.
-- Multiplayer uses the multiplayer server/source flow.
+- Let's Play: choose Standard Chess, bot game, multiplayer entry, or approved Custom Game.
+- Play vs Bot: choose side and engine before starting.
+- Computer Opponent controls: full bot/personality controller remains available through the bot controls access path.
 
-## Change Board And Pieces
+## Visuals
 
-Go to Environment → Look.
+- Environment -> Look: visual and appearance controls.
+- Environment -> Look -> Pieces / Theme Editor: guided Piece Set workflow.
+- Piece Set workflow: Source -> Arrange -> Finalize.
+- Environment -> Look -> Animation: default movement animation, speed, scope, and active-status feedback.
+- Platform UI settings: welcome panel/sidebar color and frame/border controls.
 
-- Pieces opens the guided Piece Set workflow.
-- Board/Squares/Paths/Layers adjust board visuals.
-- Themes manages broader visual setup.
-- Animation controls movement animation defaults.
-- Platform UI controls app UI appearance.
+## Packages
 
-## Manage Packages
+- Environment -> Packages or Tools -> Package Manager: Load Package, Save Package, Extract Package.
+- Save Package: prepare selected categories, then save a shareable `.zip`.
+- Load Package: preview package categories, then apply selected categories.
+- Extract Package: unpack a package into human-readable folders without applying it.
 
-Go to Tools → Import / Export or Environment → Load / Save Sets depending on current entry point.
+## Audio, Events, and Animation
 
-Use Package Manager to:
+- Advanced -> Gaming -> Sound Editor: create Sound Rules and manage Sound Library.
+- Advanced -> Gaming -> Event Builder: create/test custom events and attach sound/animation actions.
+- Advanced -> Gaming -> Animation Builder: create/test named animations.
+- Advanced -> Gaming -> Event Log: gameplay/system action history.
+- Environment -> Sound: audio settings and path to sound tools.
 
-- Load Package
-- Save Package
-- Extract Package
+## Bots
 
-Packages are shareable `.zip` files containing settings plus real media assets.
+- Tools -> Bots: add, edit, remove, and test registered bots.
+- Stockfish browser-worker default path: `/engines/stockfish/stockfish-18-lite-single.js`.
+- Invalid worker paths should show friendly test/load failures.
 
-## Edit Sounds
+## Custom Games
 
-Go to Advanced → Gaming → Sound Editor.
-
-Environment → Sound also provides audio settings and should help users reach sound editing without duplicating menu entries.
-
-## Manage Events
-
-Go to Advanced → Gaming → Event Builder.
-
-Use Event Builder to create custom events and attach sounds or animations.
-
-## View Event History
-
-Go to Advanced → Gaming → Event Log.
-
-This is for gameplay/system action history, not crash reports.
-
-## Troubleshoot Errors
-
-Go to Advanced → System → Troubleshooter.
-
-This is for errors/debug reports and future support reports.
-
-## Manage Animations
-
-Go to:
-
-- Environment → Look → Animation for default movement settings.
-- Advanced → Gaming → Animation Builder for reusable named animations.
-
-## Manage Bots
-
-Go to Tools → Bots.
-
-Use Computer Opponent controls for the full opponent/controller UI during bot play.
+- Rule Builder: create/edit/validate/test/approve custom rulesets.
+- Custom Game: approved sandbox-playable rulesets can be started locally.
+- Custom rules and custom-game behavior are beta/experimental and need deeper testing.
 
 ## Multiplayer
 
-Go to Multiplayer/Let’s Play multiplayer flow. Server-source choices include home/custom server settings, with official service planned later.
+- Multiplayer view: host/join and server-source settings.
+- Host compliance policy and host asset matching exist, but multiplayer still needs broader testing.
 
+## System
+
+- Advanced -> System -> Troubleshooter: error/debug reports.
+- Advanced -> System -> Validation: validation tools if available.
+- Advanced -> System -> Settings Builder: settings/tooling area if available.
+- Advanced -> System -> Reset System: reset controls.
+- About / Support: project information and donation/support placeholder.
+
+## Reports to Request From Testers
+
+- crashes or blank packaged app startup
+- Package Manager load/save/extract failures
+- missing imported media after restart
+- Stockfish test/play failures
+- Custom Game/Rule Builder issues
+- Event -> Sound or Event -> Animation issues
+- audio upload validation issues
+- multiplayer/server connection issues

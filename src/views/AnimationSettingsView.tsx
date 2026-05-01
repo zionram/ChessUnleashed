@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useSettings, type PieceAnimationSettings } from '../context/SettingsContext';
 
 const easingOptions: Array<{ label: string; value: PieceAnimationSettings['easing'] }> = [
@@ -9,9 +9,23 @@ const easingOptions: Array<{ label: string; value: PieceAnimationSettings['easin
 
 const AnimationSettingsView: React.FC = () => {
   const { settings, updatePieceAnimations } = useSettings();
-  const { enabled, movementSpeedMs, easing, captureAnimation, promotionAnimation, defaultAnimationId } = settings.pieceAnimations;
+  const [applyMessage, setApplyMessage] = useState<string | null>(null);
+  const { enabled, movementSpeedMs, easing, captureAnimation, promotionAnimation, defaultAnimationId, movementScope } = settings.pieceAnimations;
   const selectedAnimation = settings.animationDefinitions.find(animation => animation.id === defaultAnimationId);
-
+  const scopeLabel = useMemo(() => {
+    switch (movementScope) {
+      case 'my-pieces':
+        return 'My pieces';
+      case 'opponent-pieces':
+        return 'Opponent pieces';
+      case 'white-pieces':
+        return 'White pieces';
+      case 'black-pieces':
+        return 'Black pieces';
+      default:
+        return 'Both sides / all pieces';
+    }
+  }, [movementScope]);
   const applyDefaultAnimation = (animationId: string) => {
     const animation = settings.animationDefinitions.find(item => item.id === animationId);
     if (!animation) return;
@@ -21,6 +35,11 @@ const AnimationSettingsView: React.FC = () => {
       movementSpeedMs: animation.preset === 'snap' ? 0 : animation.durationMs,
       easing: animation.easing
     });
+  };
+
+  const handleApply = () => {
+    updatePieceAnimations({ ...settings.pieceAnimations });
+    setApplyMessage(`Updated: ${selectedAnimation?.name ?? 'Animation'} · ${enabled ? 'enabled' : 'disabled'} · ${scopeLabel}.`);
   };
 
   return (
@@ -46,6 +65,25 @@ const AnimationSettingsView: React.FC = () => {
             checked={enabled}
             onChange={(event) => updatePieceAnimations({ enabled: event.target.checked })}
           />
+        </label>
+
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.85rem' }}>
+          Movement Animation Scope
+          <select
+            value={movementScope}
+            disabled={!enabled}
+            onChange={(event) => updatePieceAnimations({ movementScope: event.target.value as PieceAnimationSettings['movementScope'] })}
+            style={{ padding: '6px', fontSize: '0.8rem' }}
+          >
+            <option value="all">Both sides / all pieces</option>
+            <option value="my-pieces">My pieces</option>
+            <option value="opponent-pieces">Opponent pieces</option>
+            <option value="white-pieces">White pieces</option>
+            <option value="black-pieces">Black pieces</option>
+          </select>
+          <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
+            My/Opponent uses your active side in bot or multiplayer games. In local two-player mode it falls back to both sides.
+          </span>
         </label>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -97,10 +135,39 @@ const AnimationSettingsView: React.FC = () => {
             onChange={(event) => updatePieceAnimations({ promotionAnimation: event.target.checked })}
           />
         </label>
+
+        <div style={{
+          background: 'rgba(255,255,255,0.8)',
+          border: '1px solid rgba(148,163,184,0.35)',
+          borderRadius: '8px',
+          padding: '10px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+            <strong style={{ fontSize: '0.82rem' }}>Current Active Default</strong>
+            <button
+              onClick={handleApply}
+              style={{ padding: '4px 10px', fontSize: '0.75rem', cursor: 'pointer' }}
+            >
+              Update Animation Settings
+            </button>
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#1f2937', lineHeight: 1.45 }}>
+            <div>{enabled ? 'Enabled' : 'Disabled'} · {selectedAnimation?.name ?? 'Slide'} · {scopeLabel}</div>
+            <div>Movement speed: {movementSpeedMs}ms · Easing: {easing}</div>
+            <div>Capture: {captureAnimation ? 'On' : 'Off'} · Promotion: {promotionAnimation ? 'On' : 'Off'}</div>
+            <div style={{ color: '#475569' }}>Priority: Event-triggered animations override this default movement animation. Snap remains the fallback.</div>
+          </div>
+          {applyMessage && (
+            <div style={{ fontSize: '0.75rem', color: '#0f766e' }}>{applyMessage}</div>
+          )}
+        </div>
       </div>
 
       <p style={{ fontSize: '0.7rem', color: '#666', marginTop: '12px' }}>
-        Standard Chess pieces use the selected default movement animation. Snap / No Animation maps to immediate board updates.
+        Standard Chess pieces use the selected default movement animation and movement scope. Snap / No Animation maps to immediate board updates.
         {selectedAnimation ? ` Current default: ${selectedAnimation.name}.` : ''}
       </p>
     </div>

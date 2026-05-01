@@ -11,7 +11,15 @@ const fallbackMessages = [
 
 const WelcomeView: React.FC = () => {
   const { settings, updateUIAppearance } = useSettings();
-  const { showTipsBoard, tipsRotationSeconds, tipsMessages, welcomePanelColor } = settings.uiAppearance;
+  const {
+    showTipsBoard,
+    tipsRotationSeconds,
+    tipsMessages,
+    welcomePanelColor,
+    welcomePanelFrameColor,
+    welcomePanelFrameMode,
+    accentColor
+  } = settings.uiAppearance;
   const messages = useMemo(
     () => (tipsMessages.length ? tipsMessages : fallbackMessages),
     [tipsMessages]
@@ -51,7 +59,9 @@ const WelcomeView: React.FC = () => {
     <div className="view-container">
       <div
         style={{
-          border: '1px solid #d7e0e7',
+          border: welcomePanelFrameMode === 'none'
+            ? '1px solid transparent'
+            : `1px solid ${welcomePanelFrameMode === 'accent' ? accentColor : (welcomePanelFrameColor || '#d7e0e7')}`,
           borderRadius: 8,
           background: welcomePanelColor || '#fff',
           padding: '10px',

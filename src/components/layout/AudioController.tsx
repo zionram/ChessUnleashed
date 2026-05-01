@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useAudio } from '../../context/AudioContext';
+import { isSupportedAudioFile, useAudio } from '../../context/AudioContext';
 import { useSettings } from '../../context/SettingsContext';
 import WaveProgressBar from '../audio/WaveProgressBar';
 import { eventBus } from '../../events/EventBus';
@@ -57,6 +57,7 @@ const AudioController: React.FC = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [dragPosition, setDragPosition] = useState(controller.floatingPos || { x: 120, y: 120 });
   const [lastSoundRule, setLastSoundRule] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
   const playerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -111,8 +112,15 @@ const AudioController: React.FC = () => {
   };
 
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
+    const allFiles = Array.from(e.target.files ?? []);
+    const files = allFiles.filter(isSupportedAudioFile);
+    const rejected = allFiles.filter(file => !isSupportedAudioFile(file));
+    if (rejected.length) setUploadMessage(`Unsupported file skipped: ${rejected.map(file => file.name).join(', ')}`);
+    else setUploadMessage('');
+    if (!files.length) {
+      e.target.value = '';
+      return;
+    }
     Promise.all(files.map(file => new Promise<{ name: string; url: string }>((resolve) => {
       const reader = new FileReader();
       reader.onload = (ev) => resolve({ name: file.name, url: ev.target?.result as string });
@@ -214,8 +222,9 @@ const AudioController: React.FC = () => {
           <button onClick={() => setShowAdvanced(current => !current)} style={{ flex: 1, padding: '6px 4px' }}>
             Advanced
           </button>
-          <input id="floating-audio-upload" type="file" accept="audio/*" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
+          <input id="floating-audio-upload" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
         </div>
+        {uploadMessage && <div style={{ fontSize: '0.6rem', color: '#9a3412', marginBottom: 6 }}>{uploadMessage}</div>}
 
         {showAdvanced && (
           <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>

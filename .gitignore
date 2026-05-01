@@ -8,3 +8,17 @@ out/
 .env.local
 .vite/
 server/stockfish/*.exe
+
+*.zip
+*_pkg.zip
+*.exe
+release/
+dist/
+
+# Generated packages and release files
+*.zip
+*_pkg.zip
+*.exe
+release/
+dist/
+win-unpacked/

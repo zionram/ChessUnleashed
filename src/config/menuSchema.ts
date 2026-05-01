@@ -50,14 +50,14 @@ export const MENU_SCHEMA: MenuItem[] = [
               { id: 'app-squares', label: 'Squares', icon: React.createElement(Grid3x3, { size: 16 }), type: 'action', actionId: 'toggle-squares' },
               { id: 'app-paths', label: 'Paths', icon: React.createElement(Route, { size: 16 }), type: 'action', actionId: 'toggle-paths' },
               { id: 'app-layers', label: 'Layers', icon: React.createElement(Layers, { size: 16 }), type: 'action', actionId: 'toggle-layers' },
-              {
-                id: 'edit-appearance',
-                label: 'Themes',
-                icon: React.createElement(Settings, { size: 16 }),
-                type: 'overlay',
-                overlayTitle: 'Load / Save Set',
-                component: AppearanceView
-              }
+          {
+            id: 'edit-appearance',
+            label: 'Themes',
+            icon: React.createElement(Settings, { size: 16 }),
+            type: 'overlay',
+            overlayTitle: 'Themes',
+            component: AppearanceView
+          }
             ]
           },
           { id: 'app-animation', label: 'Animation', icon: React.createElement(Wand2, { size: 16 }), type: 'action', actionId: 'toggle-animation-settings' },
@@ -75,11 +75,11 @@ export const MENU_SCHEMA: MenuItem[] = [
       },
       {
         id: 'environment-load-set',
-        label: 'Load Set',
+        label: 'Packages',
         icon: React.createElement(Package, { size: 16 }),
         type: 'overlay',
-        overlayTitle: 'Load Set',
-        component: AppearanceView
+        overlayTitle: 'Package Manager',
+        component: ImportExportView
       }
     ]
   },
@@ -105,10 +105,10 @@ export const MENU_SCHEMA: MenuItem[] = [
       },
       {
         id: 'tools-import-export',
-        label: 'Import / Export',
+        label: 'Package Manager',
         icon: React.createElement(Package, { size: 16 }),
         type: 'overlay',
-        overlayTitle: 'Import / Export',
+        overlayTitle: 'Package Manager',
         component: ImportExportView
       },
       {
@@ -149,6 +149,7 @@ export const MENU_SCHEMA: MenuItem[] = [
         type: 'submenu',
         children: [
           { id: 'toggle-troubleshooter', label: 'Troubleshooter', type: 'toggle', actionId: 'toggle-troubleshooter' },
+          { id: 'toggle-about-support', label: 'About / Support', type: 'toggle', actionId: 'toggle-about-support' },
           {
             id: 'advanced-validation',
             label: 'Validation',

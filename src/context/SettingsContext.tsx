@@ -3,6 +3,7 @@ import { defaultTemplate, type Template } from '../templates';
 import type { TimeControlConfig } from '../timer/TimerTypes';
 import type { CustomRuleset } from '../rules/RulePackages';
 import { eventBus } from '../events/EventBus';
+import type { ImportedAssetRegistryEntry } from '../electron-assets';
 
 export type BotDifficulty = 'Easy' | 'Casual' | 'Intermediate' | 'Advanced' | 'Expert' | 'Master' | 'Grandmaster';
 export type BotPersonality = string;
@@ -284,6 +285,11 @@ export interface UIAppearanceSettings {
   tipsRotationSeconds: number;
   tipsMessages: string[];
   welcomePanelColor: string;
+  welcomePanelFrameColor: string;
+  welcomePanelFrameMode: 'accent' | 'custom' | 'none';
+  welcomeSidebarContainerColor: string;
+  welcomeSidebarContainerFrameColor: string;
+  welcomeSidebarContainerFrameMode: 'accent' | 'custom' | 'none';
 }
 
 export interface PieceAnimationSettings {
@@ -293,6 +299,7 @@ export interface PieceAnimationSettings {
   captureAnimation: boolean;
   promotionAnimation: boolean;
   defaultAnimationId?: string;
+  movementScope: 'all' | 'my-pieces' | 'opponent-pieces' | 'white-pieces' | 'black-pieces';
 }
 
 export type AnimationPresetType =
@@ -327,12 +334,14 @@ export interface AnimationDefinition {
 }
 
 export type AnimationEventTarget = 'moved-piece' | 'captured-piece' | 'target-square' | 'source-square' | 'board' | 'current-player-panel' | 'fallback-preview';
+export type AnimationRuleScope = 'any-piece' | 'my-pieces' | 'opponent-pieces' | 'white-pieces' | 'black-pieces';
 
 export interface AnimationRule {
   id: string;
   eventId: string;
   animationId: string;
   target: AnimationEventTarget;
+  scope?: AnimationRuleScope;
   enabled: boolean;
 }
 
@@ -370,6 +379,7 @@ export interface SettingsState {
   customEvents: CustomEventDefinition[];
   animationDefinitions: AnimationDefinition[];
   animationRules: AnimationRule[];
+  importedAssets: ImportedAssetRegistryEntry[];
 }
 
 export type ImportableSettingsCategories = Partial<Pick<
@@ -382,6 +392,7 @@ export type ImportableSettingsCategories = Partial<Pick<
   | 'customEvents'
   | 'animationDefinitions'
   | 'animationRules'
+  | 'importedAssets'
 >>;
 
 interface SettingsContextType {
@@ -479,6 +490,11 @@ const createDefaultSettings = (): SettingsState => ({
       showTipsBoard: true,
       tipsRotationSeconds: 12,
       welcomePanelColor: '#ffffff',
+      welcomePanelFrameColor: '#d7e0e7',
+      welcomePanelFrameMode: 'custom',
+      welcomeSidebarContainerColor: '#fdf6e3',
+      welcomeSidebarContainerFrameColor: '#eee8d5',
+      welcomeSidebarContainerFrameMode: 'custom',
       tipsMessages: [
         "Tip: Use Let's Play to start a bot, local, or multiplayer game.",
         'Did you know? Knights are the only pieces that can jump.',
@@ -493,7 +509,8 @@ const createDefaultSettings = (): SettingsState => ({
       easing: 'ease-in-out',
       captureAnimation: true,
       promotionAnimation: true,
-      defaultAnimationId: 'anim-slide'
+      defaultAnimationId: 'anim-slide',
+      movementScope: 'all'
     },
     timeControl: {
       enabled: false,
@@ -522,7 +539,8 @@ const createDefaultSettings = (): SettingsState => ({
     customRulesets: [],
     customEvents: [],
     animationDefinitions: DEFAULT_ANIMATION_DEFINITIONS,
-    animationRules: []
+    animationRules: [],
+    importedAssets: []
 });
 
 const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState => {
@@ -613,6 +631,7 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
     customEvents: saved.customEvents ?? defaults.customEvents,
     animationDefinitions: mergeDefaultAnimations(saved.animationDefinitions ?? defaults.animationDefinitions),
     animationRules: saved.animationRules ?? defaults.animationRules,
+    importedAssets: saved.importedAssets ?? defaults.importedAssets,
     registeredBots: mergeDefaultRegisteredBots(saved.registeredBots?.length ? saved.registeredBots : defaults.registeredBots),
     localProfile: {
       ...defaults.localProfile,
@@ -829,7 +848,8 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     ...(updates.customRulesets ? { customRulesets: mergeById(s.customRulesets, updates.customRulesets) } : {}),
     ...(updates.customEvents ? { customEvents: mergeById(s.customEvents, updates.customEvents) } : {}),
     ...(updates.animationDefinitions ? { animationDefinitions: mergeById(s.animationDefinitions, updates.animationDefinitions) } : {}),
-    ...(updates.animationRules ? { animationRules: mergeById(s.animationRules, updates.animationRules) } : {})
+    ...(updates.animationRules ? { animationRules: mergeById(s.animationRules, updates.animationRules) } : {}),
+    ...(updates.importedAssets ? { importedAssets: mergeById(s.importedAssets, updates.importedAssets) } : {})
   }));
   const setThemeDraft = (themeDraft: Template | null) => setSettings(s => ({ ...s, themeDraft }));
   const setThemeEditorMode = (isThemeEditorMode: boolean) => setSettings(s => ({ ...s, isThemeEditorMode }));

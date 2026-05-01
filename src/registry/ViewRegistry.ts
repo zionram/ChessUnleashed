@@ -5,7 +5,7 @@ export interface ViewConfig {
   name: string;
   component: React.ComponentType<any>;
   defaultEnabled: boolean;
-  position: 'left' | 'right' | 'bottom' | 'top';
+  position: 'left' | 'right' | 'bottom' | 'top' | 'center';
 }
 
 const views: ViewConfig[] = [];

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import AnimationPreviewCard from '../components/animation/AnimationPreviewCard';
-import { useSettings, type AnimationEventTarget, type CustomEventBaseTrigger, type CustomEventComplexCondition, type CustomEventDefinition } from '../context/SettingsContext';
+import { useSettings, type AnimationEventTarget, type AnimationRuleScope, type CustomEventBaseTrigger, type CustomEventComplexCondition, type CustomEventDefinition } from '../context/SettingsContext';
 import { useAudio } from '../context/AudioContext';
 import { createSimulatedGameEvent, evaluateCustomEventDefinition, getCustomEventStatus, getTacticalReadinessNote, getTacticalTestHint, TACTICAL_EVENT_DESCRIPTIONS } from '../events/CustomEventRuntime';
 import { eventBus } from '../events/EventBus';
@@ -33,7 +33,17 @@ const ANIMATION_TARGETS: Array<{ id: AnimationEventTarget; label: string; descri
   { id: 'captured-piece', label: 'Captured piece', description: 'Animate the captured piece location when capture data exists.', needsCaptureData: true },
   { id: 'source-square', label: 'Source square', description: 'Animate the square the move started from.', needsMoveData: true },
   { id: 'target-square', label: 'Target square', description: 'Animate the destination or affected square.', needsMoveData: true },
-  { id: 'board', label: 'Board', description: 'Animate the whole board area. Works for most events.' }
+  { id: 'board', label: 'Board', description: 'Animate the whole board area. Works for most events.' },
+  { id: 'current-player-panel', label: 'Current player panel', description: 'Prepared for player-panel animation when that target exists.' },
+  { id: 'fallback-preview', label: 'Fallback preview target', description: 'Use a safe fallback target if runtime piece/square data is unavailable.' }
+];
+
+const ANIMATION_SCOPES: Array<{ id: AnimationRuleScope; label: string; description: string }> = [
+  { id: 'any-piece', label: 'Any piece', description: 'Apply when the selected event target is available.' },
+  { id: 'my-pieces', label: 'My pieces', description: 'Prepared for player-relative filtering; currently falls back safely when ownership data is unavailable.' },
+  { id: 'opponent-pieces', label: 'Opponent pieces', description: 'Prepared for player-relative filtering; currently falls back safely when ownership data is unavailable.' },
+  { id: 'white-pieces', label: 'White pieces', description: 'Apply only when event data identifies White as the acting team.' },
+  { id: 'black-pieces', label: 'Black pieces', description: 'Apply only when event data identifies Black as the acting team.' }
 ];
 
 const EVENT_TEMPLATES: Array<{ label: string; event: Partial<CustomEventDefinition> }> = [
@@ -163,6 +173,7 @@ const EventBuilderView: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [attachAnimationId, setAttachAnimationId] = useState(settings.animationDefinitions[0]?.id ?? '');
   const [attachTarget, setAttachTarget] = useState<AnimationEventTarget>('target-square');
+  const [attachScope, setAttachScope] = useState<AnimationRuleScope>('any-piece');
   const validation = useMemo(() => validateEvent(draft, settings.customEvents, editingId), [draft, settings.customEvents, editingId]);
   const draftStatus = getCustomEventStatus(draft, settings.customEvents);
   const draftSavedEvent = settings.customEvents.find(eventDefinition => eventDefinition.id === editingId || eventDefinition.eventId === draft.eventId);
@@ -295,6 +306,7 @@ const EventBuilderView: React.FC = () => {
       eventId: eventDefinition.eventId,
       animationId: attachAnimationId,
       target: attachTarget,
+      scope: attachScope,
       enabled: true
     });
     setMessage(`Animation attached to ${eventDefinition.name}.`);
@@ -356,11 +368,16 @@ const EventBuilderView: React.FC = () => {
   );
 
   return (
-    <div className="view-container" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-        <button type="button" onClick={() => setActiveLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>
-        <button type="button" onClick={() => setActiveLayer('advanced')} style={layerButtonStyle('advanced')}>Advanced</button>
-        <button type="button" onClick={() => setActiveLayer('system')} style={layerButtonStyle('system')}>System</button>
+    <div className="view-container" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', background: 'rgba(255, 255, 255, 0.96)', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: 10, boxShadow: '0 14px 40px rgba(15, 23, 42, 0.18)', padding: 14, boxSizing: 'border-box', color: '#1f2937', overflow: 'auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => setActiveLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>
+          <button type="button" onClick={() => setActiveLayer('advanced')} style={layerButtonStyle('advanced')}>Advanced</button>
+          <button type="button" onClick={() => setActiveLayer('system')} style={layerButtonStyle('system')}>System</button>
+        </div>
+        <button type="button" onClick={() => toggleView('event-builder')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', cursor: 'pointer', fontWeight: 800 }}>
+          Close
+        </button>
       </div>
 
       {activeLayer === 'simple' && (
@@ -545,7 +562,7 @@ const EventBuilderView: React.FC = () => {
         <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
           Active events can call named Animation Builder definitions. Future-only or invalid events are blocked.
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           <select value={attachAnimationId} onChange={(event) => setAttachAnimationId(event.target.value)} style={commonFieldStyle}>
             {settings.animationDefinitions.filter(animation => animation.enabled).map(animation => (
               <option key={animation.id} value={animation.id}>{animation.name}</option>
@@ -554,10 +571,17 @@ const EventBuilderView: React.FC = () => {
           <select value={attachTarget} onChange={(event) => setAttachTarget(event.target.value as AnimationEventTarget)} style={commonFieldStyle}>
             {ANIMATION_TARGETS.map(target => <option key={target.id} value={target.id}>{target.label}</option>)}
           </select>
+          <select value={attachScope} onChange={(event) => setAttachScope(event.target.value as AnimationRuleScope)} style={commonFieldStyle}>
+            {ANIMATION_SCOPES.map(scope => <option key={scope.id} value={scope.id}>{scope.label}</option>)}
+          </select>
         </div>
         <div style={{ marginTop: 8, padding: 8, border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
           <strong>{ANIMATION_TARGETS.find(target => target.id === attachTarget)?.label}:</strong>{' '}
           {ANIMATION_TARGETS.find(target => target.id === attachTarget)?.description}
+          <div style={{ marginTop: 4 }}>
+            <strong>{ANIMATION_SCOPES.find(scope => scope.id === attachScope)?.label}:</strong>{' '}
+            {ANIMATION_SCOPES.find(scope => scope.id === attachScope)?.description}
+          </div>
           {attachTargetWarning && <div style={{ marginTop: 4, color: '#92400e' }}>{attachTargetWarning}</div>}
         </div>
         <div style={{ marginTop: 8 }}>

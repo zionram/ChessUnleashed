@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useAudio } from '../context/AudioContext';
+import { isSupportedAudioFile, useAudio } from '../context/AudioContext';
 import { useSettings } from '../context/SettingsContext';
 import WaveProgressBar from '../components/audio/WaveProgressBar';
 import { eventBus } from '../events/EventBus';
@@ -30,6 +30,7 @@ const AudioView: React.FC = () => {
   const { settings, updateTemplate, toggleView } = useSettings();
   const [showSoundTypes, setShowSoundTypes] = useState(false);
   const [lastSoundRule, setLastSoundRule] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
   const eventTypes = useMemo(() => Array.from(new Set(rules.map(rule => rule.event))), [rules]);
   const previewEvent = eventTypes[0] || 'move';
   const legacyTemplate = settings.template as typeof settings.template & { audioPlayerAppearance?: typeof settings.template.audioControllerAppearance };
@@ -51,8 +52,19 @@ const AudioView: React.FC = () => {
   }, []);
 
   const handleMusicUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
+    const allFiles = Array.from(e.target.files ?? []);
+    if (!allFiles.length) return;
+    const files = allFiles.filter(isSupportedAudioFile);
+    const rejected = allFiles.filter(file => !isSupportedAudioFile(file));
+    if (rejected.length) {
+      setUploadMessage(`Unsupported file skipped: ${rejected.map(file => file.name).join(', ')}. Use MP3, WAV, OGG, M4A, MID, or MIDI.`);
+    } else {
+      setUploadMessage('');
+    }
+    if (!files.length) {
+      e.target.value = '';
+      return;
+    }
     Promise.all(files.map(file => new Promise<{ name: string; url: string }>((resolve) => {
       const reader = new FileReader();
       reader.onload = (ev) => resolve({ name: file.name, url: ev.target?.result as string });
@@ -168,8 +180,9 @@ const AudioView: React.FC = () => {
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             <button onClick={() => document.getElementById('mixer-music-up')?.click()} style={{ flex: '1 1 120px', padding: '7px 8px' }}>Add Music</button>
             {playlist.length > 0 && <button onClick={clearPlaylist} style={{ flex: '1 1 90px', padding: '7px 8px', color: '#a33' }}>Clear Playlist</button>}
-            <input id="mixer-music-up" type="file" accept="audio/*" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
+            <input id="mixer-music-up" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
           </div>
+          {uploadMessage && <div style={{ marginTop: '6px', fontSize: '0.68rem', color: '#9a3412' }}>{uploadMessage}</div>}
           <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', marginTop: '10px' }}>
             Playback Mode
             <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value as typeof playbackMode)} style={{ padding: '6px', fontSize: '0.78rem' }}>

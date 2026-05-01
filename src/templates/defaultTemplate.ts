@@ -20,6 +20,10 @@ export interface LayerConfig {
   xOffset?: number;
   yOffset?: number;
   scale?: number;
+  lockToBoard?: boolean;
+  frameSizeMode?: 'responsive' | 'match-board' | 'fixed';
+  fixedWidth?: number;
+  fixedHeight?: number;
 }
 
 export interface TimerAppearanceConfig {
@@ -162,7 +166,7 @@ export const defaultTemplate: Template = {
     opacity: 0.2,
   },
   background: { ...defaultLayer },
-  frameLayer: { ...defaultLayer, color: 'transparent', size: 'auto', scale: 100 },
+  frameLayer: { ...defaultLayer, color: 'transparent', size: 'auto', scale: 100, lockToBoard: false, frameSizeMode: 'responsive' },
   timerAppearance: { ...defaultTimerAppearance },
   audioControllerAppearance: { ...defaultAudioControllerAppearance },
   backgroundColor: '#f5f5f5',

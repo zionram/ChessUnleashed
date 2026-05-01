@@ -32,6 +32,15 @@ type TriggeredAnimation = {
   message?: string;
 };
 
+type MoveAnimationPayload = {
+  from?: string;
+  to?: string;
+  team?: string;
+  pieceType?: string;
+  isPromotion?: boolean;
+  capturedPiece?: string;
+};
+
 const piecesMatch = (a?: BoardPiece | null, b?: BoardPiece | null) =>
   !!a && !!b && a.type === b.type && a.color === b.color;
 
@@ -41,6 +50,19 @@ const getDisplayPosition = (square: string, orientation: 'w' | 'b') => {
   const boardCol = orientation === 'b' ? 7 - fileIndex : fileIndex;
   const boardRow = orientation === 'b' ? rank - 1 : 8 - rank;
   return { x: boardCol * 12.5, y: boardRow * 12.5 };
+};
+
+const isPieceAnimationScopeAllowed = (
+  scope: 'all' | 'my-pieces' | 'opponent-pieces' | 'white-pieces' | 'black-pieces',
+  movedColor: 'w' | 'b',
+  controlMode: 'w' | 'b' | 'both'
+) => {
+  if (scope === 'all') return true;
+  if (scope === 'white-pieces') return movedColor === 'w';
+  if (scope === 'black-pieces') return movedColor === 'b';
+  if (scope === 'my-pieces') return controlMode === 'both' || movedColor === controlMode;
+  if (scope === 'opponent-pieces') return controlMode === 'both' || movedColor !== controlMode;
+  return true;
 };
 
 const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode = 'both' }) => {
@@ -60,6 +82,24 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
   const previousBoardMapRef = useRef<BoardPieceMap | null>(null);
   const animationTimeoutRef = useRef<number | null>(null);
   const triggeredAnimationTimeoutRef = useRef<number | null>(null);
+  const recentMoveAnimationRef = useRef<{ key: string; timestamp: number } | null>(null);
+
+  const startMovingPieceAnimation = (sourceSquare: string, targetSquare: string, piece: BoardPiece) => {
+    const animationSpeed = settings.pieceAnimations.movementSpeedMs;
+    const id = Date.now();
+    recentMoveAnimationRef.current = {
+      key: `${sourceSquare}:${targetSquare}:${piece.type}:${piece.color}`,
+      timestamp: id
+    };
+    if (animationTimeoutRef.current) window.clearTimeout(animationTimeoutRef.current);
+    setMovingPiece({ id, from: sourceSquare, to: targetSquare, piece, started: false });
+    window.requestAnimationFrame(() => {
+      setMovingPiece(current => current?.id === id ? { ...current, started: true } : current);
+    });
+    animationTimeoutRef.current = window.setTimeout(() => {
+      setMovingPiece(current => current?.id === id ? null : current);
+    }, animationSpeed + 80);
+  };
 
   const currentBoardMap = useMemo(() => {
     if (settings.isThemeEditorMode) return {};
@@ -117,6 +157,28 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
   }, []);
 
   useEffect(() => {
+    const handler = (event: any) => {
+      const payload = (event?.payload ?? {}) as MoveAnimationPayload;
+      if (settings.isThemeEditorMode || !settings.pieceAnimations.enabled) return;
+      if (!payload.from || !payload.to) return;
+
+      const movedColor: 'w' | 'b' = payload.team === 'b' || payload.team === 'black' ? 'b' : 'w';
+      if (!isPieceAnimationScopeAllowed(settings.pieceAnimations.movementScope ?? 'all', movedColor, controlMode)) return;
+
+      const pieceType = payload.pieceType ?? 'p';
+      const moveKey = `${payload.from}:${payload.to}:${pieceType}:${movedColor}`;
+      if (recentMoveAnimationRef.current && recentMoveAnimationRef.current.key === moveKey && Date.now() - recentMoveAnimationRef.current.timestamp < Math.max(180, settings.pieceAnimations.movementSpeedMs + 120)) {
+        return;
+      }
+
+      startMovingPieceAnimation(payload.from, payload.to, { type: pieceType, color: movedColor });
+    };
+
+    eventBus.subscribe('move.made', handler);
+    return () => eventBus.unsubscribe('move.made', handler);
+  }, [settings.isThemeEditorMode, settings.pieceAnimations.enabled, settings.pieceAnimations.movementScope, settings.pieceAnimations.movementSpeedMs, controlMode]);
+
+  useEffect(() => {
     const previousBoardMap = previousBoardMapRef.current;
     previousBoardMapRef.current = currentBoardMap;
 
@@ -150,16 +212,21 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
       return;
     }
 
-    if (animationTimeoutRef.current) window.clearTimeout(animationTimeoutRef.current);
-    const id = Date.now();
-    setMovingPiece({ id, from: source.square, to: target.square, piece: target.piece, started: false });
-    window.requestAnimationFrame(() => {
-      setMovingPiece(current => current?.id === id ? { ...current, started: true } : current);
-    });
-    animationTimeoutRef.current = window.setTimeout(() => {
-      setMovingPiece(current => current?.id === id ? null : current);
-    }, settings.pieceAnimations.movementSpeedMs + 80);
-  }, [currentBoardMap, settings.isThemeEditorMode, settings.pieceAnimations]);
+    const scope = settings.pieceAnimations.movementScope ?? 'all';
+    const movedColor: 'w' | 'b' = target.piece.color === 'b' ? 'b' : 'w';
+    const scopeAllowsAnimation = isPieceAnimationScopeAllowed(scope, movedColor, controlMode);
+    if (!scopeAllowsAnimation) {
+      setMovingPiece(null);
+      return;
+    }
+
+    const moveKey = `${source.square}:${target.square}:${source.piece.type}:${target.piece.color}`;
+    if (recentMoveAnimationRef.current && recentMoveAnimationRef.current.key === moveKey && Date.now() - recentMoveAnimationRef.current.timestamp < Math.max(180, settings.pieceAnimations.movementSpeedMs + 120)) {
+      return;
+    }
+
+    startMovingPieceAnimation(source.square, target.square, target.piece);
+  }, [currentBoardMap, settings.isThemeEditorMode, settings.pieceAnimations, controlMode]);
 
   const legalMoves = useMemo(() => {
     if (!selectedSquare || !isViewingCurrent || settings.isThemeEditorMode) return [];

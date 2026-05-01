@@ -76,7 +76,7 @@ const ViewManager: React.FC = () => {
       )}
 
       {/* Render all registered views */}
-      {registeredViews.filter(v => v.id !== 'welcome' && v.id !== 'theme-editor').map(viewConfig => {
+      {registeredViews.filter(v => v.id !== 'welcome' && v.id !== 'theme-editor' && v.position !== 'center').map(viewConfig => {
         const isActive = settings.activeViews.includes(viewConfig.id);
         const Component = viewConfig.component;
         

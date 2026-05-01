@@ -18,7 +18,7 @@ const presetOptions: Array<{ value: AnimationPresetType; label: string }> = [
 ];
 
 const targetOptions: Array<{ value: AnimationTargetType; label: string }> = [
-  { value: 'piece', label: 'Piece' },
+  { value: 'piece', label: 'Any piece / movement default' },
   { value: 'captured-piece', label: 'Captured Piece' },
   { value: 'promoted-piece', label: 'Promoted Piece' },
   { value: 'board', label: 'Board' },
@@ -31,13 +31,15 @@ const easingOptions: Array<{ value: PieceAnimationSettings['easing']; label: str
   { value: 'linear', label: 'Direct' }
 ];
 
+const filterOptions = ['All', 'Movement', 'Capture', 'Feedback', 'Promotion', 'Board', 'Custom'];
+
 const makeCustomAnimation = (base?: AnimationDefinition): AnimationDefinition => {
   const now = Date.now();
   return {
     id: `anim-custom-${now}`,
     name: base ? `${base.name} Copy` : 'Custom Animation',
     description: base?.description ?? 'Reusable animation definition.',
-    category: base?.category ?? 'Movement',
+    category: base?.category ?? 'Custom',
     preset: base?.preset ?? 'slide',
     targetType: base?.targetType ?? 'piece',
     durationMs: base?.durationMs ?? 220,
@@ -60,45 +62,70 @@ const validateAnimation = (definition: AnimationDefinition) => {
   return issues;
 };
 
+const statusLabel = (definition: AnimationDefinition) => {
+  if (definition.builtin) return 'Built-in';
+  if (!definition.enabled) return 'Disabled';
+  return definition.status === 'draft' ? 'Draft' : 'Active';
+};
+
 const AnimationBuilderView: React.FC = () => {
   const {
     settings,
+    toggleView,
     createAnimationDefinition,
     updateAnimationDefinition,
     deleteAnimationDefinition,
     updatePieceAnimations
   } = useSettings();
+  const [filter, setFilter] = useState('All');
+  const [previewId, setPreviewId] = useState(settings.pieceAnimations.defaultAnimationId || settings.animationDefinitions[0]?.id || '');
+  const [previewNonce, setPreviewNonce] = useState(0);
+  const [editorOpen, setEditorOpen] = useState(false);
   const [layer, setLayer] = useState<BuilderLayer>('simple');
-  const [selectedId, setSelectedId] = useState(settings.pieceAnimations.defaultAnimationId || settings.animationDefinitions[0]?.id || '');
-  const [draft, setDraft] = useState<AnimationDefinition>(() =>
-    settings.animationDefinitions.find(animation => animation.id === selectedId) ?? makeCustomAnimation()
-  );
-
-  const selected = settings.animationDefinitions.find(animation => animation.id === selectedId);
-  const validationIssues = validateAnimation(draft);
-  const isBuiltin = Boolean(selected?.builtin || draft.builtin);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<AnimationDefinition>(() => makeCustomAnimation());
 
   const sortedDefinitions = useMemo(() => [...settings.animationDefinitions].sort((a, b) => Number(Boolean(a.builtin)) - Number(Boolean(b.builtin)) || a.name.localeCompare(b.name)), [settings.animationDefinitions]);
+  const visibleDefinitions = useMemo(() => sortedDefinitions.filter(animation => {
+    if (filter === 'All') return true;
+    if (filter === 'Custom') return !animation.builtin;
+    return animation.category.toLowerCase().includes(filter.toLowerCase());
+  }), [sortedDefinitions, filter]);
+  const previewDefinition = settings.animationDefinitions.find(animation => animation.id === previewId) ?? visibleDefinitions[0] ?? settings.animationDefinitions[0];
+  const validationIssues = validateAnimation(draft);
+  const editingBuiltin = Boolean(draft.builtin);
 
-  const selectAnimation = (id: string) => {
-    const next = settings.animationDefinitions.find(animation => animation.id === id);
-    if (!next) return;
-    setSelectedId(id);
-    setDraft({ ...next });
+  const openNew = () => {
+    setDraft(makeCustomAnimation());
+    setEditingId(null);
+    setLayer('simple');
+    setEditorOpen(true);
+  };
+
+  const openEdit = (animation: AnimationDefinition) => {
+    setDraft({ ...animation });
+    setEditingId(animation.id);
+    setLayer('simple');
+    setEditorOpen(true);
+  };
+
+  const duplicateAnimation = (animation: AnimationDefinition) => {
+    const copy = makeCustomAnimation(animation);
+    createAnimationDefinition(copy);
+    setPreviewId(copy.id);
+    setDraft(copy);
+    setEditingId(copy.id);
+    setLayer('simple');
+    setEditorOpen(true);
   };
 
   const saveDraft = () => {
-    if (validationIssues.length > 0 || isBuiltin) return;
-    if (settings.animationDefinitions.some(animation => animation.id === draft.id)) updateAnimationDefinition(draft.id, { ...draft, status: draft.enabled ? 'active' : 'disabled' });
-    else createAnimationDefinition({ ...draft, status: draft.enabled ? 'active' : 'disabled' });
-    setSelectedId(draft.id);
-  };
-
-  const duplicateSelected = () => {
-    const copy = makeCustomAnimation(selected || draft);
-    createAnimationDefinition(copy);
-    setSelectedId(copy.id);
-    setDraft(copy);
+    if (validationIssues.length > 0 || editingBuiltin) return;
+    const next = { ...draft, status: draft.enabled ? 'active' : 'disabled' } as AnimationDefinition;
+    if (editingId && settings.animationDefinitions.some(animation => animation.id === editingId)) updateAnimationDefinition(editingId, next);
+    else createAnimationDefinition(next);
+    setPreviewId(next.id);
+    setEditorOpen(false);
   };
 
   const applyAsDefault = () => {
@@ -121,150 +148,199 @@ const AnimationBuilderView: React.FC = () => {
     fontSize: '0.75rem'
   });
 
-  const inputStyle: React.CSSProperties = { width: '100%', marginTop: 4, padding: 7, boxSizing: 'border-box' };
+  const fieldStyle: React.CSSProperties = { width: '100%', marginTop: 4, padding: 7, boxSizing: 'border-box', border: '1px solid #d0d7de', borderRadius: 6 };
+  const rowButtonStyle: React.CSSProperties = { padding: '5px 8px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 };
+  const previewAnimation = (animationId: string) => {
+    setPreviewId(animationId);
+    setPreviewNonce(current => current + 1);
+  };
 
   const renderSimpleFields = () => (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <label style={{ fontSize: '0.78rem' }}>Animation Name
-        <input value={draft.name} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, name: event.target.value })} style={inputStyle} />
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <label style={{ fontSize: '0.78rem' }}>Name
+        <input value={draft.name} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, name: event.target.value })} style={fieldStyle} />
       </label>
       <label style={{ fontSize: '0.78rem' }}>Preset
-        <select value={draft.preset} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, preset: event.target.value as AnimationPresetType })} style={inputStyle}>
+        <select value={draft.preset} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, preset: event.target.value as AnimationPresetType })} style={fieldStyle}>
           {presetOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
-      <label style={{ fontSize: '0.78rem' }}>Speed: {draft.durationMs}ms
-        <input type="range" min="0" max="900" step="20" value={draft.durationMs} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, durationMs: parseInt(event.target.value, 10) })} style={{ width: '100%' }} />
-      </label>
-      <label style={{ fontSize: '0.78rem' }}>Intensity: {Math.round(draft.intensity * 100)}%
-        <input type="range" min="0" max="1" step="0.05" value={draft.intensity} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, intensity: parseFloat(event.target.value) })} style={{ width: '100%' }} />
-      </label>
-    </section>
-  );
-
-  const renderAdvancedFields = () => (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <label style={{ fontSize: '0.78rem' }}>Description
-        <textarea value={draft.description} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, description: event.target.value })} rows={2} style={inputStyle} />
-      </label>
-      <label style={{ fontSize: '0.78rem' }}>Target Type
-        <select value={draft.targetType} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, targetType: event.target.value as AnimationTargetType })} style={inputStyle}>
+      <label style={{ fontSize: '0.78rem' }}>Target
+        <select value={draft.targetType} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, targetType: event.target.value as AnimationTargetType })} style={fieldStyle}>
           {targetOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
       <label style={{ fontSize: '0.78rem' }}>Category
-        <input value={draft.category} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, category: event.target.value })} style={inputStyle} />
+        <input value={draft.category} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, category: event.target.value })} style={fieldStyle} />
+      </label>
+      <label style={{ fontSize: '0.78rem' }}>Speed: {draft.durationMs}ms
+        <input type="range" min="0" max="900" step="20" value={draft.durationMs} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, durationMs: parseInt(event.target.value, 10) })} style={{ width: '100%' }} />
+      </label>
+      <label style={{ fontSize: '0.78rem' }}>Intensity: {Math.round(draft.intensity * 100)}%
+        <input type="range" min="0" max="1" step="0.05" value={draft.intensity} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, intensity: parseFloat(event.target.value) })} style={{ width: '100%' }} />
+      </label>
+    </div>
+  );
+
+  const renderAdvancedFields = () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <label style={{ gridColumn: '1 / -1', fontSize: '0.78rem' }}>Description
+        <textarea value={draft.description} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, description: event.target.value })} rows={2} style={fieldStyle} />
+      </label>
+      <label style={{ fontSize: '0.78rem' }}>Duration: {draft.durationMs}ms
+        <input type="range" min="0" max="1200" step="20" value={draft.durationMs} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, durationMs: parseInt(event.target.value, 10) })} style={{ width: '100%' }} />
+      </label>
+      <label style={{ fontSize: '0.78rem' }}>Delay: {draft.delayMs}ms
+        <input type="range" min="0" max="1000" step="25" value={draft.delayMs} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, delayMs: parseInt(event.target.value, 10) })} style={{ width: '100%' }} />
       </label>
       <label style={{ fontSize: '0.78rem' }}>Easing
-        <select value={draft.easing} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, easing: event.target.value as PieceAnimationSettings['easing'] })} style={inputStyle}>
+        <select value={draft.easing} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, easing: event.target.value as PieceAnimationSettings['easing'] })} style={fieldStyle}>
           {easingOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
         </select>
       </label>
-      <label style={{ fontSize: '0.78rem' }}>Delay: {draft.delayMs}ms
-        <input type="range" min="0" max="1000" step="25" value={draft.delayMs} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, delayMs: parseInt(event.target.value, 10) })} style={{ width: '100%' }} />
-      </label>
-      <label style={{ fontSize: '0.78rem' }}>Repeat Count
-        <input type="number" min="1" max="8" value={draft.repeatCount} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, repeatCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} style={inputStyle} />
+      <label style={{ fontSize: '0.78rem' }}>Repeat
+        <input type="number" min="1" max="8" value={draft.repeatCount} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, repeatCount: Math.max(1, parseInt(event.target.value, 10) || 1) })} style={fieldStyle} />
       </label>
       <label style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: '0.78rem' }}>
         Enabled
-        <input type="checkbox" checked={draft.enabled} disabled={isBuiltin} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
+        <input type="checkbox" checked={draft.enabled} disabled={editingBuiltin} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />
       </label>
-    </section>
+    </div>
   );
 
   const renderSystemFields = () => (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ padding: 8, borderRadius: 6, background: '#eef2ff', color: '#3730a3', fontSize: '0.72rem' }}>
-        Event-callable animations can be attached to active custom events from Event Builder. Runtime playback state is temporary and is not saved in packages.
+        Animation definitions are reusable settings. Runtime playback state is not saved in packages.
       </div>
       <div style={{ fontSize: '0.75rem' }}><strong>Animation ID:</strong> {draft.id}</div>
-      <div style={{ fontSize: '0.75rem' }}><strong>Status:</strong> {validationIssues.length ? 'Invalid' : draft.builtin ? 'Built-in' : draft.enabled ? 'Active' : 'Disabled'}</div>
+      <div style={{ fontSize: '0.75rem' }}><strong>Status:</strong> {validationIssues.length ? 'Invalid' : statusLabel(draft)}</div>
       {validationIssues.length > 0 && (
         <ul style={{ margin: 0, paddingLeft: 18, color: '#991b1b', fontSize: '0.72rem' }}>
           {validationIssues.map(issue => <li key={issue}>{issue}</li>)}
         </ul>
       )}
-      <pre style={{ maxHeight: 220, overflow: 'auto', padding: 8, background: '#0f172a', color: '#e2e8f0', borderRadius: 6, fontSize: '0.68rem' }}>{JSON.stringify(draft, null, 2)}</pre>
-      <button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify(draft, null, 2))} style={{ padding: 8, borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>
-        Copy Animation JSON
+      <pre style={{ maxHeight: 180, overflow: 'auto', padding: 8, background: '#0f172a', color: '#e2e8f0', borderRadius: 6, fontSize: '0.68rem' }}>{JSON.stringify(draft, null, 2)}</pre>
+      <button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify(draft, null, 2))} style={rowButtonStyle}>
+        Copy JSON
       </button>
-    </section>
+    </div>
   );
 
   return (
-    <div className="view-container" style={{ display: 'grid', gridTemplateColumns: '190px minmax(240px, 1fr) 230px', gap: 12, height: '100%', minHeight: 0 }}>
-      <section style={{ border: '1px solid #d0d7de', borderRadius: 8, background: '#fff', padding: 10, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>Animations</div>
-        <div style={{ fontSize: '0.68rem', color: '#64748b' }}>Attach enabled animations to events from Event Builder.</div>
-        <div style={{ overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 5, paddingRight: 2 }}>
-          {sortedDefinitions.map(animation => (
-            <button
-              key={animation.id}
-              type="button"
-              onClick={() => selectAnimation(animation.id)}
-              style={{
-                textAlign: 'left',
-                padding: 7,
-                borderRadius: 6,
-                border: selectedId === animation.id ? '1px solid #4f46e5' : '1px solid #e2e8f0',
-                background: selectedId === animation.id ? '#eef2ff' : '#f8fafc',
-                cursor: 'pointer'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, fontSize: '0.72rem', fontWeight: 800 }}>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{animation.name}</span>
-                <span style={{ flex: '0 0 auto', color: animation.builtin ? '#475569' : '#166534' }}>{animation.builtin ? 'Built-in' : animation.status}</span>
-              </div>
-              <div style={{ fontSize: '0.64rem', color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {animation.category} - {animation.preset}
-              </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', padding: 14, boxSizing: 'border-box', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 8, alignItems: 'center' }}>
+        <button type="button" onClick={openNew} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: '#2c3e50', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
+          Add Animation
+        </button>
+        <button type="button" onClick={() => previewDefinition && duplicateAnimation(previewDefinition)} disabled={!previewDefinition} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', color: '#2c3e50', cursor: previewDefinition ? 'pointer' : 'not-allowed', fontWeight: 800 }}>
+          Duplicate Selected
+        </button>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {filterOptions.map(option => (
+            <button key={option} type="button" onClick={() => setFilter(option)} style={{ padding: '7px 9px', borderRadius: 999, border: filter === option ? '1px solid #2c3e50' : '1px solid #d0d7de', background: filter === option ? '#2c3e50' : '#fff', color: filter === option ? '#fff' : '#334155', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 }}>
+              {option}
             </button>
           ))}
         </div>
-      </section>
+        <button type="button" onClick={() => toggleView('animation-builder')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>
+          Close
+        </button>
+      </div>
 
-      <section style={{ minHeight: 0, overflowY: 'auto', border: '1px solid #d0d7de', borderRadius: 8, background: '#fff', padding: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 12 }}>
-          <button type="button" onClick={() => setLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>
-          <button type="button" onClick={() => setLayer('advanced')} style={layerButtonStyle('advanced')}>Advanced</button>
-          <button type="button" onClick={() => setLayer('system')} style={layerButtonStyle('system')}>System</button>
-        </div>
-
-        {isBuiltin && (
-          <div style={{ padding: 8, borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: '0.72rem', marginBottom: 10 }}>
-            Built-in animations are protected. Duplicate one to make an editable custom animation.
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 12, minHeight: 0, flex: 1 }}>
+        <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, padding: '8px 10px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', fontSize: '0.72rem', color: '#475569', fontWeight: 900 }}>
+            <span>Animation</span>
+            <span>Category / Type</span>
+            <span>Target</span>
+            <span>Status</span>
+            <span>Preview</span>
+            <span>Edit</span>
           </div>
-        )}
+          <div style={{ overflowY: 'auto', minHeight: 0 }}>
+            {visibleDefinitions.map(animation => (
+              <div key={animation.id} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, alignItems: 'center', padding: '9px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '0.76rem' }}>
+                <div>
+                  <div style={{ fontWeight: 900, color: '#2c3e50' }}>{animation.name}</div>
+                  <div style={{ color: '#64748b', fontSize: '0.66rem' }}>{animation.description}</div>
+                </div>
+                <span>{animation.category} / {animation.preset}</span>
+                <span>{targetOptions.find(option => option.value === animation.targetType)?.label ?? animation.targetType}</span>
+                <span style={{ color: animation.builtin ? '#475569' : animation.enabled ? '#166534' : '#92400e', fontWeight: 800 }}>{statusLabel(animation)}</span>
+                <button type="button" onClick={() => previewAnimation(animation.id)} style={rowButtonStyle}>Preview</button>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {animation.builtin ? (
+                    <button type="button" onClick={() => duplicateAnimation(animation)} style={rowButtonStyle}>Duplicate</button>
+                  ) : (
+                    <>
+                      <button type="button" onClick={() => openEdit(animation)} style={rowButtonStyle}>Edit</button>
+                      <button type="button" onClick={() => deleteAnimationDefinition(animation.id)} style={{ ...rowButtonStyle, borderColor: '#fecaca', background: '#fef2f2', color: '#991b1b' }}>Delete</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+            {!visibleDefinitions.length && <div style={{ padding: 16, color: '#64748b', fontSize: '0.8rem' }}>No animations match this filter.</div>}
+          </div>
+        </section>
 
-        {layer === 'simple' && renderSimpleFields()}
-        {layer === 'advanced' && renderAdvancedFields()}
-        {layer === 'system' && renderSystemFields()}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
+          <AnimationPreviewCard key={`${previewDefinition?.id ?? 'none'}-${previewNonce}`} definition={previewDefinition} />
+          {previewDefinition && (
+            <div style={{ padding: 10, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.72rem', color: '#475569' }}>
+              <div><strong>Callable:</strong> {previewDefinition.enabled ? 'Yes' : 'Disabled'}</div>
+              <div><strong>Default:</strong> {settings.pieceAnimations.defaultAnimationId === previewDefinition.id ? 'Current movement default' : 'Not default'}</div>
+              <div><strong>Protected:</strong> {previewDefinition.builtin ? 'Built-in preset' : 'Editable custom animation'}</div>
+            </div>
+          )}
+        </section>
+      </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 14 }}>
-          <button type="button" onClick={duplicateSelected} style={{ padding: 9, borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontWeight: 700 }}>
-            Duplicate
-          </button>
-          <button type="button" onClick={saveDraft} disabled={isBuiltin || validationIssues.length > 0} style={{ padding: 9, borderRadius: 6, border: 'none', background: !isBuiltin && validationIssues.length === 0 ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: !isBuiltin && validationIssues.length === 0 ? 'pointer' : 'not-allowed', fontWeight: 700 }}>
-            Save
-          </button>
-          <button type="button" onClick={applyAsDefault} disabled={validationIssues.length > 0} style={{ padding: 9, borderRadius: 6, border: '1px solid #16a34a', background: '#f0fdf4', color: '#166534', cursor: validationIssues.length === 0 ? 'pointer' : 'not-allowed', fontWeight: 700 }}>
-            Use as Default
-          </button>
-          <button type="button" onClick={() => deleteAnimationDefinition(draft.id)} disabled={isBuiltin} style={{ padding: 9, borderRadius: 6, border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', cursor: isBuiltin ? 'not-allowed' : 'pointer', fontWeight: 700 }}>
-            Delete
-          </button>
+      {editorOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.42)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+          <div style={{ width: 'min(860px, 96vw)', maxHeight: '92vh', overflowY: 'auto', background: '#fff', borderRadius: 10, boxShadow: '0 18px 45px rgba(15, 23, 42, 0.28)', padding: 14, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 14 }}>
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#2c3e50' }}>{editingId ? editingBuiltin ? 'Built-In Animation' : 'Edit Animation' : 'Add Animation'}</div>
+                  <div style={{ fontSize: '0.76rem', color: '#64748b' }}>{editingBuiltin ? 'Duplicate built-ins before editing.' : 'Create reusable animations for movement and events.'}</div>
+                </div>
+                <button type="button" onClick={() => setEditorOpen(false)} style={rowButtonStyle}>Cancel</button>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                <button type="button" onClick={() => setLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>
+                <button type="button" onClick={() => setLayer('advanced')} style={layerButtonStyle('advanced')}>Advanced</button>
+                <button type="button" onClick={() => setLayer('system')} style={layerButtonStyle('system')}>System</button>
+              </div>
+
+              {editingBuiltin && (
+                <div style={{ padding: 8, borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: '0.72rem' }}>
+                  Built-in animations are protected. Use Duplicate to create an editable custom copy.
+                </div>
+              )}
+
+              {layer === 'simple' && renderSimpleFields()}
+              {layer === 'advanced' && renderAdvancedFields()}
+              {layer === 'system' && renderSystemFields()}
+
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                {editingBuiltin && <button type="button" onClick={() => duplicateAnimation(draft)} style={rowButtonStyle}>Duplicate Built-In</button>}
+                <button type="button" onClick={applyAsDefault} disabled={validationIssues.length > 0} style={{ ...rowButtonStyle, borderColor: '#16a34a', background: '#f0fdf4', color: '#166534', cursor: validationIssues.length === 0 ? 'pointer' : 'not-allowed' }}>Use as Default</button>
+                <button type="button" onClick={saveDraft} disabled={editingBuiltin || validationIssues.length > 0} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #2c3e50', background: !editingBuiltin && validationIssues.length === 0 ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: !editingBuiltin && validationIssues.length === 0 ? 'pointer' : 'not-allowed', fontWeight: 800 }}>Save Animation</button>
+              </div>
+            </section>
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <AnimationPreviewCard definition={draft} />
+              <div style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8, color: '#475569', fontSize: '0.72rem' }}>
+                {validationIssues.length ? validationIssues.join(' ') : 'Animation definition looks ready.'}
+              </div>
+            </section>
+          </div>
         </div>
-      </section>
-
-      <section style={{ minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <AnimationPreviewCard definition={draft} />
-        <div style={{ padding: 10, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.72rem', color: '#475569' }}>
-          <div><strong>Callable:</strong> {draft.enabled ? 'Yes' : 'Disabled'}</div>
-          <div><strong>Default:</strong> {settings.pieceAnimations.defaultAnimationId === draft.id ? 'Current movement default' : 'Not default'}</div>
-          <div><strong>Protected:</strong> {isBuiltin ? 'Built-in preset' : 'Editable custom animation'}</div>
-        </div>
-      </section>
+      )}
     </div>
   );
 };

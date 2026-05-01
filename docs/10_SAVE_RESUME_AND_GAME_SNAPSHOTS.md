@@ -1,42 +1,49 @@
-# Save Resume And Game Snapshots
+# Save/Resume and Game Snapshots
 
 Status: Current foundation
 
-Game Snapshot is separate from ExperiencePackage.
+Save/Resume is for active games in progress. ExperiencePackage is for reusable setup/config/assets/rules/events/sounds. Do not mix them by default.
 
-## Distinction
+## Game Snapshot
 
-ExperiencePackage:
+A Game Snapshot describes runtime game state, such as:
 
-- reusable setup/config/assets/rules/events/sounds
-- shareable package data
-- no active game-in-progress runtime state
-
-Game Snapshot:
-
-- current game in progress
-- board state / FEN where supported
-- turn
-- move/history
-- result
-- selected custom ruleset reference/state for Custom Game
-- runtime-only fields
+- game type: standard or custom
+- timestamp and version
+- board position / FEN for Standard Chess where available
+- move history where available
+- current turn
+- result/game-over state
+- timer runtime if safely available
+- selected custom ruleset id for Custom Game
+- custom board state for Custom Game
+- basic player/profile labels
 
 ## Standard Chess Resume
 
-Standard Chess snapshots are handled through `GameContext` and snapshot helpers. Existing chess rules/chess.js behavior should not be changed for snapshot work.
+Standard Chess snapshots should restore current board position, pieces, turn, move history, and result where existing runtime APIs support it. They must not change chess rules or replace chess.js/runtime behavior.
 
 ## Custom Game Resume
 
-Custom Game snapshots are handled separately from ExperiencePackage. They should include runtime board state, turn, history, result, and selected ruleset reference/state.
+Custom Game snapshots describe local custom runtime state only:
 
-## Safety Rules
+- selected ruleset id
+- board state
+- current turn
+- move history
+- result
 
-- Validate snapshot version before restoring.
-- Ignore invalid/stale snapshots safely.
-- Do not use browser confirm prompts for resume/start-fresh choices.
-- Clear snapshots when the user intentionally starts fresh, resets, or exits where appropriate.
-- Do not include runtime snapshots in exported ExperiencePackages.
+Runtime snapshots are not part of ExperiencePackage.
+
+## Package Separation
+
+Package Manager exports exclude live game-in-progress state by default. Normal packages should not contain current board position, turn, move history, timer runtime, or result.
+
+If future UI adds "Include current game snapshot", it must be explicit and off by default.
+
+## Snapshot Clearing
+
+Snapshots may be cleared when the user intentionally starts fresh, resets, ends/exits a custom game, or starts a new game. Applied settings/config should not be cleared by snapshot actions.
 
 ## Related Files
 
@@ -44,4 +51,3 @@ Custom Game snapshots are handled separately from ExperiencePackage. They should
 - `src/context/GameContext.tsx`
 - `src/views/CustomGameRuntimeView.tsx`
 - `src/packages/ExperiencePackage.ts`
-

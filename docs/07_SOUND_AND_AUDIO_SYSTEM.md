@@ -1,61 +1,62 @@
-# Sound And Audio System
+# Sound and Audio System
 
 Status: Current
 
-Sound and audio are split into sound effects/rules and background music/audio control.
+Chess Unleashed separates sound files, sound rules, background music, and audio playback controls.
 
 ## Sound Editor
 
-`src/views/SoundEditorView.tsx` is rules-first. It manages event-to-sound behavior rather than a raw file list-first workflow.
+Sound Editor is rules-first. It manages what event plays what sound.
 
 Current concepts:
 
-- Sound Rules
-- Sound Library
-- built-in event triggers
-- custom event triggers from Event Builder
-- category filtering
-- rule add/edit/delete
-- sound preview in rule editor
-- playback behavior settings
+- Sound Library: uploaded sound files.
+- Sound Rules: event-to-sound mappings.
+- Built-in events and Custom Events.
+- Per-rule playback behavior.
+- Preview/Stop controls inside the Add/Edit Sound Rule overlay.
 
-Sound rules reference sound file IDs/names and should not duplicate binary file data.
+Sound files should be referenced by IDs/paths, not duplicated as file blobs in rule data.
 
 ## Playback Behavior
 
-Sound Rules can configure:
+Sound Rules support behavior options such as:
 
-- allow overlap with other sound effects
+- allow overlap with other effects
 - play only once until reset
 - stop other sound effects before playing
 - lower background music while playing
 - pause background music while playing
 - resume music after sound ends
+- loop while active / stop when event condition ends for supported stateful events
+
+Check/in-check is currently the supported stateful case. A check sound can pause background music while check is active, stop when the check condition ends, and resume music if configured.
 
 ## Audio Controller
 
-Current audio controller functionality includes:
+The Audio Controller handles background music/playlists:
 
-- current background track
-- playlist support
+- current track
 - play/pause/stop
-- next/previous
-- repeat/loop/play-through modes
+- previous/next
+- repeat modes
+- shuffle if available
 - volume
-- waveform/progress bar
 - recent sound-rule feedback
 
-`WaveProgressBar` is used by both Audio Controller and Audio settings.
+## WaveProgressBar
 
-## MIDI And Unsupported Files
+`WaveProgressBar` is shared by Audio Controller and Audio settings. It provides a functional progress/wave bar with current time, duration, progress, and seek behavior where supported. Unsupported media such as MIDI should degrade safely.
 
-MIDI files may be listed safely, but browser playback/waveform support may be limited. Unsupported waveform states should degrade with friendly labels instead of crashing.
+## Upload Validation
+
+Audio upload should reject unsupported files, such as `.docx`, with a friendly message. Supported audio types include common browser-playable audio formats and intentionally supported MIDI formats where implemented.
 
 ## Related Files
 
 - `src/views/SoundEditorView.tsx`
-- `src/views/AudioView.tsx`
 - `src/context/AudioContext.tsx`
+- `src/views/AudioView.tsx`
 - `src/components/layout/AudioController.tsx`
 - `src/components/audio/WaveProgressBar.tsx`
-
+- `src/events/EventTriggerSystem.ts`

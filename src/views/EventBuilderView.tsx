@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { useSettings, type CustomEventBaseTrigger, type CustomEventComplexCondition, type CustomEventDefinition } from '../context/SettingsContext';
+import AnimationPreviewCard from '../components/animation/AnimationPreviewCard';
+import { useSettings, type AnimationEventTarget, type CustomEventBaseTrigger, type CustomEventComplexCondition, type CustomEventDefinition } from '../context/SettingsContext';
+import { useAudio } from '../context/AudioContext';
 import { createSimulatedGameEvent, evaluateCustomEventDefinition, getCustomEventStatus, getTacticalReadinessNote, getTacticalTestHint, TACTICAL_EVENT_DESCRIPTIONS } from '../events/CustomEventRuntime';
 import { eventBus } from '../events/EventBus';
 import type { GameEvent } from '../events/types';
@@ -26,6 +28,13 @@ const COMPLEX_CONDITIONS: Array<{ id: CustomEventComplexCondition; label: string
 
 const PIECES = ['any', 'pawn', 'knight', 'bishop', 'rook', 'queen', 'king', 'custom'];
 const TEAMS = ['any', 'white', 'black', 'custom'];
+const ANIMATION_TARGETS: Array<{ id: AnimationEventTarget; label: string; description: string; needsMoveData?: boolean; needsCaptureData?: boolean }> = [
+  { id: 'moved-piece', label: 'Moved piece', description: 'Animate the piece that caused the event.', needsMoveData: true },
+  { id: 'captured-piece', label: 'Captured piece', description: 'Animate the captured piece location when capture data exists.', needsCaptureData: true },
+  { id: 'source-square', label: 'Source square', description: 'Animate the square the move started from.', needsMoveData: true },
+  { id: 'target-square', label: 'Target square', description: 'Animate the destination or affected square.', needsMoveData: true },
+  { id: 'board', label: 'Board', description: 'Animate the whole board area. Works for most events.' }
+];
 
 const EVENT_TEMPLATES: Array<{ label: string; event: Partial<CustomEventDefinition> }> = [
   { label: 'Piece Moves', event: { name: 'Piece Moves', eventId: 'custom.piece.moves', category: 'Piece Moves', baseTrigger: 'pieceMoved', conditions: { pieceType: 'any', team: 'any' } } },
@@ -127,8 +136,21 @@ const getStatusStyle = (status: string): React.CSSProperties => ({
   color: status === 'Active' ? '#166534' : status === 'Future-only' ? '#92400e' : '#b42318'
 });
 
+const getTargetDataWarning = (eventDefinition: CustomEventDefinition, target: AnimationEventTarget) => {
+  const targetInfo = ANIMATION_TARGETS.find(item => item.id === target);
+  if (!targetInfo) return '';
+  if (targetInfo.needsCaptureData && eventDefinition.baseTrigger !== 'pieceCaptured') {
+    return 'This target needs capture data. If the event payload has no captured piece, the animation falls back safely.';
+  }
+  if (targetInfo.needsMoveData && !['afterMove', 'pieceMoved', 'pieceCaptured', 'promotion', 'check', 'checkmate'].includes(eventDefinition.baseTrigger)) {
+    return 'This target needs move-square data. If the event payload has no squares, the animation falls back safely.';
+  }
+  return '';
+};
+
 const EventBuilderView: React.FC = () => {
-  const { settings, createCustomEvent, updateCustomEvent, deleteCustomEvent } = useSettings();
+  const { settings, toggleView, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationRule, deleteAnimationRule } = useSettings();
+  const { rules: soundRules } = useAudio();
   const [draft, setDraft] = useState<CustomEventDefinition>(() => createBlankEvent());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeLayer, setActiveLayer] = useState<'simple' | 'advanced' | 'system'>('simple');
@@ -139,9 +161,14 @@ const EventBuilderView: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('All');
   const [triggerFilter, setTriggerFilter] = useState('All');
   const [categoryFilter, setCategoryFilter] = useState('All');
+  const [attachAnimationId, setAttachAnimationId] = useState(settings.animationDefinitions[0]?.id ?? '');
+  const [attachTarget, setAttachTarget] = useState<AnimationEventTarget>('target-square');
   const validation = useMemo(() => validateEvent(draft, settings.customEvents, editingId), [draft, settings.customEvents, editingId]);
   const draftStatus = getCustomEventStatus(draft, settings.customEvents);
+  const draftSavedEvent = settings.customEvents.find(eventDefinition => eventDefinition.id === editingId || eventDefinition.eventId === draft.eventId);
   const draftConditionSummaries = getConditionSummaries(draft);
+  const attachTargetWarning = getTargetDataWarning(draft, attachTarget);
+  const selectedAttachAnimation = settings.animationDefinitions.find(animation => animation.id === attachAnimationId);
   const categories = useMemo(() => ['All', ...Array.from(new Set(settings.customEvents.map(eventDefinition => eventDefinition.category || 'Custom Events')))], [settings.customEvents]);
   const visibleEvents = useMemo(() => settings.customEvents.filter(eventDefinition => {
     const status = getCustomEventStatus(eventDefinition, settings.customEvents);
@@ -246,6 +273,41 @@ const EventBuilderView: React.FC = () => {
     } catch {
       setMessage('Copy failed. Select and copy the JSON manually.');
     }
+  };
+
+  const attachAnimationToEvent = (eventDefinition: CustomEventDefinition) => {
+    const status = getCustomEventStatus(eventDefinition, settings.customEvents);
+    const savedEvent = settings.customEvents.find(item => item.id === eventDefinition.id || item.eventId === eventDefinition.eventId);
+    if (!savedEvent) {
+      setMessage('Save this custom event before attaching an animation.');
+      return;
+    }
+    if (status !== 'Active') {
+      setMessage('Only active custom events can call animations.');
+      return;
+    }
+    if (!attachAnimationId) {
+      setMessage('Choose an animation first.');
+      return;
+    }
+    createAnimationRule({
+      id: `anim-rule-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      eventId: eventDefinition.eventId,
+      animationId: attachAnimationId,
+      target: attachTarget,
+      enabled: true
+    });
+    setMessage(`Animation attached to ${eventDefinition.name}.`);
+  };
+
+  const attachSoundToEvent = (eventDefinition: CustomEventDefinition) => {
+    const status = getCustomEventStatus(eventDefinition, settings.customEvents);
+    if (status !== 'Active') {
+      setMessage('Only active custom events can reliably trigger sound rules.');
+      return;
+    }
+    setMessage(`Sound Editor opened. Choose Custom Events, then select ${eventDefinition.name}.`);
+    toggleView('sound-editor');
   };
 
   const commonFieldStyle: React.CSSProperties = { padding: 8, border: '1px solid #d0d7de', borderRadius: 6 };
@@ -478,6 +540,39 @@ const EventBuilderView: React.FC = () => {
         Test Event
       </button>
 
+      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
+        <div style={{ fontWeight: 900, color: '#2c3e50', marginBottom: 4 }}>Attach Animation</div>
+        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
+          Active events can call named Animation Builder definitions. Future-only or invalid events are blocked.
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <select value={attachAnimationId} onChange={(event) => setAttachAnimationId(event.target.value)} style={commonFieldStyle}>
+            {settings.animationDefinitions.filter(animation => animation.enabled).map(animation => (
+              <option key={animation.id} value={animation.id}>{animation.name}</option>
+            ))}
+          </select>
+          <select value={attachTarget} onChange={(event) => setAttachTarget(event.target.value as AnimationEventTarget)} style={commonFieldStyle}>
+            {ANIMATION_TARGETS.map(target => <option key={target.id} value={target.id}>{target.label}</option>)}
+          </select>
+        </div>
+        <div style={{ marginTop: 8, padding: 8, border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
+          <strong>{ANIMATION_TARGETS.find(target => target.id === attachTarget)?.label}:</strong>{' '}
+          {ANIMATION_TARGETS.find(target => target.id === attachTarget)?.description}
+          {attachTargetWarning && <div style={{ marginTop: 4, color: '#92400e' }}>{attachTargetWarning}</div>}
+        </div>
+        <div style={{ marginTop: 8 }}>
+          <AnimationPreviewCard definition={selectedAttachAnimation} compact />
+        </div>
+        <button
+          type="button"
+          onClick={() => attachAnimationToEvent(draft)}
+          disabled={draftStatus !== 'Active' || !draftSavedEvent}
+          style={{ marginTop: 8, width: '100%', padding: '9px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: draftStatus === 'Active' && draftSavedEvent ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: draftStatus === 'Active' && draftSavedEvent ? 'pointer' : 'not-allowed', fontWeight: 900 }}
+        >
+          {draftSavedEvent ? 'Attach Animation to Current Event' : 'Save Event Before Attaching'}
+        </button>
+      </section>
+
       <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontWeight: 900, color: '#2c3e50' }}>Custom Events</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 0.8fr 0.8fr', gap: 6 }}>
@@ -495,6 +590,8 @@ const EventBuilderView: React.FC = () => {
         </div>
         {visibleEvents.map(eventDefinition => {
           const status = getCustomEventStatus(eventDefinition, settings.customEvents);
+          const attachedAnimationRules = settings.animationRules.filter(rule => rule.eventId === eventDefinition.eventId);
+          const attachedSoundRules = soundRules.filter(rule => rule.event === eventDefinition.eventId);
           return (
           <div key={eventDefinition.id} style={{ padding: 10, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center' }}>
             <div>
@@ -503,13 +600,23 @@ const EventBuilderView: React.FC = () => {
                 <span style={getStatusStyle(status)}>{status}</span>
               </div>
               <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{eventDefinition.category} - {eventDefinition.baseTrigger || 'No trigger'} - {eventDefinition.eventId}</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+                <span style={{ padding: '2px 6px', borderRadius: 999, background: '#eff6ff', color: '#1d4ed8', fontSize: '0.68rem', fontWeight: 800 }}>
+                  {attachedSoundRules.length} sound rule{attachedSoundRules.length === 1 ? '' : 's'}
+                </span>
+                <span style={{ padding: '2px 6px', borderRadius: 999, background: '#eef2ff', color: '#3730a3', fontSize: '0.68rem', fontWeight: 800 }}>
+                  {attachedAnimationRules.length} animation rule{attachedAnimationRules.length === 1 ? '' : 's'}
+                </span>
+              </div>
               {eventDefinition.conditions.complexCondition && (
                 <div style={{ fontSize: '0.72rem', color: ['pieceAttacked', 'fork'].includes(eventDefinition.conditions.complexCondition) ? '#166534' : '#92400e' }}>
                   {TACTICAL_EVENT_DESCRIPTIONS[eventDefinition.conditions.complexCondition] ?? `Uses tactical condition: ${eventDefinition.conditions.complexCondition}`}
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button type="button" disabled={status !== 'Active'} onClick={() => attachSoundToEvent(eventDefinition)} title={status === 'Active' ? 'Open Sound Editor for this event' : 'Only active events can attach working sound rules'} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: status === 'Active' ? '#fff' : '#f1f5f9', cursor: status === 'Active' ? 'pointer' : 'not-allowed' }}>Attach Sound</button>
+              <button type="button" disabled={status !== 'Active'} onClick={() => attachAnimationToEvent(eventDefinition)} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: status === 'Active' ? '#fff' : '#f1f5f9', cursor: status === 'Active' ? 'pointer' : 'not-allowed' }}>Attach Animation</button>
               <button type="button" onClick={() => {
                 beginEdit(eventDefinition);
                 setSelectedSampleId('auto');
@@ -526,6 +633,19 @@ const EventBuilderView: React.FC = () => {
               <button type="button" onClick={() => beginEdit(eventDefinition)} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Edit</button>
               <button type="button" onClick={() => deleteCustomEvent(eventDefinition.id)} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #fecaca', background: '#fef2f2', color: '#b42318', cursor: 'pointer' }}>Delete</button>
             </div>
+            {attachedAnimationRules.length > 0 && (
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {attachedAnimationRules.map(rule => {
+                  const animation = settings.animationDefinitions.find(item => item.id === rule.animationId);
+                  return (
+                    <div key={rule.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', padding: '5px 7px', borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', fontSize: '0.68rem' }}>
+                      <span>{animation?.name ?? rule.animationId} -&gt; {ANIMATION_TARGETS.find(target => target.id === rule.target)?.label ?? rule.target}</span>
+                      <button type="button" onClick={() => deleteAnimationRule(rule.id)} style={{ border: '1px solid #fecaca', background: '#fef2f2', color: '#991b1b', borderRadius: 6, cursor: 'pointer' }}>Remove</button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );})}
         {!visibleEvents.length && <div style={{ padding: 10, border: '1px dashed #cbd5e1', borderRadius: 8, color: '#64748b', fontSize: '0.8rem' }}>No custom events match this filter.</div>}

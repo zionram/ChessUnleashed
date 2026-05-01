@@ -15,6 +15,7 @@ interface SquareProps {
   onBadgeLeave: () => void;
   isSelected: boolean;
   isMoveTarget: boolean;
+  hidePiece?: boolean;
 }
 
 const Square: React.FC<SquareProps> = ({
@@ -29,6 +30,7 @@ const Square: React.FC<SquareProps> = ({
   onBadgeLeave,
   isSelected,
   isMoveTarget,
+  hidePiece = false,
 }) => {
   const { settings, updateThemeDraft } = useSettings();
   const [isOver, setIsOver] = useState(false);
@@ -156,7 +158,7 @@ const Square: React.FC<SquareProps> = ({
         pointerEvents: 'none'
       }}>
         <div style={{ width: '85%', height: '85%', zIndex: 1, position: 'relative', pointerEvents: 'none' }}>
-          {piece && <Piece type={piece.type} color={piece.color} comfort={comfort} />}
+          {piece && !hidePiece && <Piece type={piece.type} color={piece.color} comfort={comfort} />}
         </div>
 
         <div style={{ position: 'absolute', zIndex: 10, display: 'flex', gap: '2px' }}>

@@ -1,24 +1,33 @@
 import { WebSocketServer } from 'ws';
 import { Chess } from 'chess.js';
 import { nanoid } from 'nanoid';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const wss = new WebSocketServer({ port: 8080, host: '0.0.0.0' });
-const rooms = new Map(); // id -> { game: Chess, history: string[], theme: any, players: [{ws, color, token}], undoPending: boolean, timer: timeout, chat: any[], lastMove: any, enforceSharedExp: boolean, allowPersonalPieces: boolean }
+const __filename = fileURLToPath(import.meta.url);
 
-console.log('Chess LAN Server running on port 8080 (0.0.0.0)');
+export function startChessServer({ port = 8080, host = '0.0.0.0', logPrefix = 'Chess LAN Server' } = {}) {
+  const wss = new WebSocketServer({ port, host });
+  const rooms = new Map(); // id -> { game: Chess, history: string[], theme: any, players: [{ws, color, token}], undoPending: boolean, timer: timeout, chat: any[], lastMove: any, enforceSharedExp: boolean, allowPersonalPieces: boolean }
 
-const broadcastStatus = (roomId) => {
-  const room = rooms.get(roomId);
-  if (!room) return;
-  const status = {
-    white: room.players.some(p => p.color === 'w'),
-    black: room.players.some(p => p.color === 'b')
+  console.log(`${logPrefix} running on port ${port} (${host})`);
+
+  wss.on('error', (error) => {
+    console.error(`${logPrefix} error: ${error.message}`);
+  });
+
+  const broadcastStatus = (roomId) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+    const status = {
+      white: room.players.some(p => p.color === 'w'),
+      black: room.players.some(p => p.color === 'b')
+    };
+    console.log(`[BROADCAST] Room ${roomId} status: w:${status.white} b:${status.black}`);
+    room.players.forEach(p => p.ws?.send(JSON.stringify({ type: 'presence', payload: status })));
   };
-  console.log(`[BROADCAST] Room ${roomId} status: w:${status.white} b:${status.black}`);
-  room.players.forEach(p => p.ws?.send(JSON.stringify({ type: 'presence', payload: status })));
-};
 
-wss.on('connection', (ws, req) => {
+  wss.on('connection', (ws, req) => {
   const ip = req.socket.remoteAddress;
   console.log(`[SOCKET] New connection from ${ip}`);
 
@@ -186,4 +195,21 @@ wss.on('connection', (ws, req) => {
       }
     }
   });
-});
+  });
+
+  return {
+    wss,
+    rooms,
+    port,
+    host,
+    close: () => new Promise((resolve) => {
+      wss.close(() => resolve());
+    })
+  };
+}
+
+const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+
+if (isDirectRun) {
+  startChessServer();
+}

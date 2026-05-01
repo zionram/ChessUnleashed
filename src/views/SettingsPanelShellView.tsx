@@ -3,7 +3,7 @@ import { useAudio } from '../context/AudioContext';
 import { useSettings } from '../context/SettingsContext';
 import { getRegisteredSettingsTemplate } from '../registry/SettingsTemplateRegistry';
 import { SettingsFieldRenderer, SettingsFieldShell, type SupportedSettingsFieldType } from '../components/settings/SettingsFieldRenderer';
-import { buildExperiencePackage, validateExperiencePackage, type ExperiencePackage } from '../packages/ExperiencePackage';
+import { buildExperiencePackage, createExperiencePackageZip, readExperiencePackageZip, validateExperiencePackage, type ExperiencePackage } from '../packages/ExperiencePackage';
 import ThemeEditorView from './ThemeEditorView';
 
 type SettingsRendererField = {
@@ -250,7 +250,7 @@ const SettingsPanelShellView: React.FC = () => {
     });
   };
 
-  const downloadExperiencePackage = () => {
+  const downloadExperiencePackage = async () => {
     const experiencePackage = buildExperiencePackage(settings, {
       audio: getCurrentProfile()
     });
@@ -260,11 +260,18 @@ const SettingsPanelShellView: React.FC = () => {
       alert(`Experience package export blocked:\n${validation.issues.join('\n')}`);
       return;
     }
-    const blob = new Blob([JSON.stringify(experiencePackage, null, 2)], { type: 'application/json' });
+    let blob: Blob;
+    try {
+      blob = await createExperiencePackageZip(experiencePackage);
+    } catch (error) {
+      console.warn('ExperiencePackage asset export blocked:', error);
+      alert(error instanceof Error ? error.message : 'Experience package asset export failed.');
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'chess-unleashed-experience.json';
+    link.download = 'chess-unleashed-experience.zip';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -292,32 +299,26 @@ const SettingsPanelShellView: React.FC = () => {
     setValidatedImportPackage(null);
   };
 
-  const handleExperiencePackageImportSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleExperiencePackageImportSelection = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        const validation = validateExperiencePackage(parsed);
-        if (validation.valid) {
-          setValidatedImportPackage(parsed as ExperiencePackage);
-          setImportValidationMessage(`Valid package: ${parsed.metadata?.name ?? 'Unnamed package'}`);
-        } else {
-          setValidatedImportPackage(null);
-          setImportValidationMessage(`Invalid package: ${validation.issues.join(' ')}`);
-        }
-      } catch {
+    try {
+      const parsed = file.name.toLowerCase().endsWith('.zip')
+        ? (await readExperiencePackageZip(file, { loadAssets: true })).package
+        : JSON.parse(await file.text());
+      const validation = validateExperiencePackage(parsed);
+      if (validation.valid) {
+        setValidatedImportPackage(parsed as ExperiencePackage);
+        setImportValidationMessage(`Valid package: ${parsed.metadata?.name ?? 'Unnamed package'}`);
+      } else {
         setValidatedImportPackage(null);
-        setImportValidationMessage('Invalid JSON file.');
+        setImportValidationMessage(`Invalid package: ${validation.issues.join(' ')}`);
       }
-    };
-    reader.onerror = () => {
+    } catch {
       setValidatedImportPackage(null);
-      setImportValidationMessage('Failed to read selected file.');
-    };
-    reader.readAsText(file);
+      setImportValidationMessage(file.name.toLowerCase().endsWith('.zip') ? 'Invalid package zip.' : 'Invalid JSON file.');
+    }
     e.target.value = '';
   };
 
@@ -709,7 +710,7 @@ const SettingsPanelShellView: React.FC = () => {
             <input
               id="experience-package-import-input"
               type="file"
-              accept=".json,application/json"
+              accept=".json,.zip,application/json,application/zip"
               onChange={handleExperiencePackageImportSelection}
               style={{ display: 'none' }}
             />

@@ -8,6 +8,7 @@ import { getRegisteredSettingsField } from '../registry/SettingsRegistry';
 type PieceSidePrefix = 'w' | 'b';
 type BulkApplyTarget = 'white' | 'black' | 'both';
 type BulkImportFile = { name: string; dataUrl: string };
+type PieceSetStep = 'source' | 'arrange' | 'finalize';
 
 const BULK_APPLY_TARGETS: Array<{ id: BulkApplyTarget; label: string; prefixes: PieceSidePrefix[] }> = [
   { id: 'white', label: 'Apply to White', prefixes: ['w'] },
@@ -27,6 +28,8 @@ const ThemeEditorView: React.FC = () => {
   const [bulkAutoAssignedFiles, setBulkAutoAssignedFiles] = useState<string[]>([]);
   const [activeVariantPiece, setActiveVariantPiece] = useState<string | null>(null);
   const [bulkApplyTarget, setBulkApplyTarget] = useState<BulkApplyTarget>('both');
+  const [stagedBuiltInSet, setStagedBuiltInSet] = useState<string | null>(null);
+  const [pieceSetStep, setPieceSetStep] = useState<PieceSetStep>('source');
   const [isBulkDropActive, setIsBulkDropActive] = useState(false);
 
   // Ensure draft exists when editor is mounted
@@ -70,12 +73,12 @@ const ThemeEditorView: React.FC = () => {
   const hasChanges = JSON.stringify(draft) !== JSON.stringify(liveTemplate);
 
   const BULK_PIECE_MATCHERS: Array<{ piece: string; tokens: string[] }> = [
-    { piece: 'pawn', tokens: ['pawn', '_p', '-p', ' p ', '(p)', '[p]'] },
-    { piece: 'rook', tokens: ['rook', 'castle', '_r', '-r', ' r ', '(r)', '[r]'] },
-    { piece: 'knight', tokens: ['knight', 'horse', '_n', '-n', ' n ', '(n)', '[n]'] },
-    { piece: 'bishop', tokens: ['bishop', '_b', '-b', ' b ', '(b)', '[b]'] },
-    { piece: 'queen', tokens: ['queen', '_q', '-q', ' q ', '(q)', '[q]'] },
-    { piece: 'king', tokens: ['king', '_k', '-k', ' k ', '(k)', '[k]'] }
+    { piece: 'pawn', tokens: ['pawn', 'white pawn', 'black pawn', 'wp', 'bp', '_p', '-p', ' p ', '(p)', '[p]'] },
+    { piece: 'rook', tokens: ['rook', 'castle', 'white rook', 'black rook', 'wr', 'br', '_r', '-r', ' r ', '(r)', '[r]'] },
+    { piece: 'knight', tokens: ['knight', 'horse', 'white knight', 'black knight', 'wn', 'bn', '_n', '-n', ' n ', '(n)', '[n]'] },
+    { piece: 'bishop', tokens: ['bishop', 'white bishop', 'black bishop', 'wb', 'bb', '_b', '-b', ' b ', '(b)', '[b]'] },
+    { piece: 'queen', tokens: ['queen', 'white queen', 'black queen', 'wq', 'bq', '_q', '-q', ' q ', '(q)', '[q]'] },
+    { piece: 'king', tokens: ['king', 'white king', 'black king', 'wk', 'bk', '_k', '-k', ' k ', '(k)', '[k]'] }
   ];
   const BULK_PIECE_SLOT_MAP: Record<string, string> = {
     pawn: 'p',
@@ -94,6 +97,17 @@ const ThemeEditorView: React.FC = () => {
 
   const activeConfig = getActiveConfig();
   if (!activeConfig) return null;
+  const hasCustomPieceAssets = (config: PieceThemeConfig) =>
+    Object.values(config.customPieces ?? {}).some(Boolean) ||
+    Object.values(config.customVariants ?? {}).some(rules => rules.some(rule => Boolean(rule.image)));
+  const currentAppliedSetLabel = liveTemplate.pieceThemeMode === 'team'
+    ? `White: ${liveTemplate.whitePieceTheme?.builtinSet || liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet}, Black: ${liveTemplate.blackPieceTheme?.builtinSet || liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet}`
+    : liveTemplate.pieceTheme.type === 'custom'
+      ? `Custom / mixed set using ${liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet} fallback`
+      : liveTemplate.pieceTheme.builtinSet || liveTemplate.pieceSet;
+  const stagedPreviewLabel = hasChanges || bulkImportFiles.length > 0
+    ? 'Staged Preview'
+    : 'Applied pieces';
   const stagedBulkAssignments = bulkImportFiles.flatMap(file => {
     const piece = bulkImportAssignments[file.name];
     return piece ? [{ piece, file }] : [];
@@ -111,6 +125,26 @@ const ThemeEditorView: React.FC = () => {
   });
   const selectedBulkApplyTarget = BULK_APPLY_TARGETS.find(target => target.id === bulkApplyTarget) ?? BULK_APPLY_TARGETS[2];
   const hasBulkApplyChanges = stagedBulkAssignments.length > 0 || stagedVariantCandidates.some(({ piece }) => Boolean(piece));
+  const getDraftSlotStatus = (piece: string) => {
+    const slotKey = BULK_PIECE_SLOT_MAP[piece];
+    if (!slotKey) return 'Built-in fallback';
+    const targetPrefixes = selectedBulkApplyTarget.prefixes;
+    const configs = targetPrefixes.map(prefix => {
+      if (draft.pieceThemeMode === 'unified') return { prefix, config: draft.pieceTheme };
+      return {
+        prefix,
+        config: prefix === 'w' ? (draft.whitePieceTheme || draft.pieceTheme) : (draft.blackPieceTheme || draft.pieceTheme)
+      };
+    });
+    const appliedTargets = configs
+      .filter(({ prefix, config }) => Boolean(config.customPieces?.[`${prefix}${slotKey}`]))
+      .map(({ prefix }) => prefix === 'w' ? 'White' : 'Black');
+    if (appliedTargets.length > 0) return `Applied to Draft: ${appliedTargets.join(', ')}`;
+    return 'Built-in fallback';
+  };
+  const customPieceCount = Object.values(activeConfig.customPieces ?? {}).filter(Boolean).length;
+  const variantCount = Object.values(activeConfig.customVariants ?? {}).reduce((count, rules) => count + rules.filter(rule => Boolean(rule.image)).length, 0);
+  const fallbackCount = Math.max(0, 12 - customPieceCount);
   const builtInSetConfig = getRegisteredSettingsField('pieces.builtinSet');
 
   const builtInSetField = {
@@ -182,7 +216,21 @@ const ThemeEditorView: React.FC = () => {
             });
             return nextAssignments;
           });
+        } else {
+          setBulkImportAssignments(current => {
+            const nextAssignments = { ...current };
+            const claimedPieces = new Set(Object.values(nextAssignments));
+            nextFiles.forEach(file => {
+              const match = getBulkMatchedPiece(file.name, false, claimedPieces);
+              if (match) {
+                nextAssignments[file.name] = match;
+                claimedPieces.add(match);
+              }
+            });
+            return nextAssignments;
+          });
         }
+        setPieceSetStep('arrange');
       })
       .catch(() => alert('Failed to load bulk import images.'));
   };
@@ -319,6 +367,7 @@ const ThemeEditorView: React.FC = () => {
     setBulkExtraStyleRules({});
     setBulkAutoAssignedFiles([]);
     setActiveVariantPiece(null);
+    setStagedBuiltInSet(null);
     setIsBulkDropActive(false);
   };
 
@@ -331,6 +380,51 @@ const ThemeEditorView: React.FC = () => {
   const handleBulkPieceDrop = (e: React.DragEvent<HTMLDivElement>, piece: string) => {
     e.preventDefault();
     if (e.dataTransfer.files?.length) loadBulkImportFiles(e.dataTransfer.files, piece);
+  };
+
+  const stageBuiltInSet = () => {
+    if (!stagedBuiltInSet) return;
+    updateActiveConfig({
+      builtinSet: stagedBuiltInSet,
+      type: hasCustomPieceAssets(activeConfig) ? 'custom' : 'builtin'
+    });
+    setPieceSetStep('arrange');
+  };
+
+  const applySingleStagedPiece = (piece: string) => {
+    const match = stagedBulkAssignments.find(entry => entry.piece === piece);
+    if (!match) return;
+
+    const applyToConfig = (config: PieceThemeConfig, prefixes: PieceSidePrefix[]) => {
+      const nextCustomPieces = { ...config.customPieces };
+      prefixes.forEach(prefix => {
+        const slotKey = BULK_PIECE_SLOT_MAP[piece];
+        if (slotKey) nextCustomPieces[`${prefix}${slotKey}`] = match.file.dataUrl;
+      });
+      return {
+        ...config,
+        type: 'custom' as const,
+        customPieces: nextCustomPieces
+      };
+    };
+
+    const targetUpdates: Partial<typeof draft> = {
+      pieceThemeMode: bulkApplyTarget === 'both' ? 'unified' : 'team'
+    };
+
+    if (bulkApplyTarget === 'both') {
+      targetUpdates.pieceTheme = applyToConfig(draft.pieceTheme, ['w', 'b']);
+    }
+
+    selectedBulkApplyTarget.prefixes.forEach(prefix => {
+      const key = prefix === 'w' ? 'whitePieceTheme' : 'blackPieceTheme';
+      const currentConfig = prefix === 'w'
+        ? (draft.whitePieceTheme || draft.pieceTheme)
+        : (draft.blackPieceTheme || draft.pieceTheme);
+      targetUpdates[key] = applyToConfig(currentConfig, [prefix]);
+    });
+
+    updateThemeDraft(targetUpdates);
   };
 
   const applyBulkAssignment = () => {
@@ -396,12 +490,7 @@ const ThemeEditorView: React.FC = () => {
     });
 
     updateThemeDraft(targetUpdates);
-    setBulkImportFiles([]);
-    setBulkImportAssignments({});
-    setBulkExtraStyleAssignments({});
-    setBulkExtraStyleRules({});
-    setBulkAutoAssignedFiles([]);
-    setActiveVariantPiece(null);
+    setStagedBuiltInSet(null);
     setIsBulkDropActive(false);
   };
 
@@ -411,29 +500,95 @@ const ThemeEditorView: React.FC = () => {
         <button onClick={() => { if (window.confirm("Exit?")) { setThemeDraft(null); setThemeEditorMode(false); } }} style={{ fontSize: '0.7rem', padding: '4px 10px', cursor: 'pointer' }}>Exit</button>
       </div>
 
-      <button onClick={() => { updateTemplate(draft); if (multiplayer.isConnected) syncTheme(draft); }} disabled={!hasChanges} style={{ width: '100%', padding: '10px', background: hasChanges ? '#4caf50' : '#ccc', color: 'white', border: 'none', borderRadius: '4px', cursor: hasChanges ? 'pointer' : 'not-allowed', fontWeight: 'bold', marginBottom: '15px' }}>Apply to Game</button>
-      <button
-        onClick={resetUnappliedPieceChanges}
-        disabled={!hasChanges && bulkImportFiles.length === 0}
-        style={{ width: '100%', padding: '8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px', cursor: hasChanges || bulkImportFiles.length > 0 ? 'pointer' : 'not-allowed', marginBottom: '15px' }}
-      >
-        Reset Unapplied Changes
-      </button>
+      <div style={{ marginBottom: '12px', padding: '8px 10px', borderRadius: '6px', border: '1px solid #d7e0e7', background: hasChanges || bulkImportFiles.length > 0 ? '#f0f7ff' : '#f8f9fa', color: '#334155', fontSize: '0.74rem' }}>
+        <strong>{stagedPreviewLabel}</strong>
+        <div style={{ marginTop: '3px' }}>Current Applied Set: {currentAppliedSetLabel}</div>
+        {(hasChanges || bulkImportFiles.length > 0) && (
+          <div style={{ marginTop: '3px' }}>The center board is previewing staged piece changes until you apply or reset them.</div>
+        )}
+      </div>
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '12px' }}>
+        {[
+          ['source', 'Source'],
+          ['arrange', 'Arrange'],
+          ['finalize', 'Finalize']
+        ].map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setPieceSetStep(id as PieceSetStep)}
+            style={{
+              padding: '7px 6px',
+              borderRadius: '6px',
+              border: pieceSetStep === id ? '1px solid #2c3e50' : '1px solid #d7e0e7',
+              background: pieceSetStep === id ? '#2c3e50' : '#fff',
+              color: pieceSetStep === id ? '#fff' : '#334155',
+              cursor: 'pointer',
+              fontSize: '0.72rem',
+              fontWeight: 700
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {pieceSetStep === 'source' && (
       <section style={{ marginBottom: '15px', padding: '12px', border: '1px solid #d7e0e7', borderRadius: '8px', background: '#fff' }}>
         <h4 style={{ margin: '0 0 8px 0' }}>Piece Set</h4>
         <div style={{ fontSize: '0.72rem', color: '#5d6d7e', marginBottom: '12px' }}>
-          Choose a built-in set, import a saved set, or override individual pieces with your own images. Changes stay in the draft until you apply them to the game.
+          Step 1: choose a built-in SVG set or upload piece images. Recognized filenames are assigned automatically; anything unclear stays available for manual assignment in Arrange.
         </div>
+        <div style={{ display: 'grid', gap: '10px' }}>
+          <div style={{ padding: '10px', border: '1px solid #e3e8ee', borderRadius: '8px', background: '#fafbfc' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.8rem', marginBottom: '8px' }}>Use Built-In Set</div>
         <SettingsFieldRenderer
           key={builtInSetField.key}
           fieldKey={builtInSetField.key}
           type={builtInSetField.type}
           label="Choose Built-in Pieces"
-          value={builtInSetField.value}
-          onChange={builtInSetField.onChange}
+          value={stagedBuiltInSet ?? builtInSetField.value}
+          onChange={(value: string | number | boolean) => setStagedBuiltInSet(String(value))}
           options={builtInSetField.options}
         />
+        <button
+          onClick={stageBuiltInSet}
+          disabled={!stagedBuiltInSet || stagedBuiltInSet === activeConfig.builtinSet}
+          style={{ width: '100%', marginTop: '8px', padding: '8px', background: stagedBuiltInSet && stagedBuiltInSet !== activeConfig.builtinSet ? '#2c3e50' : '#d8dee6', color: '#fff', border: 'none', borderRadius: '4px', cursor: stagedBuiltInSet && stagedBuiltInSet !== activeConfig.builtinSet ? 'pointer' : 'not-allowed', fontWeight: 700 }}
+        >
+          Stage Built-In Set
+        </button>
+        <div style={{ marginTop: '8px', fontSize: '0.68rem', color: '#5d6d7e' }}>
+          Built-in SVG pieces can be mixed with custom images. Empty custom slots fall back to the staged built-in set.
+        </div>
+          </div>
+          <div style={{ padding: '10px', border: `1px dashed ${isBulkDropActive ? '#3498db' : '#ccd6dd'}`, borderRadius: '8px', background: isBulkDropActive ? 'rgba(52, 152, 219, 0.08)' : '#fafbfc' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.8rem', marginBottom: '6px' }}>Upload Pieces</div>
+            <div style={{ fontSize: '0.68rem', color: '#5d6d7e', marginBottom: '8px' }}>
+              Upload full sets or individual images. Common names like wp, black-queen, or knight are detected automatically.
+            </div>
+            <button
+              onClick={() => document.getElementById('bulk-piece-import-input')?.click()}
+              style={{ width: '100%', padding: '10px', background: '#3498db', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 700 }}
+            >
+              Upload Pieces
+            </button>
+            <div
+              onDragEnter={(e) => { e.preventDefault(); setIsBulkDropActive(true); }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                if (e.currentTarget === e.target) setIsBulkDropActive(false);
+              }}
+              onDrop={handleBulkDrop}
+              style={{ marginTop: '8px', minHeight: '58px', padding: '8px', borderRadius: '6px', background: '#fff', border: '1px solid #e3e8ee', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', fontSize: '0.72rem', color: '#5d6d7e' }}
+            >
+              Drop images here
+            </div>
+          </div>
+        </div>
+        <input id="bulk-piece-import-input" type="file" accept="image/*" multiple onChange={handleBulkImportInput} style={{ display: 'none' }} />
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
           <button
             onClick={() => document.getElementById('set-load-in')?.click()}
@@ -445,18 +600,20 @@ const ThemeEditorView: React.FC = () => {
             onClick={saveUnifiedSet}
             style={{ flex: '1 1 140px', padding: '10px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
           >
-            Save Piece Set
+            Save Current Staged Piece Set
           </button>
         </div>
         <input id="set-load-in" type="file" accept=".json" onChange={loadUnifiedSet} style={{ display: 'none' }} />
       </section>
+      )}
 
+      {pieceSetStep === 'arrange' && (
       <section style={{ marginBottom: '15px', padding: '12px', border: `1px dashed ${isBulkDropActive ? '#3498db' : '#ccd6dd'}`, borderRadius: '8px', background: isBulkDropActive ? 'rgba(52, 152, 219, 0.08)' : '#fafbfc' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', marginBottom: '8px', flexWrap: 'wrap' }}>
-          <h4 style={{ margin: 0 }}>Import Custom Images</h4>
+          <h4 style={{ margin: 0 }}>Arrange Draft</h4>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '100%' }}>
             <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.7rem', color: '#5d6d7e', flex: '1 1 150px', minWidth: '140px' }}>
-              Target
+              Apply Target
               <select
                 value={bulkApplyTarget}
                 onChange={(e) => setBulkApplyTarget(e.target.value as BulkApplyTarget)}
@@ -479,50 +636,23 @@ const ThemeEditorView: React.FC = () => {
               disabled={!hasBulkApplyChanges}
               style={{ fontSize: '0.75rem', padding: '6px 10px', cursor: hasBulkApplyChanges ? 'pointer' : 'not-allowed' }}
             >
-              Add to Draft
+              Apply to Draft
             </button>
             <button
               onClick={clearStagedBulkImport}
               disabled={bulkImportFiles.length === 0}
               style={{ fontSize: '0.75rem', padding: '6px 10px', cursor: bulkImportFiles.length > 0 ? 'pointer' : 'not-allowed' }}
             >
-              Clear Staged
-            </button>
-            <button
-              onClick={() => document.getElementById('bulk-piece-import-input')?.click()}
-              style={{ fontSize: '0.75rem', padding: '6px 10px', cursor: 'pointer' }}
-            >
-              Choose Images
+              Reset Draft
             </button>
           </div>
-          <input id="bulk-piece-import-input" type="file" accept="image/*" multiple onChange={handleBulkImportInput} style={{ display: 'none' }} />
         </div>
         <div style={{ fontSize: '0.72rem', color: '#5d6d7e', marginBottom: '8px' }}>
-          Stage multiple piece images here, review the base assignments and extra style images, then add them to the selected side in the draft.
+          Step 2: arrange the staged draft. Empty slots use the built-in fallback set unless you assign a custom image.
         </div>
-        <div
-          onDragEnter={(e) => { e.preventDefault(); setIsBulkDropActive(true); }}
-          onDragOver={(e) => e.preventDefault()}
-          onDragLeave={(e) => {
-            e.preventDefault();
-            if (e.currentTarget === e.target) setIsBulkDropActive(false);
-          }}
-          onDrop={handleBulkDrop}
-          style={{
-            minHeight: '72px',
-            padding: '10px',
-            borderRadius: '6px',
-            background: '#fff',
-            border: `1px solid ${isBulkDropActive ? '#3498db' : '#e3e8ee'}`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center'
-          }}
-        >
-          <div style={{ fontSize: '0.75rem', color: '#5d6d7e' }}>
-            Drop 5-12 piece images here, or use Choose Images.
-          </div>
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          <button onClick={() => setPieceSetStep('source')} style={{ padding: '7px 10px', border: '1px solid #d0d7de', borderRadius: '6px', background: '#fff', cursor: 'pointer' }}>Back to Source</button>
+          <button onClick={() => setPieceSetStep('finalize')} style={{ padding: '7px 10px', border: '1px solid #2c3e50', borderRadius: '6px', background: '#2c3e50', color: '#fff', cursor: 'pointer' }}>Finalize</button>
         </div>
         {bulkImportFiles.length === 0 && (
           <div style={{ marginTop: '10px', fontSize: '0.72rem', color: '#8a94a6' }}>
@@ -535,7 +665,7 @@ const ThemeEditorView: React.FC = () => {
               Base Piece Assignment Preview
             </div>
             <div style={{ marginTop: '4px', fontSize: '0.7rem', color: '#5d6d7e' }}>
-              Click Auto Assign or choose piece slots manually. Assigned images become the main piece images in the draft.
+              Click Auto Assign or choose piece slots manually. Assigned images become the main piece images in the staged preview.
             </div>
             <div style={{ marginTop: '8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(118px, 1fr))', gap: '8px' }}>
               {bulkAssignmentPreview.map(entry => (
@@ -559,13 +689,33 @@ const ThemeEditorView: React.FC = () => {
                   <div style={{ fontSize: '0.62rem', color: '#5d6d7e', wordBreak: 'break-word' }}>
                     {entry.file ? entry.file.name : 'Waiting for match'}
                   </div>
+                  <div style={{
+                    marginTop: '5px',
+                    padding: '3px 5px',
+                    borderRadius: '999px',
+                    background: entry.file ? '#eef2ff' : '#f8f9fa',
+                    color: entry.file ? '#3730a3' : '#64748b',
+                    fontSize: '0.58rem',
+                    fontWeight: 700,
+                    textAlign: 'center'
+                  }}>
+                    {entry.file ? `Staged - ${getDraftSlotStatus(entry.piece)}` : getDraftSlotStatus(entry.piece)}
+                  </div>
                   {entry.file && (
+                    <>
+                    <button
+                      onClick={() => applySingleStagedPiece(entry.piece)}
+                      style={{ marginTop: '6px', width: '100%', fontSize: '0.62rem', padding: '4px 6px', cursor: 'pointer', background: '#2c3e50', color: '#fff', border: 'none', borderRadius: '4px' }}
+                    >
+                      Apply Piece
+                    </button>
                     <button
                       onClick={() => clearBulkBaseAssignment(entry.file!.name)}
                       style={{ marginTop: '6px', width: '100%', fontSize: '0.62rem', padding: '4px 6px', cursor: 'pointer' }}
                     >
                       Clear Base
                     </button>
+                    </>
                   )}
                   <button
                     onClick={() => document.getElementById(`bulk-piece-slot-input-${entry.piece}`)?.click()}
@@ -708,6 +858,58 @@ const ThemeEditorView: React.FC = () => {
           </>
         )}
       </section>
+      )}
+
+      {pieceSetStep === 'finalize' && (
+        <section style={{ marginBottom: '15px', padding: '12px', border: '1px solid #d7e0e7', borderRadius: '8px', background: '#fff' }}>
+          <h4 style={{ margin: '0 0 8px 0' }}>Finalize Piece Set</h4>
+          <div style={{ fontSize: '0.72rem', color: '#5d6d7e', marginBottom: '12px' }}>
+            Step 3: review the staged piece set, apply it to the game, or save the mixed piece set as JSON.
+          </div>
+          <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+            <div style={{ padding: '8px', borderRadius: '6px', background: '#f8f9fa', border: '1px solid #e3e8ee', fontSize: '0.75rem' }}>
+              <strong>{customPieceCount}</strong> custom piece slot{customPieceCount === 1 ? '' : 's'} assigned
+            </div>
+            <div style={{ padding: '8px', borderRadius: '6px', background: '#f8f9fa', border: '1px solid #e3e8ee', fontSize: '0.75rem' }}>
+              <strong>{fallbackCount}</strong> slot{fallbackCount === 1 ? '' : 's'} using built-in fallback
+            </div>
+            <div style={{ padding: '8px', borderRadius: '6px', background: '#f8f9fa', border: '1px solid #e3e8ee', fontSize: '0.75rem' }}>
+              <strong>{variantCount}</strong> variant / extra style image{variantCount === 1 ? '' : 's'}
+            </div>
+          </div>
+          <div style={{ fontSize: '0.68rem', color: '#5d6d7e', marginBottom: '12px' }}>
+            Save Piece Set exports the current staged mixed set supported by the existing piece set JSON format.
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button
+              onClick={() => { updateTemplate(draft); if (multiplayer.isConnected) syncTheme(draft); }}
+              disabled={!hasChanges}
+              style={{ padding: '10px', background: hasChanges ? '#4caf50' : '#ccc', color: 'white', border: 'none', borderRadius: '4px', cursor: hasChanges ? 'pointer' : 'not-allowed', fontWeight: 'bold' }}
+            >
+              Apply Piece Set
+            </button>
+            <button
+              onClick={saveUnifiedSet}
+              style={{ padding: '10px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+            >
+              Save Piece Set
+            </button>
+            <button
+              onClick={() => setPieceSetStep('arrange')}
+              style={{ padding: '9px', background: '#fff', border: '1px solid #d0d7de', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              Back to Arrange Draft
+            </button>
+            <button
+              onClick={resetUnappliedPieceChanges}
+              disabled={!hasChanges && bulkImportFiles.length === 0 && !stagedBuiltInSet}
+              style={{ padding: '9px', background: '#fff', border: '1px solid #d0d7de', borderRadius: '4px', cursor: hasChanges || bulkImportFiles.length > 0 || stagedBuiltInSet ? 'pointer' : 'not-allowed' }}
+            >
+              Reset Draft
+            </button>
+          </div>
+        </section>
+      )}
 
     </div>
   );

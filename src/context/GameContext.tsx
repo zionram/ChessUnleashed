@@ -306,7 +306,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const handler = (event: any) => {
-      if (event.type === 'custom.event') return;
+      if (['custom.event', 'animation.play', 'animation.rule.played', 'sound.rule.played'].includes(event.type)) return;
       settings.customEvents.forEach(definition => {
         const result = evaluateCustomEventDefinition(definition, event);
         if (!result.matched) return;
@@ -320,12 +320,40 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...getCustomEventLogDetails(definition, event)
           }
         });
+        settings.animationRules
+          .filter(rule => rule.enabled && rule.eventId === definition.eventId)
+          .forEach(rule => {
+            const animation = settings.animationDefinitions.find(item => item.id === rule.animationId && item.enabled);
+            if (!animation) return;
+            eventBus.emit({
+              type: 'animation.play',
+              payload: {
+                ruleId: rule.id,
+                eventId: definition.eventId,
+                eventName: definition.name,
+                animation,
+                target: rule.target,
+                ...getCustomEventLogDetails(definition, event)
+              }
+            });
+            eventBus.emit({
+              type: 'animation.rule.played',
+              payload: {
+                summary: `Animation Rule Played: ${animation.name}`,
+                animationName: animation.name,
+                eventName: definition.name,
+                eventId: definition.eventId,
+                target: rule.target,
+                ruleId: rule.id
+              }
+            });
+          });
         playEvent(definition.eventId, getCustomEventAudioContext(event));
       });
     };
     eventBus.subscribe('*', handler);
     return () => eventBus.unsubscribe('*', handler);
-  }, [settings.customEvents, playEvent]);
+  }, [settings.customEvents, settings.animationRules, settings.animationDefinitions, playEvent]);
 
   const [gameState, setGameState] = useState<GameState>(engine.getGameState());
 

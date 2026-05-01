@@ -5,7 +5,7 @@ import LetsPlaySetupView from '../views/LetsPlaySetupView';
 import SettingsPanelShellView from '../views/SettingsPanelShellView';
 
 import {
-  Gamepad2, Palette, Puzzle, Grid3x3, Route, Layers, Volume2, Sliders, Package, Settings, MessageCircle
+  Gamepad2, Palette, Puzzle, Grid3x3, Route, Layers, Volume2, Sliders, Package, Settings, MessageCircle, Wand2
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -27,6 +27,61 @@ export const MENU_SCHEMA: MenuItem[] = [
     type: 'overlay',
     overlayTitle: "Let's Play!",
     component: LetsPlaySetupView
+  },
+  {
+    id: 'appearance',
+    label: 'Environment',
+    icon: React.createElement(Palette, { size: 18 }),
+    type: 'submenu',
+    children: [
+      {
+        id: 'environment-look',
+        label: 'Look',
+        icon: React.createElement(Palette, { size: 16 }),
+        type: 'submenu',
+        children: [
+          { id: 'app-pieces', label: 'Pieces', icon: React.createElement(Puzzle, { size: 16 }), type: 'action', actionId: 'toggle-piece-editor' },
+          {
+            id: 'environment-board',
+            label: 'Board',
+            icon: React.createElement(Grid3x3, { size: 16 }),
+            type: 'submenu',
+            children: [
+              { id: 'app-squares', label: 'Squares', icon: React.createElement(Grid3x3, { size: 16 }), type: 'action', actionId: 'toggle-squares' },
+              { id: 'app-paths', label: 'Paths', icon: React.createElement(Route, { size: 16 }), type: 'action', actionId: 'toggle-paths' },
+              { id: 'app-layers', label: 'Layers', icon: React.createElement(Layers, { size: 16 }), type: 'action', actionId: 'toggle-layers' },
+              {
+                id: 'edit-appearance',
+                label: 'Themes',
+                icon: React.createElement(Settings, { size: 16 }),
+                type: 'overlay',
+                overlayTitle: 'Load / Save Set',
+                component: AppearanceView
+              }
+            ]
+          },
+          { id: 'app-animation', label: 'Animation', icon: React.createElement(Wand2, { size: 16 }), type: 'action', actionId: 'toggle-animation-settings' },
+          { id: 'app-platform-ui', label: 'Platform UI', icon: React.createElement(Palette, { size: 16 }), type: 'action', actionId: 'toggle-platform-appearance' }
+        ]
+      },
+      {
+        id: 'environment-sound',
+        label: 'Sound',
+        icon: React.createElement(Volume2, { size: 16 }),
+        type: 'submenu',
+        children: [
+          { id: 'app-volume', label: 'Audio Settings', icon: React.createElement(Volume2, { size: 16 }), type: 'action', actionId: 'toggle-audio' }
+        ]
+      },
+      {
+        id: 'environment-load-set',
+        label: 'Load Set',
+        icon: React.createElement(Package, { size: 16 }),
+        type: 'overlay',
+        overlayTitle: 'Load Set',
+        component: AppearanceView
+      }
+    ]
   },
   {
     id: 'tools',
@@ -70,60 +125,6 @@ export const MENU_SCHEMA: MenuItem[] = [
     ]
   },
   {
-    id: 'appearance',
-    label: 'Environment',
-    icon: React.createElement(Palette, { size: 18 }),
-    type: 'submenu',
-    children: [
-      {
-        id: 'environment-look',
-        label: 'Look',
-        icon: React.createElement(Palette, { size: 16 }),
-        type: 'submenu',
-        children: [
-          { id: 'app-pieces', label: 'Pieces', icon: React.createElement(Puzzle, { size: 16 }), type: 'action', actionId: 'toggle-piece-editor' },
-          {
-            id: 'environment-board',
-            label: 'Board',
-            icon: React.createElement(Grid3x3, { size: 16 }),
-            type: 'submenu',
-            children: [
-              { id: 'app-squares', label: 'Squares', icon: React.createElement(Grid3x3, { size: 16 }), type: 'action', actionId: 'toggle-squares' },
-              { id: 'app-paths', label: 'Paths', icon: React.createElement(Route, { size: 16 }), type: 'action', actionId: 'toggle-paths' },
-              { id: 'app-layers', label: 'Layers', icon: React.createElement(Layers, { size: 16 }), type: 'action', actionId: 'toggle-layers' },
-              {
-                id: 'edit-appearance',
-                label: 'Themes',
-                icon: React.createElement(Settings, { size: 16 }),
-                type: 'overlay',
-                overlayTitle: 'Load / Save Set',
-                component: AppearanceView
-              }
-            ]
-          },
-          { id: 'app-platform-ui', label: 'Platform UI', icon: React.createElement(Palette, { size: 16 }), type: 'action', actionId: 'toggle-platform-appearance' }
-        ]
-      },
-      {
-        id: 'environment-sound',
-        label: 'Sound',
-        icon: React.createElement(Volume2, { size: 16 }),
-        type: 'submenu',
-        children: [
-          { id: 'app-volume', label: 'Audio Settings', icon: React.createElement(Volume2, { size: 16 }), type: 'action', actionId: 'toggle-audio' }
-        ]
-      },
-      {
-        id: 'environment-load-set',
-        label: 'Load Set',
-        icon: React.createElement(Package, { size: 16 }),
-        type: 'overlay',
-        overlayTitle: 'Load Set',
-        component: AppearanceView
-      }
-    ]
-  },
-  {
     id: 'advanced',
     label: 'Advanced',
     icon: React.createElement(Package, { size: 18 }),
@@ -137,6 +138,7 @@ export const MENU_SCHEMA: MenuItem[] = [
         children: [
           { id: 'advanced-sound-editor', label: 'Sound Editor', icon: React.createElement(Sliders, { size: 16 }), type: 'action', actionId: 'toggle-sound-editor' },
           { id: 'toggle-event-builder', label: 'Event Builder', type: 'toggle', actionId: 'toggle-event-builder' },
+          { id: 'toggle-animation-builder', label: 'Animation Builder', icon: React.createElement(Wand2, { size: 16 }), type: 'toggle', actionId: 'toggle-animation-builder' },
           { id: 'toggle-event-log', label: 'Event Log', type: 'toggle', actionId: 'toggle-event-log' }
         ]
       },

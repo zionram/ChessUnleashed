@@ -84,11 +84,11 @@ const BotsView: React.FC = () => {
 
   const startEditingBot = (botId: string) => {
     const bot = settings.registeredBots.find(item => item.id === botId);
-    if (!bot || bot.type === 'mock') return;
+    if (!bot || bot.builtin) return;
     setEditingBotId(bot.id);
     setNewBotName(bot.name);
     setNewBotPath(bot.path);
-    setNewBotType(bot.type);
+    setNewBotType(bot.type === 'web' ? 'web' : 'worker');
     setTestResult({ status: 'idle' });
     setLayer('add-bot');
   };
@@ -156,7 +156,7 @@ const BotsView: React.FC = () => {
                   <div style={{ fontSize: '0.65rem', color: '#64748b' }}>Browser UCI engine - test before play</div>
                 )}
               </button>
-              {eng.type !== 'mock' ? (
+              {eng.type !== 'mock' && !eng.builtin ? (
                 <div style={{ display: 'flex', gap: '4px' }}>
                   <button
                     onClick={() => startEditingBot(eng.id)}

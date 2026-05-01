@@ -22,7 +22,22 @@ export interface CustomBotConfig {
   name: string;
   type: 'worker' | 'web' | 'mock';
   path: string;
+  builtin?: boolean;
 }
+
+export const BUNDLED_STOCKFISH_BOT: CustomBotConfig = {
+  id: 'stockfish-18-lite-bundled',
+  name: 'Stockfish 18 Lite',
+  type: 'worker',
+  path: '/engines/stockfish/stockfish-18-lite-single.js',
+  builtin: true
+};
+
+export const DEFAULT_REGISTERED_BOTS: CustomBotConfig[] = [
+  { id: 'standard', name: 'Training Bot (Standard)', type: 'mock', path: 'internal', builtin: true },
+  { id: 'random', name: 'Random Bot', type: 'mock', path: 'internal', builtin: true },
+  BUNDLED_STOCKFISH_BOT
+];
 
 export interface LocalPlayerProfile {
   displayName: string;
@@ -268,7 +283,71 @@ export interface UIAppearanceSettings {
   showTipsBoard: boolean;
   tipsRotationSeconds: number;
   tipsMessages: string[];
+  welcomePanelColor: string;
 }
+
+export interface PieceAnimationSettings {
+  enabled: boolean;
+  movementSpeedMs: number;
+  easing: 'linear' | 'ease' | 'ease-in-out';
+  captureAnimation: boolean;
+  promotionAnimation: boolean;
+  defaultAnimationId?: string;
+}
+
+export type AnimationPresetType =
+  | 'snap'
+  | 'slide'
+  | 'fast-slide'
+  | 'bounce'
+  | 'hop'
+  | 'shake'
+  | 'pulse'
+  | 'capture-pop'
+  | 'promotion-glow'
+  | 'board-flash';
+
+export type AnimationTargetType = 'piece' | 'captured-piece' | 'promoted-piece' | 'board' | 'ui';
+
+export interface AnimationDefinition {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  preset: AnimationPresetType;
+  targetType: AnimationTargetType;
+  durationMs: number;
+  delayMs: number;
+  easing: PieceAnimationSettings['easing'];
+  intensity: number;
+  repeatCount: number;
+  enabled: boolean;
+  status: 'built-in' | 'draft' | 'active' | 'disabled';
+  builtin?: boolean;
+}
+
+export type AnimationEventTarget = 'moved-piece' | 'captured-piece' | 'target-square' | 'source-square' | 'board' | 'current-player-panel' | 'fallback-preview';
+
+export interface AnimationRule {
+  id: string;
+  eventId: string;
+  animationId: string;
+  target: AnimationEventTarget;
+  enabled: boolean;
+}
+
+export const DEFAULT_ANIMATION_DEFINITIONS: AnimationDefinition[] = [
+  { id: 'anim-snap', name: 'Snap / No Animation', description: 'Instant movement with no slide.', category: 'Movement', preset: 'snap', targetType: 'piece', durationMs: 0, delayMs: 0, easing: 'linear', intensity: 0, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-slide', name: 'Slide', description: 'Standard smooth piece slide.', category: 'Movement', preset: 'slide', targetType: 'piece', durationMs: 220, delayMs: 0, easing: 'ease-in-out', intensity: 0.5, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-fast-slide', name: 'Fast Slide', description: 'Quick direct movement.', category: 'Movement', preset: 'fast-slide', targetType: 'piece', durationMs: 120, delayMs: 0, easing: 'ease', intensity: 0.4, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-bounce', name: 'Bounce', description: 'Movement with a playful bounce preview.', category: 'Movement', preset: 'bounce', targetType: 'piece', durationMs: 340, delayMs: 0, easing: 'ease-in-out', intensity: 0.7, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-hop', name: 'Hop', description: 'Piece hops between squares.', category: 'Movement', preset: 'hop', targetType: 'piece', durationMs: 280, delayMs: 0, easing: 'ease-in-out', intensity: 0.7, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-shake', name: 'Shake', description: 'Short shake for warnings or blocked actions.', category: 'Feedback', preset: 'shake', targetType: 'piece', durationMs: 260, delayMs: 0, easing: 'linear', intensity: 0.6, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-pulse', name: 'Pulse', description: 'Soft pulse for highlights.', category: 'Feedback', preset: 'pulse', targetType: 'piece', durationMs: 320, delayMs: 0, easing: 'ease-in-out', intensity: 0.5, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-capture-pop', name: 'Capture Pop', description: 'Small pop for captures.', category: 'Capture', preset: 'capture-pop', targetType: 'captured-piece', durationMs: 180, delayMs: 0, easing: 'ease', intensity: 0.8, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-promotion-glow', name: 'Promotion Glow', description: 'Glow effect for promoted pieces.', category: 'Promotion', preset: 'promotion-glow', targetType: 'promoted-piece', durationMs: 500, delayMs: 0, easing: 'ease-in-out', intensity: 0.6, repeatCount: 1, enabled: true, status: 'built-in', builtin: true },
+  { id: 'anim-board-flash', name: 'Board Flash', description: 'Board-wide flash for future event triggers.', category: 'Board', preset: 'board-flash', targetType: 'board', durationMs: 300, delayMs: 0, easing: 'ease', intensity: 0.4, repeatCount: 1, enabled: true, status: 'built-in', builtin: true }
+];
 
 export interface SettingsState {
   template: Template;
@@ -282,12 +361,15 @@ export interface SettingsState {
   personalityProfiles: Record<string, BotPersonalityProfile>;
   chatSettings: ChatSettings;
   uiAppearance: UIAppearanceSettings;
+  pieceAnimations: PieceAnimationSettings;
   timeControl: TimeControlConfig;
   registeredBots: CustomBotConfig[];
   localProfile: LocalPlayerProfile;
   multiplayerServer: MultiplayerServerConfig;
   customRulesets: CustomRuleset[];
   customEvents: CustomEventDefinition[];
+  animationDefinitions: AnimationDefinition[];
+  animationRules: AnimationRule[];
 }
 
 export type ImportableSettingsCategories = Partial<Pick<
@@ -298,6 +380,8 @@ export type ImportableSettingsCategories = Partial<Pick<
   | 'multiplayerServer'
   | 'customRulesets'
   | 'customEvents'
+  | 'animationDefinitions'
+  | 'animationRules'
 >>;
 
 interface SettingsContextType {
@@ -307,6 +391,7 @@ interface SettingsContextType {
   updateBotSettings: (updates: Partial<BotSettings>) => void;
   updateChatSettings: (updates: Partial<ChatSettings>) => void;
   updateUIAppearance: (updates: Partial<UIAppearanceSettings>) => void;
+  updatePieceAnimations: (updates: Partial<PieceAnimationSettings>) => void;
   updateTimeControl: (updates: Partial<TimeControlConfig>) => void;
   updateMultiplayerServer: (updates: Partial<MultiplayerServerConfig>) => void;
   updatePersonalityProfile: (name: string, updates: Partial<BotPersonalityProfile>) => void;
@@ -324,6 +409,12 @@ interface SettingsContextType {
   createCustomEvent: (eventDefinition: CustomEventDefinition) => void;
   updateCustomEvent: (id: string, updates: Partial<CustomEventDefinition>) => void;
   deleteCustomEvent: (id: string) => void;
+  createAnimationDefinition: (definition: AnimationDefinition) => void;
+  updateAnimationDefinition: (id: string, updates: Partial<AnimationDefinition>) => void;
+  deleteAnimationDefinition: (id: string) => void;
+  createAnimationRule: (rule: AnimationRule) => void;
+  updateAnimationRule: (id: string, updates: Partial<AnimationRule>) => void;
+  deleteAnimationRule: (id: string) => void;
   importSettingsCategories: (updates: ImportableSettingsCategories) => void;
   setThemeDraft: (t: Template | null) => void;
   toggleView: (viewId: string) => void;
@@ -387,6 +478,7 @@ const createDefaultSettings = (): SettingsState => ({
       density: 'comfortable',
       showTipsBoard: true,
       tipsRotationSeconds: 12,
+      welcomePanelColor: '#ffffff',
       tipsMessages: [
         "Tip: Use Let's Play to start a bot, local, or multiplayer game.",
         'Did you know? Knights are the only pieces that can jump.',
@@ -394,6 +486,14 @@ const createDefaultSettings = (): SettingsState => ({
         'Chess fact: Castling is the only move where two pieces move at once.',
         'Tip: Save your favorite setup as an ExperiencePackage.'
       ]
+    },
+    pieceAnimations: {
+      enabled: true,
+      movementSpeedMs: 220,
+      easing: 'ease-in-out',
+      captureAnimation: true,
+      promotionAnimation: true,
+      defaultAnimationId: 'anim-slide'
     },
     timeControl: {
       enabled: false,
@@ -405,10 +505,7 @@ const createDefaultSettings = (): SettingsState => ({
       behavior: 'static',
       draggablePosition: { x: 24, y: 24 }
     },
-    registeredBots: [
-      { id: 'standard', name: 'Training Bot (Standard)', type: 'mock', path: 'internal' },
-      { id: 'random', name: 'Random Bot', type: 'mock', path: 'internal' }
-    ],
+    registeredBots: DEFAULT_REGISTERED_BOTS,
     localProfile: {
       displayName: 'Guest Player',
       profileImage: '',
@@ -423,11 +520,28 @@ const createDefaultSettings = (): SettingsState => ({
       customUrl: ''
     },
     customRulesets: [],
-    customEvents: []
+    customEvents: [],
+    animationDefinitions: DEFAULT_ANIMATION_DEFINITIONS,
+    animationRules: []
 });
 
 const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState => {
   const defaults = createDefaultSettings();
+  const mergeDefaultRegisteredBots = (savedBots: CustomBotConfig[] = []) => {
+    const next = [...savedBots];
+    defaults.registeredBots.forEach(defaultBot => {
+      const alreadyPresent = next.some(bot => bot.id === defaultBot.id || bot.path === defaultBot.path);
+      if (!alreadyPresent) next.push(defaultBot);
+    });
+    return next;
+  };
+  const mergeDefaultAnimations = (savedAnimations: AnimationDefinition[] = []) => {
+    const next = [...savedAnimations];
+    DEFAULT_ANIMATION_DEFINITIONS.forEach(defaultAnimation => {
+      if (!next.some(animation => animation.id === defaultAnimation.id)) next.push(defaultAnimation);
+    });
+    return next;
+  };
 
   return {
     ...defaults,
@@ -483,6 +597,10 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
       ...defaults.uiAppearance,
       ...saved.uiAppearance
     },
+    pieceAnimations: {
+      ...defaults.pieceAnimations,
+      ...saved.pieceAnimations
+    },
     timeControl: {
       ...defaults.timeControl,
       ...saved.timeControl
@@ -493,7 +611,9 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
     },
     customRulesets: saved.customRulesets ?? defaults.customRulesets,
     customEvents: saved.customEvents ?? defaults.customEvents,
-    registeredBots: saved.registeredBots?.length ? saved.registeredBots : defaults.registeredBots,
+    animationDefinitions: mergeDefaultAnimations(saved.animationDefinitions ?? defaults.animationDefinitions),
+    animationRules: saved.animationRules ?? defaults.animationRules,
+    registeredBots: mergeDefaultRegisteredBots(saved.registeredBots?.length ? saved.registeredBots : defaults.registeredBots),
     localProfile: {
       ...defaults.localProfile,
       ...saved.localProfile,
@@ -550,6 +670,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateThemeDraft = (updates: Partial<Template>) => setSettings(s => ({ ...s, themeDraft: s.themeDraft ? { ...s.themeDraft, ...updates } : null }));
   const updateBotSettings = (updates: Partial<BotSettings>) => setSettings(s => ({ ...s, botSettings: { ...s.botSettings, ...updates } }));
   const updateUIAppearance = (updates: Partial<UIAppearanceSettings>) => setSettings(s => ({ ...s, uiAppearance: { ...s.uiAppearance, ...updates } }));
+  const updatePieceAnimations = (updates: Partial<PieceAnimationSettings>) => setSettings(s => ({ ...s, pieceAnimations: { ...s.pieceAnimations, ...updates } }));
   const updateTimeControl = (updates: Partial<TimeControlConfig>) => setSettings(s => ({ ...s, timeControl: { ...s.timeControl, ...updates } }));
   const updateMultiplayerServer = (updates: Partial<MultiplayerServerConfig>) => setSettings(s => ({ ...s, multiplayerServer: { ...s.multiplayerServer, ...updates } }));
   const updateChatSettings = (updates: Partial<ChatSettings>) => setSettings(s => ({
@@ -594,16 +715,19 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
   });
   const setActiveEngineId = (activeEngineId: EngineId) => setSettings(s => ({ ...s, activeEngineId }));
-  const registerBot = (config: CustomBotConfig) => setSettings(s => ({ ...s, registeredBots: [...s.registeredBots, config] }));
+  const registerBot = (config: CustomBotConfig) => setSettings(s => {
+    const duplicate = s.registeredBots.some(bot => bot.id === config.id || bot.path === config.path);
+    return duplicate ? s : { ...s, registeredBots: [...s.registeredBots, config] };
+  });
   const updateBot = (id: string, updates: Partial<CustomBotConfig>) => setSettings(s => ({
     ...s,
     registeredBots: s.registeredBots.map(bot =>
-      bot.id === id && bot.type !== 'mock' ? { ...bot, ...updates, id: bot.id } : bot
+      bot.id === id && !bot.builtin ? { ...bot, ...updates, id: bot.id } : bot
     )
   }));
   const removeBot = (id: string) => setSettings(s => ({
     ...s,
-    registeredBots: s.registeredBots.filter(b => b.id !== id),
+    registeredBots: s.registeredBots.filter(b => b.id !== id || b.builtin),
     activeEngineId: s.activeEngineId === id ? 'standard' : s.activeEngineId
   }));
   const updateLocalProfile = (updates: Partial<LocalPlayerProfile>) => setSettings(s => ({
@@ -653,6 +777,40 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     ...s,
     customEvents: s.customEvents.filter(eventDefinition => eventDefinition.id !== id)
   }));
+  const createAnimationDefinition = (definition: AnimationDefinition) => setSettings(s => ({
+    ...s,
+    animationDefinitions: s.animationDefinitions.some(animation => animation.id === definition.id)
+      ? s.animationDefinitions
+      : [...s.animationDefinitions, definition]
+  }));
+  const updateAnimationDefinition = (id: string, updates: Partial<AnimationDefinition>) => setSettings(s => ({
+    ...s,
+    animationDefinitions: s.animationDefinitions.map(animation =>
+      animation.id === id && !animation.builtin ? { ...animation, ...updates, id: animation.id, builtin: animation.builtin } : animation
+    )
+  }));
+  const deleteAnimationDefinition = (id: string) => setSettings(s => ({
+    ...s,
+    animationDefinitions: s.animationDefinitions.filter(animation => animation.id !== id || animation.builtin),
+    animationRules: s.animationRules.filter(rule => rule.animationId !== id),
+    pieceAnimations: s.pieceAnimations.defaultAnimationId === id
+      ? { ...s.pieceAnimations, defaultAnimationId: 'anim-slide', enabled: true, movementSpeedMs: 220, easing: 'ease-in-out' }
+      : s.pieceAnimations
+  }));
+  const createAnimationRule = (rule: AnimationRule) => setSettings(s => ({
+    ...s,
+    animationRules: s.animationRules.some(existing => existing.eventId === rule.eventId && existing.animationId === rule.animationId && existing.target === rule.target)
+      ? s.animationRules
+      : [...s.animationRules, rule]
+  }));
+  const updateAnimationRule = (id: string, updates: Partial<AnimationRule>) => setSettings(s => ({
+    ...s,
+    animationRules: s.animationRules.map(rule => rule.id === id ? { ...rule, ...updates, id: rule.id } : rule)
+  }));
+  const deleteAnimationRule = (id: string) => setSettings(s => ({
+    ...s,
+    animationRules: s.animationRules.filter(rule => rule.id !== id)
+  }));
   const mergeById = <T extends { id: string }>(existing: T[], incoming: T[]) => {
     const next = [...existing];
     incoming.forEach(item => {
@@ -669,7 +827,9 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     ...(updates.localProfile ? { localProfile: { ...s.localProfile, ...updates.localProfile } } : {}),
     ...(updates.multiplayerServer ? { multiplayerServer: { ...s.multiplayerServer, ...updates.multiplayerServer } } : {}),
     ...(updates.customRulesets ? { customRulesets: mergeById(s.customRulesets, updates.customRulesets) } : {}),
-    ...(updates.customEvents ? { customEvents: mergeById(s.customEvents, updates.customEvents) } : {})
+    ...(updates.customEvents ? { customEvents: mergeById(s.customEvents, updates.customEvents) } : {}),
+    ...(updates.animationDefinitions ? { animationDefinitions: mergeById(s.animationDefinitions, updates.animationDefinitions) } : {}),
+    ...(updates.animationRules ? { animationRules: mergeById(s.animationRules, updates.animationRules) } : {})
   }));
   const setThemeDraft = (themeDraft: Template | null) => setSettings(s => ({ ...s, themeDraft }));
   const setThemeEditorMode = (isThemeEditorMode: boolean) => setSettings(s => ({ ...s, isThemeEditorMode }));
@@ -688,7 +848,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   return (
-    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, importSettingsCategories, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
+    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updatePieceAnimations, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationDefinition, updateAnimationDefinition, deleteAnimationDefinition, createAnimationRule, updateAnimationRule, deleteAnimationRule, importSettingsCategories, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
       {children}
     </SettingsContext.Provider>
   );

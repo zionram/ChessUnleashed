@@ -1,15 +1,47 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Chess } from 'chess.js';
 import Square from './Square';
+import Piece from './Piece';
 import { calculatePressureMap, type SquarePressureMap, type PressureSource } from '../../utils/pressureEngine';
 import { useGame } from '../../context/GameContext';
 import { useSettings } from '../../context/SettingsContext';
+import { eventBus } from '../../events/EventBus';
 
 interface ChessBoardProps {
   onPieceSelect?: (pieceKey: string) => void;
   orientation?: 'w' | 'b';
   controlMode?: 'w' | 'b' | 'both';
 }
+
+const COLUMNS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+type BoardPiece = { type: string; color: string };
+type BoardPieceMap = Record<string, BoardPiece>;
+type MovingPieceAnimation = {
+  id: number;
+  from: string;
+  to: string;
+  piece: BoardPiece;
+  started: boolean;
+};
+type TriggeredAnimation = {
+  id: number;
+  animation: any;
+  target: string;
+  square?: string;
+  message?: string;
+};
+
+const piecesMatch = (a?: BoardPiece | null, b?: BoardPiece | null) =>
+  !!a && !!b && a.type === b.type && a.color === b.color;
+
+const getDisplayPosition = (square: string, orientation: 'w' | 'b') => {
+  const fileIndex = COLUMNS.indexOf(square[0]);
+  const rank = parseInt(square[1], 10);
+  const boardCol = orientation === 'b' ? 7 - fileIndex : fileIndex;
+  const boardRow = orientation === 'b' ? rank - 1 : 8 - rank;
+  return { x: boardCol * 12.5, y: boardRow * 12.5 };
+};
 
 const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode = 'both' }) => {
   const gameContext = useGame();
@@ -23,6 +55,25 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
   const [activePathSources, setActivePathSources] = useState<PressureSource[]>([]);
   const [pendingPromotion, setPendingPromotion] = useState<{ from: string; to: string } | null>(null);
   const [illegalMoveMsg, setIllegalMoveMsg] = useState<string | null>(null);
+  const [movingPiece, setMovingPiece] = useState<MovingPieceAnimation | null>(null);
+  const [triggeredAnimation, setTriggeredAnimation] = useState<TriggeredAnimation | null>(null);
+  const previousBoardMapRef = useRef<BoardPieceMap | null>(null);
+  const animationTimeoutRef = useRef<number | null>(null);
+  const triggeredAnimationTimeoutRef = useRef<number | null>(null);
+
+  const currentBoardMap = useMemo(() => {
+    if (settings.isThemeEditorMode) return {};
+    const board = engine.getBoardAtFen(viewFen);
+    const nextMap: BoardPieceMap = {};
+    if (!board) return nextMap;
+    for (let r = 0; r < 8; r += 1) {
+      for (let c = 0; c < 8; c += 1) {
+        const piece = board[r][c];
+        if (piece) nextMap[`${COLUMNS[c]}${8 - r}`] = piece;
+      }
+    }
+    return nextMap;
+  }, [engine, settings.isThemeEditorMode, viewFen]);
 
   useEffect(() => {
     try {
@@ -32,6 +83,83 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
       console.error('Error calculating pressure map:', e);
     }
   }, [viewFen]);
+
+  useEffect(() => () => {
+    if (animationTimeoutRef.current) window.clearTimeout(animationTimeoutRef.current);
+    if (triggeredAnimationTimeoutRef.current) window.clearTimeout(triggeredAnimationTimeoutRef.current);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: any) => {
+      const payload = event.payload;
+      if (!payload?.animation) return;
+      const target = payload.target as string;
+      const square = target === 'source-square'
+        ? payload.from
+        : target === 'target-square' || target === 'moved-piece' || target === 'captured-piece'
+          ? payload.to
+          : undefined;
+      const id = Date.now();
+      setTriggeredAnimation({
+        id,
+        animation: payload.animation,
+        target,
+        square,
+        message: payload.eventName
+      });
+      if (triggeredAnimationTimeoutRef.current) window.clearTimeout(triggeredAnimationTimeoutRef.current);
+      triggeredAnimationTimeoutRef.current = window.setTimeout(() => {
+        setTriggeredAnimation(current => current?.id === id ? null : current);
+      }, Math.max(180, (payload.animation.durationMs || 300) + (payload.animation.delayMs || 0) + 120));
+    };
+    eventBus.subscribe('animation.play', handler);
+    return () => eventBus.unsubscribe('animation.play', handler);
+  }, []);
+
+  useEffect(() => {
+    const previousBoardMap = previousBoardMapRef.current;
+    previousBoardMapRef.current = currentBoardMap;
+
+    if (!previousBoardMap || settings.isThemeEditorMode || !settings.pieceAnimations.enabled) {
+      setMovingPiece(null);
+      return;
+    }
+
+    const changedToSquares = Object.entries(currentBoardMap)
+      .filter(([square, piece]) => !piecesMatch(previousBoardMap[square], piece))
+      .map(([square, piece]) => ({ square, piece }));
+    const changedFromSquares = Object.entries(previousBoardMap)
+      .filter(([square, piece]) => !piecesMatch(currentBoardMap[square], piece))
+      .map(([square, piece]) => ({ square, piece }));
+    const target = changedToSquares.find(({ piece }) =>
+      changedFromSquares.some(source => source.piece.color === piece.color)
+    );
+    const source = target
+      ? changedFromSquares.find(({ piece }) => piece.color === target.piece.color && (piece.type === target.piece.type || piece.type === 'p'))
+      : null;
+
+    if (!target || !source || source.square === target.square) {
+      setMovingPiece(null);
+      return;
+    }
+
+    const wasCapture = !!previousBoardMap[target.square] && previousBoardMap[target.square]?.color !== target.piece.color;
+    const wasPromotion = source.piece.type !== target.piece.type;
+    if ((wasCapture && !settings.pieceAnimations.captureAnimation) || (wasPromotion && !settings.pieceAnimations.promotionAnimation)) {
+      setMovingPiece(null);
+      return;
+    }
+
+    if (animationTimeoutRef.current) window.clearTimeout(animationTimeoutRef.current);
+    const id = Date.now();
+    setMovingPiece({ id, from: source.square, to: target.square, piece: target.piece, started: false });
+    window.requestAnimationFrame(() => {
+      setMovingPiece(current => current?.id === id ? { ...current, started: true } : current);
+    });
+    animationTimeoutRef.current = window.setTimeout(() => {
+      setMovingPiece(current => current?.id === id ? null : current);
+    }, settings.pieceAnimations.movementSpeedMs + 80);
+  }, [currentBoardMap, settings.isThemeEditorMode, settings.pieceAnimations]);
 
   const legalMoves = useMemo(() => {
     if (!selectedSquare || !isViewingCurrent || settings.isThemeEditorMode) return [];
@@ -119,7 +247,6 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
 
   const squares = useMemo(() => {
     const arr = [];
-    const COLUMNS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     const rows = [0, 1, 2, 3, 4, 5, 6, 7];
     const cols = [0, 1, 2, 3, 4, 5, 6, 7];
 
@@ -133,12 +260,10 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
       'a7': { type: 'r', color: 'b' }, 'b7': { type: 'n', color: 'b' }, 'c7': { type: 'b', color: 'b' }, 'd7': { type: 'q', color: 'b' }, 'e7': { type: 'k', color: 'b' }, 'f7': { type: 'p', color: 'b' }
     };
 
-    const board = settings.isThemeEditorMode ? null : engine.getBoardAtFen(viewFen);
-
     for (const r of rows) {
       for (const c of cols) {
         const squareName = `${COLUMNS[c]}${8 - r}`;
-        const piece = settings.isThemeEditorMode ? EDITOR_LAYOUT[squareName] : (board ? board[r][c] : null);
+        const piece = settings.isThemeEditorMode ? EDITOR_LAYOUT[squareName] : (currentBoardMap[squareName] ?? null);
         const pressure = settings.isThemeEditorMode ? { white: [], black: [] } : (pressureMap[squareName] || { white: [], black: [] });
         const isDark = (r + c) % 2 === 1;
 
@@ -156,14 +281,58 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
             onBadgeLeave={() => setActivePathSources([])}
             isSelected={selectedSquare === squareName}
             isMoveTarget={legalMoves.includes(squareName)}
+            hidePiece={movingPiece?.to === squareName}
           />
         );
       }
     }
     return arr;
-  }, [viewFen, pressureMap, activePathSources, selectedSquare, legalMoves, settings.template, settings.isThemeEditorMode, engine, orientation]);
+  }, [currentBoardMap, pressureMap, activePathSources, selectedSquare, legalMoves, settings.template, settings.isThemeEditorMode, orientation, movingPiece?.to]);
 
   const { boardColors, boardOverlay } = settings.template;
+  const getTriggeredAnimationName = (preset: string) => `event-animation-${preset}`;
+  const renderTriggeredAnimation = () => {
+    if (!triggeredAnimation) return null;
+    const { animation, target, square } = triggeredAnimation;
+    const isBoardTarget = target === 'board' || animation.targetType === 'board' || animation.preset === 'board-flash';
+    const squarePosition = square ? getDisplayPosition(square, orientation) : { x: 43.75, y: 43.75 };
+    const animationStyle = `${getTriggeredAnimationName(animation.preset)} ${Math.max(80, animation.durationMs || 300)}ms ${animation.easing || 'ease-in-out'} ${animation.delayMs || 0}ms ${animation.repeatCount || 1}`;
+
+    if (isBoardTarget) {
+      return (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            zIndex: 45,
+            borderRadius: '4px',
+            animation: animationStyle
+          }}
+        />
+      );
+    }
+
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          left: `calc(10px + ${squarePosition.x}%)`,
+          top: `calc(10px + ${squarePosition.y}%)`,
+          width: 'calc((100% - 20px) / 8)',
+          height: 'calc((100% - 20px) / 8)',
+          pointerEvents: 'none',
+          zIndex: 46,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: animationStyle
+        }}
+      >
+        <div style={{ width: '62%', height: '62%', borderRadius: '999px', border: '3px solid rgba(79,70,229,0.8)', background: 'rgba(79,70,229,0.12)' }} />
+      </div>
+    );
+  };
 
   // Analysis display calculation
   const effectiveColor = analysisPerspective === 'you' ? (multiplayer.playerColor || gameState.turn) : analysisPerspective;
@@ -172,6 +341,18 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
 
   return (
     <div style={{ position: 'relative' }}>
+      <style>{`
+        @keyframes event-animation-snap { from { opacity: 0.9; } to { opacity: 0; } }
+        @keyframes event-animation-slide { from { transform: translateX(-18px); opacity: 0.3; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes event-animation-fast-slide { from { transform: translateX(-24px); opacity: 0.3; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes event-animation-bounce { 0% { transform: scale(0.7); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
+        @keyframes event-animation-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+        @keyframes event-animation-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+        @keyframes event-animation-pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.35); opacity: 1; } }
+        @keyframes event-animation-capture-pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.35); opacity: 1; } 100% { transform: scale(1); opacity: 0.75; } }
+        @keyframes event-animation-promotion-glow { 0%, 100% { box-shadow: 0 0 0 rgba(250,204,21,0); } 50% { box-shadow: 0 0 26px rgba(250,204,21,0.95); } }
+        @keyframes event-animation-board-flash { 0%, 100% { background: rgba(250,204,21,0); } 50% { background: rgba(250,204,21,0.32); } }
+      `}</style>
       {/* Engine Assist UI Overlay */}
       {settings.trainingWheels && !settings.isThemeEditorMode && (
         <div style={{
@@ -240,6 +421,36 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
         }}
       >
         {squares}
+        {movingPiece && (() => {
+          const from = getDisplayPosition(movingPiece.from, orientation);
+          const to = getDisplayPosition(movingPiece.to, orientation);
+          const x = movingPiece.started ? to.x : from.x;
+          const y = movingPiece.started ? to.y : from.y;
+
+          return (
+            <div
+              key={movingPiece.id}
+              style={{
+                position: 'absolute',
+                left: `calc(10px + ${x}%)`,
+                top: `calc(10px + ${y}%)`,
+                width: 'calc((100% - 20px) / 8)',
+                height: 'calc((100% - 20px) / 8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+                zIndex: 40,
+                transition: `left ${settings.pieceAnimations.movementSpeedMs}ms ${settings.pieceAnimations.easing}, top ${settings.pieceAnimations.movementSpeedMs}ms ${settings.pieceAnimations.easing}`
+              }}
+            >
+              <div style={{ width: '85%', height: '85%' }}>
+                <Piece type={movingPiece.piece.type} color={movingPiece.piece.color} comfort={0} />
+              </div>
+            </div>
+          );
+        })()}
+        {renderTriggeredAnimation()}
       </div>
 
       {illegalMoveMsg && (

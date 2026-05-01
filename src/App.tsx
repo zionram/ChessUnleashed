@@ -26,6 +26,8 @@ import BotsView from './views/BotsView';
 import TimerSettingsView from './views/TimerSettingsView';
 import TimerView from './views/TimerView';
 import PlatformAppearanceView from './views/PlatformAppearanceView';
+import AnimationSettingsView from './views/AnimationSettingsView';
+import AnimationBuilderView from './views/AnimationBuilderView';
 import ProfileView from './views/ProfileView';
 import RuleBuilderView from './views/RuleBuilderView';
 import CustomGameRuntimeView from './views/CustomGameRuntimeView';
@@ -74,6 +76,8 @@ registerView({ id: 'paths', name: 'Paths', component: PathsView, defaultEnabled:
 registerView({ id: 'layers', name: 'Layers', component: LayersView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'audio', name: 'Audio Settings', component: AudioView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'platform-appearance', name: 'Platform UI', component: PlatformAppearanceView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'animation-settings', name: 'Animation', component: AnimationSettingsView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'animation-builder', name: 'Animation Builder', component: AnimationBuilderView, defaultEnabled: false, position: 'right' });
 
 function MainLayout() {
   const { settings, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
@@ -231,6 +235,8 @@ function MainLayout() {
       case 'toggle-troubleshooter': toggleView('troubleshooter'); break;
       case 'toggle-audio': toggleView('audio'); break;
       case 'toggle-platform-appearance': toggleView('platform-appearance'); break;
+      case 'toggle-animation-settings': toggleView('animation-settings'); break;
+      case 'toggle-animation-builder': toggleView('animation-builder'); break;
       case 'toggle-sound-editor': toggleView('sound-editor'); break;
       case 'toggle-multiplayer': toggleView('multiplayer'); break;
       case 'toggle-computer': toggleView('computer-opponent'); break;

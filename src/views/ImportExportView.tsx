@@ -4,6 +4,8 @@ import { useAudio } from '../context/AudioContext';
 import { useSettings } from '../context/SettingsContext';
 import {
   buildExperiencePackage,
+  createExperiencePackageZip,
+  readExperiencePackageZip,
   validateExperiencePackage,
   type ExperiencePackage,
   type ExperiencePackageContents
@@ -24,6 +26,8 @@ type PendingImport = {
   version?: string;
   contents: ExperiencePackageContents;
   source: unknown;
+  file?: File;
+  requiresAssetHydration?: boolean;
 };
 
 type PackageCategoryId = keyof ExperiencePackageContents;
@@ -45,6 +49,8 @@ const PACKAGE_CATEGORY_MANIFEST: PackageCategoryManifestItem[] = [
   { id: 'soundRules', label: 'Sound Rules', description: 'Event-to-sound rule definitions.', exportable: true, applySupported: true },
   { id: 'audioPlaylists', label: 'Audio Playlists', description: 'Background music playlist and selected track metadata.', exportable: true, applySupported: true },
   { id: 'customEvents', label: 'Custom Events', description: 'Event Builder definitions used by Sound Rules and Event Log.', exportable: true, applySupported: true },
+  { id: 'animationDefinitions', label: 'Animation Definitions', description: 'Animation Builder presets callable by custom events.', exportable: true, applySupported: true },
+  { id: 'animationRules', label: 'Event Animation Rules', description: 'Links custom events to named Animation Builder definitions.', exportable: true, applySupported: true },
   { id: 'customRulesets', label: 'Custom Rulesets / Custom Games', description: 'Approved reusable custom game definitions.', exportable: true, applySupported: true },
   { id: 'botSettings', label: 'Bot Settings', description: 'Bot behavior, difficulty, personality, and AI preferences.', exportable: true, applySupported: true },
   { id: 'registeredBots', label: 'Registered Bots', description: 'Custom bot registrations such as local worker engine paths.', exportable: true, applySupported: true },
@@ -73,6 +79,8 @@ const DEFAULT_EXPORT_CATEGORIES: Array<keyof ExperiencePackageContents> = [
   'soundRules',
   'audioPlaylists',
   'customEvents',
+  'animationDefinitions',
+  'animationRules',
   'botSettings',
   'registeredBots',
   'personalityProfiles',
@@ -211,7 +219,9 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
           name: experiencePackage.metadata.name,
           version: experiencePackage.metadata.version,
           contents: experiencePackage.contents,
-          source: experiencePackage
+          source: experiencePackage,
+          file: file.name.toLowerCase().endsWith('.zip') ? file : undefined,
+          requiresAssetHydration: file.name.toLowerCase().endsWith('.zip') && !!experiencePackage.assetManifest?.assets.length
         };
         setPendingImport(nextImport);
         setSelectedImportCategories(Object.keys(nextImport.contents).filter(categoryId =>
@@ -237,9 +247,26 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
     }
   };
 
-  const applyPackage = () => {
+  const applyPackage = async () => {
     if (!pendingImport) return;
-    const { contents } = pendingImport;
+    let activeImport = pendingImport;
+    if (pendingImport.requiresAssetHydration && pendingImport.file) {
+      try {
+        const hydrated = await readExperiencePackageZip(pendingImport.file, { loadAssets: true });
+        activeImport = {
+          ...pendingImport,
+          contents: hydrated.package.contents,
+          source: hydrated.package
+        };
+        if (hydrated.warnings.length > 0) {
+          setMessage(`Package applied with asset warnings: ${hydrated.warnings.join(' ')}`);
+        }
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Failed to load package assets.');
+        return;
+      }
+    }
+    const { contents } = activeImport;
 
     if (selectedImportCategories.includes('template') && contents.template) updateTemplate(contents.template);
     if (selectedImportCategories.includes('uiAppearance') && contents.uiAppearance) updateUIAppearance(contents.uiAppearance);
@@ -280,15 +307,17 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
       ...(selectedImportCategories.includes('localProfile') && contents.localProfile ? { localProfile: contents.localProfile } : {}),
       ...(selectedImportCategories.includes('multiplayerServer') && contents.multiplayerServer ? { multiplayerServer: contents.multiplayerServer } : {}),
       ...(selectedImportCategories.includes('customRulesets') && contents.customRulesets ? { customRulesets: contents.customRulesets } : {}),
-      ...(selectedImportCategories.includes('customEvents') && contents.customEvents ? { customEvents: contents.customEvents } : {})
+      ...(selectedImportCategories.includes('customEvents') && contents.customEvents ? { customEvents: contents.customEvents } : {}),
+      ...(selectedImportCategories.includes('animationDefinitions') && contents.animationDefinitions ? { animationDefinitions: contents.animationDefinitions } : {}),
+      ...(selectedImportCategories.includes('animationRules') && contents.animationRules ? { animationRules: contents.animationRules } : {})
     });
     setThemeDraft(null);
-    setMessage(`Applied package: ${pendingImport.name}`);
+    setMessage(`Applied package: ${activeImport.name}`);
     setPendingImport(null);
     closeOverlay?.();
   };
 
-  const exportPackage = () => {
+  const exportPackage = async () => {
     const experiencePackage = buildExperiencePackage(settings, {
       audio: getCurrentProfile()
     });
@@ -305,11 +334,17 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
       return;
     }
 
-    const blob = new Blob([JSON.stringify(exportPackage, null, 2)], { type: 'application/json' });
+    let blob: Blob;
+    try {
+      blob = await createExperiencePackageZip(exportPackage);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Failed to prepare package assets.');
+      return;
+    }
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'chess-unleashed-experience.json';
+    link.download = 'chess-unleashed-experience.zip';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -10,7 +10,7 @@ const fontOptions = [
 
 const PlatformAppearanceView: React.FC = () => {
   const { settings, updateUIAppearance } = useSettings();
-  const { accentColor, baseFontSize, density, fontFamily, showTipsBoard, tipsRotationSeconds } = settings.uiAppearance;
+  const { accentColor, baseFontSize, density, fontFamily, showTipsBoard, tipsRotationSeconds, welcomePanelColor } = settings.uiAppearance;
 
   return (
     <div className="view-container">
@@ -85,6 +85,25 @@ const PlatformAppearanceView: React.FC = () => {
               onChange={(e) => updateUIAppearance({ tipsRotationSeconds: parseInt(e.target.value, 10) })}
               style={{ width: '110px' }}
             />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '0.85rem' }}>Welcome Panel Color</span>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="color"
+                value={welcomePanelColor || '#ffffff'}
+                onChange={(e) => updateUIAppearance({ welcomePanelColor: e.target.value })}
+                style={{ width: '44px', height: '28px', padding: 0, border: 'none', background: 'none' }}
+              />
+              <button
+                type="button"
+                onClick={() => updateUIAppearance({ welcomePanelColor: '#ffffff' })}
+                style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontSize: '0.72rem' }}
+              >
+                Reset
+              </button>
+            </div>
           </div>
         </div>
       </div>

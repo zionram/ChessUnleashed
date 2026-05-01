@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron": "electron .",
+    "package": "npm run build && electron-builder --dir",
     "dist": "npm run build && electron-builder",
     "dist:portable": "npm run build && electron-builder --win portable",
     "electron:debug": "npm run build && electron ."
@@ -20,6 +21,7 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
+      "server/chessServer.js",
       "package.json",
       "!**/.git/**",
       "!**/node_modules/.cache/**",
@@ -28,7 +30,16 @@
       "!tsconfig.json"
     ],
     "win": {
-      "target": "nsis"
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "directories": {
       "output": "release"

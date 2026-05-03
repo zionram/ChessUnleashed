@@ -24,6 +24,7 @@ export interface ExperiencePackageMetadata {
   version: string;
   description?: string;
   author?: string;
+  aiGenerated?: boolean;
 }
 
 export interface ExperiencePackageRules {
@@ -63,6 +64,7 @@ export interface ExperienceAssetManifestEntry {
   category: ExperienceAssetCategory;
   packagePath: string;
   originalDisplayName: string;
+  sourceUrl?: string;
 }
 
 export interface ExperienceAssetManifest {
@@ -280,21 +282,24 @@ const walkTemplateAssetUrls = (
   visitPieceConfig(template.pieceTheme, 'pieces');
   visitPieceConfig(template.whitePieceTheme, 'white-pieces');
   visitPieceConfig(template.blackPieceTheme, 'black-pieces');
-  visit(template.boardOverlay.image, 'boards', 'board-overlay', nextUrl => {
-    template.boardOverlay.image = nextUrl;
-  });
-  visit(template.background.image, 'boards', 'background', nextUrl => {
-    template.background.image = nextUrl;
-  });
-  visit(template.frameLayer.image, 'boards', 'frame-layer', nextUrl => {
-    template.frameLayer.image = nextUrl;
-  });
-  Object.entries(template.audioControllerAppearance.controlImages ?? {}).forEach(([control, url]) => {
+  const overlay = template.boardOverlay;
+  if (overlay) {
+    visit(overlay.image, 'boards', 'board-overlay', nextUrl => { overlay.image = nextUrl; });
+  }
+  const background = template.background;
+  if (background) {
+    visit(background.image, 'boards', 'background', nextUrl => { background.image = nextUrl; });
+  }
+  const frameLayer = template.frameLayer;
+  if (frameLayer) {
+    visit(frameLayer.image, 'boards', 'frame-layer', nextUrl => { frameLayer.image = nextUrl; });
+  }
+  const audioCtrl = template.audioControllerAppearance;
+  Object.entries(audioCtrl?.controlImages ?? {}).forEach(([control, url]) => {
     visit(url || '', 'ui', `audio-controller-${control}`, nextUrl => {
-      template.audioControllerAppearance.controlImages = {
-        ...(template.audioControllerAppearance.controlImages ?? {}),
-        [control]: nextUrl
-      };
+      if (audioCtrl) {
+        audioCtrl.controlImages = { ...(audioCtrl.controlImages ?? {}), [control]: nextUrl };
+      }
     });
   });
 };
@@ -720,4 +725,10 @@ export const validateExperiencePackage = (pkg: unknown): ExperiencePackageValida
     valid: issues.length === 0,
     issues
   };
+};
+
+export const makePackagePortable = (pkg: ExperiencePackage): ExperiencePackage => {
+  const json = JSON.stringify(pkg);
+  const portable = json.replace(/"local-asset:\/\/[^/]+\/([^"\\]+)"/g, '"package://$1"');
+  return JSON.parse(portable) as ExperiencePackage;
 };

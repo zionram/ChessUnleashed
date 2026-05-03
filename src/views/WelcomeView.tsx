@@ -18,8 +18,10 @@ const WelcomeView: React.FC = () => {
     welcomePanelColor,
     welcomePanelFrameColor,
     welcomePanelFrameMode,
-    accentColor
+    accentColor,
+    sidebarStyle
   } = settings.uiAppearance;
+  const isGlass = sidebarStyle === 'glass';
   const messages = useMemo(
     () => (tipsMessages.length ? tipsMessages : fallbackMessages),
     [tipsMessages]
@@ -80,14 +82,14 @@ const WelcomeView: React.FC = () => {
             Close
           </button>
         </div>
-        <div style={{ fontSize: '0.78rem', color: '#34495e', lineHeight: 1.35, minHeight: 44 }}>
+        <div style={{ fontSize: '0.78rem', color: isGlass ? '#c8d0d9' : '#34495e', lineHeight: 1.35, minHeight: 44 }}>
           {messages[messageIndex]}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
           <button onClick={showPrevious} disabled={messages.length < 2} style={{ fontSize: '0.7rem', padding: '4px 8px' }}>
             Previous
           </button>
-          <span style={{ fontSize: '0.65rem', color: '#7f8c8d' }}>
+          <span style={{ fontSize: '0.65rem', color: isGlass ? '#7f8da3' : '#7f8c8d' }}>
             {messageIndex + 1} / {messages.length}
           </span>
           <button onClick={showNext} disabled={messages.length < 2} style={{ fontSize: '0.7rem', padding: '4px 8px' }}>

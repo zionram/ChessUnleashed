@@ -23,10 +23,8 @@ const PlatformAppearanceView: React.FC = () => {
     welcomePanelFrameMode,
     welcomeSidebarContainerColor,
     welcomeSidebarContainerFrameColor,
-    welcomeSidebarContainerFrameMode,
-    sidebarStyle
+    welcomeSidebarContainerFrameMode
   } = settings.uiAppearance;
-  const isGlass = sidebarStyle === 'glass';
 
   const applyPreset = (presetId: string) => {
     const preset = UI_APPEARANCE_PRESETS.find(p => p.id === presetId);
@@ -36,8 +34,8 @@ const PlatformAppearanceView: React.FC = () => {
 
   return (
     <div className="view-container">
-      <div style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: `1px solid ${isGlass ? 'rgba(148,163,184,0.16)' : '#e5e7eb'}` }}>
-        <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: isGlass ? '#94a3b8' : '#374151' }}>Presets</div>
+      <div style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: '1px solid #e5e7eb' }}>
+        <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: '#374151' }}>Presets</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {UI_APPEARANCE_PRESETS.map(preset => (
             <button
@@ -48,6 +46,8 @@ const PlatformAppearanceView: React.FC = () => {
                 padding: '5px 12px',
                 fontSize: '0.78rem',
                 borderRadius: 4,
+                border: '1px solid #d0d7de',
+                background: '#f6f8fa',
                 cursor: 'pointer',
                 fontWeight: 500
               }}

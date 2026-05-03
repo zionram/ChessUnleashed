@@ -27,20 +27,17 @@ const getGroupLabel = (group: WorkspacePanel['group']) => ({
   tools: 'Tools'
 }[group]);
 
-const getShortPanelName = (name: string) => {
-  const map: Record<string, string> = {
-    'Platform UI': 'Platform',
-    'Platform Appearance': 'Platform',
-    'Audio Settings': 'Audio',
-    'Sound Editor': 'Sounds',
-    'Bot Manager': 'Bots',
-    'Theme Editor': 'Theme',
-    'Piece Editor': 'Pieces',
-    'Package Manager': 'Packages',
-    'Import / Export': 'Packages',
-    'Event Log': 'Events'
+const getPanelTabName = (panel: WorkspacePanel) => {
+  const shortById: Record<string, string> = {
+    'platform-appearance': 'Platform',
+    'audio': 'Audio',
+    'sound-editor': 'Sound',
+    'bot-manager': 'Bots',
+    'package-manager': 'Packages',
+    'theme-editor': 'Editor',
+    'event-log': 'Events'
   };
-  return map[name] ?? name.replace(/\s+(Settings|Manager|Editor|View)$/i, '');
+  return shortById[panel.id] ?? panel.name.replace(/ Settings$/i, '').replace(/ Manager$/i, '').replace(/ Editor$/i, '');
 };
 
 const PanelContent: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => {
@@ -68,44 +65,6 @@ const ViewManager: React.FC = () => {
 
   const isMobile = window.innerWidth <= 768;
   const buttonRadius = { rounded: 6, square: 2, minimal: 0 }[settings.uiAppearance.buttonStyle];
-  const isGlass = settings.uiAppearance.sidebarStyle === 'glass';
-
-  const tabStripStyle: React.CSSProperties = {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'stretch',
-    gap: '5px',
-    padding: '6px 4px 8px',
-    overflowX: 'hidden',
-    overflowY: 'visible',
-    scrollbarWidth: 'none'
-  };
-
-  const getTabStyle = (active: boolean): React.CSSProperties => ({
-    flex: '1 1 72px',
-    minWidth: '64px',
-    maxWidth: '96px',
-    padding: '5px 7px',
-    borderRadius: '7px 7px 0 0',
-    border: active
-      ? `1px solid ${settings.uiAppearance.accentColor}`
-      : isGlass
-        ? '1px solid rgba(148, 163, 184, 0.18)'
-        : '1px solid #d0d7de',
-    borderBottom: active
-      ? `2px solid ${settings.uiAppearance.accentColor}`
-      : isGlass
-        ? '1px solid rgba(148, 163, 184, 0.14)'
-        : '1px solid #d0d7de',
-    background: active
-      ? (isGlass ? 'rgba(14, 47, 72, 0.92)' : '#eef6ff')
-      : (isGlass ? 'rgba(10, 18, 32, 0.82)' : '#f6f8fa'),
-    color: isGlass ? '#e5edf7' : '#1f2937',
-    cursor: 'pointer',
-    textAlign: 'left',
-    boxShadow: active && isGlass ? `0 0 0 1px rgba(56, 189, 248, 0.12), 0 0 14px rgba(56, 189, 248, 0.14)` : undefined,
-    overflow: 'hidden'
-  });
 
   const ToggleSwitch = ({ id, active }: { id: string, active: boolean }) => (
     <div
@@ -170,8 +129,8 @@ const ViewManager: React.FC = () => {
   if (panels.length === 0) {
     return (
       <div className="view-manager view-manager-empty">
-        <div className="panel-tab-strip" aria-label="Workspace panel tabs" style={tabStripStyle}>
-          <button className="panel-tab active" type="button" style={getTabStyle(true)}>Workspace</button>
+        <div className="panel-tab-strip" aria-label="Workspace panel tabs">
+          <button className="panel-tab active" type="button">Workspace</button>
         </div>
         <div className="active-view-panel workspace-empty-panel">
           <h4>Workspace Panels</h4>
@@ -186,47 +145,17 @@ const ViewManager: React.FC = () => {
 
   return (
     <div className="view-manager workspace-tab-manager">
-      <div className="panel-tab-strip" aria-label="Workspace panel tabs" style={tabStripStyle}>
+      <div className="panel-tab-strip" aria-label="Workspace panel tabs">
         {panels.map(panel => (
           <button
             key={panel.id}
             type="button"
             className={`panel-tab ${panel.id === activePanel.id ? 'active' : ''}`}
-            style={getTabStyle(panel.id === activePanel.id)}
             onClick={() => setActiveTabId(panel.id)}
             title={`${getGroupLabel(panel.group)}: ${panel.name}`}
           >
-            <span
-              className="panel-tab-group"
-              style={{
-                display: 'block',
-                fontSize: '0.52rem',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                opacity: 0.62,
-                lineHeight: 1,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-            >
-              {getGroupLabel(panel.group)}
-            </span>
-            <span
-              className="panel-tab-name"
-              style={{
-                display: 'block',
-                marginTop: '2px',
-                fontSize: '0.72rem',
-                lineHeight: 1.1,
-                fontWeight: 700,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-            >
-              {getShortPanelName(panel.name)}
-            </span>
+            <span className="panel-tab-group">{getGroupLabel(panel.group)}</span>
+            <span className="panel-tab-name">{getPanelTabName(panel)}</span>
           </button>
         ))}
       </div>

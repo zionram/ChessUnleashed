@@ -604,10 +604,6 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
         ...defaults.template.blackPieceTheme!,
         ...saved.template?.blackPieceTheme
       },
-      boardOverlay: {
-        ...defaults.template.boardOverlay,
-        ...saved.template?.boardOverlay
-      },
       background: {
         ...defaults.template.background,
         ...saved.template?.background

@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm.cmd run *)",
+      "Bash(not exist *)",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); console.log\\('Sparkles' in l ? 'ok' : 'missing'\\);\")",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs grep *)",
+      "PowerShell(Head *)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\GProjects\\\\ChessUnleashed\\\\src\" -Recurse -File | Where-Object {$_.Name -match '\\(util|helper|download|export|canvas|image\\)' -and $_.Extension -match '\\\\.\\(ts|tsx|js|jsx\\)$'} | Select-Object -ExpandProperty FullName)",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\GProjects\\\\ChessUnleashed\\\\src\" -Recurse -File -Name | Where-Object {$_ -match '\\(Board|Canvas|Render|Export\\)' -and $_ -match '\\\\.\\(tsx?|jsx?\\)$'})",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

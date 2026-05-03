@@ -19,3 +19,21 @@ contextBridge.exposeInMainWorld('chessUnleashedSplash', {
     return () => splashListeners.delete(listener);
   }
 });
+
+const lanGameListeners = new Set();
+
+ipcRenderer.on('chess-lan:games-updated', (_event, games) => {
+  lanGameListeners.forEach(listener => listener(games));
+});
+
+contextBridge.exposeInMainWorld('chessUnleashedLan', {
+  startListening: () => ipcRenderer.invoke('chess-lan:start-listening'),
+  getServerInfo: () => ipcRenderer.invoke('chess-lan:get-server-info'),
+  startBroadcast: (payload) => ipcRenderer.invoke('chess-lan:start-broadcast', payload),
+  stopBroadcast: () => ipcRenderer.invoke('chess-lan:stop-broadcast'),
+  onGamesUpdated: (listener) => {
+    if (typeof listener !== 'function') return () => {};
+    lanGameListeners.add(listener);
+    return () => lanGameListeners.delete(listener);
+  }
+});

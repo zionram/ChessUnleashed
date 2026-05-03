@@ -18,7 +18,7 @@ const DEFAULT_AUDIO_CONTROLLER_APPEARANCE = {
 } as const;
 
 const AudioView: React.FC = () => {
-  const {
+  const { 
     masterVolume, setMasterVolume, musicVolume, setMusicVolume, sfxVolume, setSfxVolume,
     bgMusic, bgMusicName, playlistName, isMusicPlaying, musicProgress, musicDuration,
     playlist, currentTrackIndex, playbackMode,
@@ -38,57 +38,6 @@ const AudioView: React.FC = () => {
   const trackName = bgMusicName || (bgMusic ? 'Custom music' : 'No track loaded');
   const activePlaylistName = playlistName || 'Single Track';
   const soundEditorOpen = settings.activeViews.includes('sound-editor');
-  const isGlass = settings.uiAppearance.sidebarStyle === 'glass';
-  const accent = settings.uiAppearance.accentColor;
-
-  const sectionStyle: React.CSSProperties = {
-    marginBottom: '20px',
-    padding: '12px',
-    border: isGlass ? `1px solid ${accent}33` : '1px solid #d7e0e7',
-    borderRadius: '8px',
-    background: isGlass ? 'rgba(7, 17, 31, 0.82)' : '#fff',
-    color: isGlass ? '#e6f4ff' : undefined,
-    boxShadow: isGlass ? 'inset 0 0 0 1px rgba(255,255,255,0.02)' : undefined
-  };
-
-  const cardStyle: React.CSSProperties = {
-    padding: '10px',
-    border: isGlass ? `1px solid ${accent}24` : '1px solid #e3e8ee',
-    borderRadius: '8px',
-    background: isGlass ? 'rgba(10, 20, 38, 0.9)' : '#fafbfc',
-    marginBottom: '12px',
-    color: isGlass ? '#e2e8f0' : undefined
-  };
-
-  const nestedCardStyle: React.CSSProperties = {
-    padding: '8px',
-    border: isGlass ? `1px solid ${accent}22` : '1px solid #e3e8ee',
-    borderRadius: '6px',
-    background: isGlass ? 'rgba(7, 17, 31, 0.88)' : '#fafbfc',
-    color: isGlass ? '#dbeafe' : undefined
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    borderRadius: '4px',
-    border: isGlass ? `1px solid ${accent}35` : undefined,
-    background: isGlass ? 'rgba(15, 23, 42, 0.92)' : undefined,
-    color: isGlass ? '#e5edf7' : undefined,
-    cursor: 'pointer',
-    boxShadow: isGlass ? 'inset 0 0 0 1px rgba(255,255,255,0.02)' : undefined
-  };
-
-  const mutedTextStyle: React.CSSProperties = {
-    color: isGlass ? '#94a3b8' : '#5d6d7e'
-  };
-
-  const selectStyle: React.CSSProperties = {
-    padding: '6px',
-    fontSize: '0.78rem',
-    borderRadius: '4px',
-    border: isGlass ? `1px solid ${accent}30` : undefined,
-    background: isGlass ? 'rgba(15, 23, 42, 0.95)' : undefined,
-    color: isGlass ? '#e5edf7' : undefined
-  };
 
   useEffect(() => {
     const handleRulePlayed = (event: GameEvent) => {
@@ -177,66 +126,66 @@ const AudioView: React.FC = () => {
     <div className="view-container">
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ display: 'flex', gap: '5px' }}>
-          <button onClick={saveProfileFile} title="Save profile as JSON" style={{ ...buttonStyle, fontSize: '0.65rem', padding: '2px 8px' }}>Save</button>
-          <button onClick={() => document.getElementById('prof-load-in')?.click()} title="Load profile from JSON" style={{ ...buttonStyle, fontSize: '0.65rem', padding: '2px 8px' }}>Load</button>
+          <button onClick={saveProfileFile} title="Save profile as JSON" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>Save</button>
+          <button onClick={() => document.getElementById('prof-load-in')?.click()} title="Load profile from JSON" style={{ fontSize: '0.65rem', padding: '2px 8px' }}>Load</button>
           <input id="prof-load-in" type="file" accept=".json" onChange={loadProfileFile} style={{ display: 'none' }} />
         </div>
       </div>
 
-      <section style={sectionStyle}>
+      <section className="cu-audio-card" style={{ marginBottom: '20px', padding: '12px', border: '1px solid #d7e0e7', borderRadius: '8px', background: '#fff' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
-          <h4 style={{ fontSize: '0.85rem', margin: 0, color: isGlass ? '#e6f4ff' : undefined }}>Audio Controller</h4>
+          <h4 style={{ fontSize: '0.85rem', margin: 0 }}>Audio Controller</h4>
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button
               onClick={() => {
                 if (!soundEditorOpen) toggleView('sound-editor');
               }}
               disabled={soundEditorOpen}
-              style={{ ...buttonStyle, fontSize: '0.7rem', padding: '4px 8px', opacity: soundEditorOpen ? 0.55 : 1 }}
+              style={{ fontSize: '0.7rem', padding: '4px 8px' }}
             >
               {soundEditorOpen ? 'Sound Editor Open' : 'Open Sound Editor'}
             </button>
-            <button onClick={() => updateController({ floating: !controller.floating })} style={{ ...buttonStyle, fontSize: '0.7rem', padding: '4px 8px' }}>
+            <button onClick={() => updateController({ floating: !controller.floating })} style={{ fontSize: '0.7rem', padding: '4px 8px' }}>
               {controller.floating ? 'Hide Controller' : 'Float Controller'}
             </button>
           </div>
         </div>
-        <div style={cardStyle}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px', color: isGlass ? '#dbeafe' : undefined }}>{trackName}</div>
-          <div style={{ fontSize: '0.62rem', ...mutedTextStyle, marginBottom: '8px' }}>Playlist: {activePlaylistName}</div>
+        <div className="cu-audio-inner-card" style={{ padding: '10px', border: '1px solid #e3e8ee', borderRadius: '8px', background: '#fafbfc', marginBottom: '12px' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px' }}>{trackName}</div>
+          <div style={{ fontSize: '0.62rem', color: '#5d6d7e', marginBottom: '8px' }}>Playlist: {activePlaylistName}</div>
           {lastSoundRule && (
-            <div style={{ fontSize: '0.62rem', ...mutedTextStyle, marginBottom: '8px' }}>
+            <div style={{ fontSize: '0.62rem', color: '#5d6d7e', marginBottom: '8px' }}>
               Last effect: {lastSoundRule}
             </div>
           )}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
-            <button onClick={previousTrack} disabled={playlist.length < 2} title="Previous track" style={{ ...buttonStyle, padding: '7px 8px' }}>{'<<'}</button>
-            <button onClick={isMusicPlaying ? pauseBackgroundMusic : playBackgroundMusic} disabled={!bgMusic} style={{ ...buttonStyle, flex: '1 1 70px', padding: '7px 8px' }}>
+            <button onClick={previousTrack} disabled={playlist.length < 2} title="Previous track" style={{ padding: '7px 8px' }}>{'<<'}</button>
+            <button onClick={isMusicPlaying ? pauseBackgroundMusic : playBackgroundMusic} disabled={!bgMusic} style={{ flex: '1 1 70px', padding: '7px 8px' }}>
               {isMusicPlaying ? 'Pause' : 'Play'}
             </button>
-            <button onClick={stopBackgroundMusic} disabled={!bgMusic} style={{ ...buttonStyle, flex: '1 1 70px', padding: '7px 8px' }}>Stop</button>
-            <button onClick={nextTrack} disabled={playlist.length < 2} title="Next track" style={{ ...buttonStyle, padding: '7px 8px' }}>{'>>'}</button>
+            <button onClick={stopBackgroundMusic} disabled={!bgMusic} style={{ flex: '1 1 70px', padding: '7px 8px' }}>Stop</button>
+            <button onClick={nextTrack} disabled={playlist.length < 2} title="Next track" style={{ padding: '7px 8px' }}>{'>>'}</button>
           </div>
           <div style={{ marginBottom: '8px' }}>
             <WaveProgressBar
               progress={musicProgress}
               duration={musicDuration}
               isPlaying={isMusicPlaying && !controller.muted}
-              accentColor={isGlass ? accent : audioAppearance.accentColor}
+              accentColor={audioAppearance.accentColor}
               disabled={!bgMusic || !musicDuration}
               unavailableLabel={bgMusic ? 'Waveform unavailable for this track.' : 'Load music to show playback progress.'}
               onSeek={seekBackgroundMusic}
             />
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => document.getElementById('mixer-music-up')?.click()} style={{ ...buttonStyle, flex: '1 1 120px', padding: '7px 8px' }}>Add Music</button>
-            {playlist.length > 0 && <button onClick={clearPlaylist} style={{ ...buttonStyle, flex: '1 1 90px', padding: '7px 8px', color: isGlass ? '#fca5a5' : '#a33' }}>Clear Playlist</button>}
+            <button onClick={() => document.getElementById('mixer-music-up')?.click()} style={{ flex: '1 1 120px', padding: '7px 8px' }}>Add Music</button>
+            {playlist.length > 0 && <button onClick={clearPlaylist} style={{ flex: '1 1 90px', padding: '7px 8px', color: '#a33' }}>Clear Playlist</button>}
             <input id="mixer-music-up" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
           </div>
-          {uploadMessage && <div style={{ marginTop: '6px', fontSize: '0.68rem', color: isGlass ? '#fbbf24' : '#9a3412' }}>{uploadMessage}</div>}
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', marginTop: '10px', color: isGlass ? '#cbd5e1' : undefined }}>
+          {uploadMessage && <div style={{ marginTop: '6px', fontSize: '0.68rem', color: '#9a3412' }}>{uploadMessage}</div>}
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', marginTop: '10px' }}>
             Playback Mode
-            <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value as typeof playbackMode)} style={selectStyle}>
+            <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value as typeof playbackMode)} style={{ padding: '6px', fontSize: '0.78rem' }}>
               <option value="sequence">Play Through</option>
               <option value="repeat-playlist">Repeat Playlist</option>
               <option value="loop-track">Loop Current Track</option>
@@ -244,37 +193,37 @@ const AudioView: React.FC = () => {
             </select>
           </label>
           {playlist.length > 0 && (
-            <div style={{ marginTop: '10px', borderTop: isGlass ? `1px solid ${accent}22` : '1px solid #e3e8ee', paddingTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+            <div style={{ marginTop: '10px', borderTop: '1px solid #e3e8ee', paddingTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
               {playlist.map((track, index) => (
-                <div key={track.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', marginBottom: '5px', color: isGlass ? '#dbeafe' : undefined }}>
+                <div key={track.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', marginBottom: '5px' }}>
                   <span style={{ flex: 1, fontWeight: index === currentTrackIndex ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {track.name}
                   </span>
-                  <button onClick={() => removePlaylistTrack(track.id)} style={{ ...buttonStyle, fontSize: '0.62rem', padding: '2px 6px' }}>Remove</button>
+                  <button onClick={() => removePlaylistTrack(track.id)} style={{ fontSize: '0.62rem', padding: '2px 6px' }}>Remove</button>
                 </div>
               ))}
             </div>
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', flexWrap: 'wrap' }}>
-          <button onClick={() => playEvent(previewEvent)} style={{ ...buttonStyle, flex: '1 1 80px', padding: '8px' }}>Play Preview</button>
-          <button onClick={() => updateController({ muted: !controller.muted })} style={{ ...buttonStyle, flex: '1 1 80px', padding: '8px' }}>
+          <button onClick={() => playEvent(previewEvent)} style={{ flex: '1 1 80px', padding: '8px' }}>Play Preview</button>
+          <button onClick={() => updateController({ muted: !controller.muted })} style={{ flex: '1 1 80px', padding: '8px' }}>
             {controller.muted ? 'Unmute' : 'Mute'}
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{ width: '92px', fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Music</span>
+          <span style={{ width: '92px', fontSize: '0.75rem' }}>Music</span>
           <input type="range" min="0" max="1" step="0.01" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} style={{ flex: 1 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{ width: '92px', fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Master</span>
+          <span style={{ width: '92px', fontSize: '0.75rem' }}>Master</span>
           <input type="range" min="0" max="1" step="0.01" value={masterVolume} onChange={(e) => setMasterVolume(parseFloat(e.target.value))} style={{ flex: 1 }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <span style={{ width: '92px', fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Effects</span>
+          <span style={{ width: '92px', fontSize: '0.75rem' }}>Effects</span>
           <input type="range" min="0" max="1" step="0.01" value={sfxVolume} onChange={(e) => setSfxVolume(parseFloat(e.target.value))} style={{ flex: 1 }} />
         </div>
-        <button onClick={() => setShowSoundTypes(current => !current)} style={{ ...buttonStyle, width: '100%', padding: '8px', marginTop: '6px' }}>
+        <button onClick={() => setShowSoundTypes(current => !current)} style={{ width: '100%', padding: '8px', marginTop: '6px' }}>
           {showSoundTypes ? 'Hide Advanced' : 'Advanced'}
         </button>
         {showSoundTypes && (
@@ -284,15 +233,15 @@ const AudioView: React.FC = () => {
               const soundName = library.find(sound => sound.id === rules.find(rule => rule.event === eventName)?.soundId)?.name ?? 'No sound';
 
               return (
-                <div key={eventName} style={nestedCardStyle}>
+                <div key={eventName} className="cu-audio-inner-card" style={{ padding: '8px', border: '1px solid #e3e8ee', borderRadius: '6px', background: '#fafbfc' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>
                       <input type="checkbox" checked={category.enabled} onChange={(e) => updateCategory(eventName, { enabled: e.target.checked })} />
                       {eventName}
                     </label>
-                    <button onClick={() => playEvent(eventName)} disabled={!category.enabled} style={{ ...buttonStyle, fontSize: '0.65rem', padding: '3px 7px' }}>Preview</button>
+                    <button onClick={() => playEvent(eventName)} disabled={!category.enabled} style={{ fontSize: '0.65rem', padding: '3px 7px' }}>Preview</button>
                   </div>
-                  <div style={{ fontSize: '0.62rem', ...mutedTextStyle, marginBottom: '5px' }}>{soundName}</div>
+                  <div style={{ fontSize: '0.62rem', color: '#5d6d7e', marginBottom: '5px' }}>{soundName}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '0.65rem', width: 44 }}>Volume</span>
                     <input type="range" min="0" max="1" step="0.01" value={category.volume} onChange={(e) => updateCategory(eventName, { volume: parseFloat(e.target.value) })} style={{ flex: 1 }} />
@@ -304,32 +253,32 @@ const AudioView: React.FC = () => {
         )}
       </section>
 
-      <section style={sectionStyle}>
-        <h4 style={{ fontSize: '0.85rem', margin: '0 0 10px', color: isGlass ? '#e6f4ff' : undefined }}>Controller Theme</h4>
+      <section className="cu-audio-card" style={{ marginBottom: '20px', padding: '12px', border: '1px solid #d7e0e7', borderRadius: '8px', background: '#fff' }}>
+        <h4 style={{ fontSize: '0.85rem', margin: '0 0 10px' }}>Controller Theme</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : undefined }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
             Accent
             <input type="color" value={audioAppearance.accentColor} onChange={(e) => updateTemplate({ audioControllerAppearance: { ...audioAppearance, accentColor: e.target.value, sliderColor: e.target.value } })} />
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : undefined }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
             Background
             <input type="color" value={audioAppearance.backgroundColor} onChange={(e) => updateTemplate({ audioControllerAppearance: { ...audioAppearance, backgroundColor: e.target.value } })} />
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : undefined }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem' }}>
             Text
             <input type="color" value={audioAppearance.textColor} onChange={(e) => updateTemplate({ audioControllerAppearance: { ...audioAppearance, textColor: e.target.value } })} />
           </label>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button onClick={() => document.getElementById('audio-controller-theme-load')?.click()} style={{ ...buttonStyle, flex: '1 1 130px', padding: '7px 8px' }}>Load Controller Theme</button>
+            <button onClick={() => document.getElementById('audio-controller-theme-load')?.click()} style={{ flex: '1 1 130px', padding: '7px 8px' }}>Load Controller Theme</button>
             <input id="audio-controller-theme-load" type="file" accept=".json,application/json" onChange={loadControllerThemeFile} style={{ display: 'none' }} />
           </div>
-          <div style={{ fontSize: '0.62rem', color: isGlass ? '#94a3b8' : '#6b7280' }}>
+          <div style={{ fontSize: '0.62rem', color: '#6b7280' }}>
             Controller skin metadata is stored on the active template for ExperiencePackage export.
           </div>
         </div>
       </section>
 
-      <p style={{ fontSize: '0.65rem', color: isGlass ? '#94a3b8' : '#888', marginTop: '15px', fontStyle: 'italic' }}>
+      <p style={{ fontSize: '0.65rem', color: '#888', marginTop: '15px', fontStyle: 'italic' }}>
         Note: Use the Sound Editor for advanced trigger rules and library management.
       </p>
     </div>

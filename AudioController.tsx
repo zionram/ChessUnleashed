@@ -51,53 +51,6 @@ const AudioController: React.FC = () => {
   const { settings } = useSettings();
   const legacyTemplate = settings.template as typeof settings.template & { audioPlayerAppearance?: typeof DEFAULT_AUDIO_CONTROLLER_APPEARANCE };
   const appearance = settings.template.audioControllerAppearance ?? legacyTemplate.audioPlayerAppearance ?? DEFAULT_AUDIO_CONTROLLER_APPEARANCE;
-  const isGlassUi = settings.uiAppearance.sidebarStyle === 'glass';
-  const controllerSurface = isGlassUi
-    ? {
-        background: 'rgba(6, 11, 20, 0.92)',
-        color: '#e5f4ff',
-        border: `1px solid ${settings.uiAppearance.accentColor}`,
-        titleBackground: 'rgba(13, 17, 23, 0.94)',
-        cardBackground: 'rgba(15, 23, 42, 0.84)',
-        cardBorder: '1px solid rgba(56, 189, 248, 0.28)',
-        buttonBackground: 'rgba(15, 23, 42, 0.9)',
-        buttonBorder: '1px solid rgba(56, 189, 248, 0.32)',
-        buttonColor: '#e5f4ff',
-        inputBackground: 'rgba(2, 6, 23, 0.88)',
-        inputBorder: '1px solid rgba(56, 189, 248, 0.28)',
-        accent: settings.uiAppearance.accentColor
-      }
-    : {
-        background: appearance.backgroundColor,
-        color: appearance.textColor,
-        border: '1px solid #d7e0e7',
-        titleBackground: 'rgba(0,0,0,0.04)',
-        cardBackground: 'rgba(255,255,255,0.52)',
-        cardBorder: '1px solid #e3e8ee',
-        buttonBackground: undefined,
-        buttonBorder: undefined,
-        buttonColor: undefined,
-        inputBackground: undefined,
-        inputBorder: undefined,
-        accent: appearance.accentColor
-      };
-  const controlButtonStyle: React.CSSProperties = {
-    background: controllerSurface.buttonBackground,
-    border: controllerSurface.buttonBorder,
-    color: controllerSurface.buttonColor
-  };
-  const panelCardStyle: React.CSSProperties = {
-    padding: 7,
-    border: controllerSurface.cardBorder,
-    borderRadius: 6,
-    background: controllerSurface.cardBackground
-  };
-  const selectStyle: React.CSSProperties = {
-    padding: 5,
-    background: controllerSurface.inputBackground,
-    border: controllerSurface.inputBorder,
-    color: controllerSurface.buttonColor
-  };
   const eventTypes = useMemo(() => Array.from(new Set(rules.map(rule => rule.event))), [rules]);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -179,10 +132,28 @@ const AudioController: React.FC = () => {
   const trackName = bgMusicName || (bgMusic ? 'Custom music' : 'No track loaded');
   const activePlaylistName = playlistName || 'Single Track';
   const hasPlaylistControls = playlist.length > 1;
+  const isGlassUi = settings.uiAppearance.sidebarStyle === 'glass';
+  const uiAccent = settings.uiAppearance.accentColor || appearance.accentColor;
+  const buttonRadius = { rounded: 6, square: 2, minimal: 0 }[settings.uiAppearance.buttonStyle] ?? 6;
+  const floatingBackground = isGlassUi ? 'rgba(2, 6, 23, 0.94)' : appearance.backgroundColor;
+  const floatingText = isGlassUi ? '#dbeafe' : appearance.textColor;
+  const floatingMutedText = isGlassUi ? '#8fa3ba' : appearance.textColor;
+  const floatingBorder = isGlassUi ? 'rgba(56, 189, 248, 0.34)' : '#d7e0e7';
+  const floatingHeaderBg = isGlassUi ? 'rgba(15, 23, 42, 0.84)' : 'rgba(0,0,0,0.04)';
+  const floatingCardBg = isGlassUi ? 'rgba(15, 23, 42, 0.62)' : 'rgba(255,255,255,0.52)';
+  const floatingCardBorder = isGlassUi ? 'rgba(148, 163, 184, 0.18)' : '#e3e8ee';
+  const floatingButtonStyle: React.CSSProperties = {
+    borderRadius: buttonRadius,
+    border: isGlassUi ? '1px solid rgba(148, 163, 184, 0.24)' : undefined,
+    background: isGlassUi ? 'rgba(15, 23, 42, 0.78)' : undefined,
+    color: isGlassUi ? '#e2e8f0' : undefined,
+    cursor: 'pointer'
+  };
 
   return (
     <div
       ref={playerRef}
+      className={`audio-controller-floating${isGlassUi ? ' glass' : ''}`}
       style={{
         position: 'fixed',
         left: dragPosition.x,
@@ -190,10 +161,10 @@ const AudioController: React.FC = () => {
         zIndex: 1000,
         width: 286,
         borderRadius: appearance.shape === 'rounded' ? 12 : 2,
-        border: controllerSurface.border,
-        background: controllerSurface.background,
-        color: controllerSurface.color,
-        boxShadow: '0 10px 28px rgba(0,0,0,0.2)',
+        border: `1px solid ${floatingBorder}`,
+        background: floatingBackground,
+        color: floatingText,
+        boxShadow: isGlassUi ? '0 24px 70px rgba(0,0,0,0.58), 0 0 0 1px rgba(56,189,248,0.08)' : '0 10px 28px rgba(0,0,0,0.2)',
         overflow: 'hidden'
       }}
     >
@@ -203,15 +174,15 @@ const AudioController: React.FC = () => {
           padding: '8px 10px',
           cursor: isDragging ? 'grabbing' : 'grab',
           userSelect: 'none',
-          background: controllerSurface.titleBackground,
+          background: floatingHeaderBg,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 8
         }}
       >
-        <strong style={{ fontSize: '0.78rem' }}>Audio Controller</strong>
-        <button onClick={() => updateController({ floating: false })} onMouseDown={(e) => e.stopPropagation()} style={{ fontSize: '0.65rem', ...controlButtonStyle }}>
+        <strong style={{ fontSize: '0.78rem', color: floatingText }}>Audio Controller</strong>
+        <button onClick={() => updateController({ floating: false })} onMouseDown={(e) => e.stopPropagation()} style={{ ...floatingButtonStyle, fontSize: '0.65rem', padding: '2px 7px' }}>
           Close
         </button>
       </div>
@@ -222,7 +193,7 @@ const AudioController: React.FC = () => {
             progress={musicProgress}
             duration={musicDuration}
             isPlaying={isMusicPlaying && !controller.muted}
-            accentColor={controllerSurface.accent}
+            accentColor={isGlassUi ? uiAccent : appearance.accentColor}
             disabled={!bgMusic || !musicDuration}
             unavailableLabel={bgMusic ? 'Waveform unavailable for this track.' : 'Load music to show playback progress.'}
             onSeek={seekBackgroundMusic}
@@ -233,40 +204,40 @@ const AudioController: React.FC = () => {
           <div style={{ fontSize: '0.75rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {trackName}
           </div>
-          <div style={{ fontSize: '0.62rem', opacity: 0.72 }}>Playlist: {activePlaylistName}</div>
+          <div style={{ fontSize: '0.62rem', opacity: 0.72, color: floatingMutedText }}>Playlist: {activePlaylistName}</div>
           {lastSoundRule && (
-            <div style={{ fontSize: '0.58rem', opacity: 0.68, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: '0.58rem', opacity: 0.68, color: floatingMutedText, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
               Last effect: {lastSoundRule}
             </div>
           )}
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-          <button onClick={previousTrack} disabled={!hasPlaylistControls} title="Previous track" style={{ padding: '6px 7px', ...controlButtonStyle }}>{'<<'}</button>
-          <button onClick={isMusicPlaying ? pauseBackgroundMusic : playBackgroundMusic} disabled={!bgMusic} style={{ flex: 1, padding: '6px 4px', ...controlButtonStyle }}>
+          <button onClick={previousTrack} disabled={!hasPlaylistControls} title="Previous track" style={{ ...floatingButtonStyle, padding: '6px 7px' }}>{'<<'}</button>
+          <button onClick={isMusicPlaying ? pauseBackgroundMusic : playBackgroundMusic} disabled={!bgMusic} style={{ ...floatingButtonStyle, flex: 1, padding: '6px 4px' }}>
             {isMusicPlaying ? 'Pause' : 'Play'}
           </button>
-          <button onClick={stopBackgroundMusic} disabled={!bgMusic} style={{ flex: 1, padding: '6px 4px', ...controlButtonStyle }}>Stop</button>
-          <button onClick={nextTrack} disabled={!hasPlaylistControls} title="Next track" style={{ padding: '6px 7px', ...controlButtonStyle }}>{'>>'}</button>
+          <button onClick={stopBackgroundMusic} disabled={!bgMusic} style={{ ...floatingButtonStyle, flex: 1, padding: '6px 4px' }}>Stop</button>
+          <button onClick={nextTrack} disabled={!hasPlaylistControls} title="Next track" style={{ ...floatingButtonStyle, padding: '6px 7px' }}>{'>>'}</button>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <span style={{ fontSize: '0.65rem', width: 44 }}>Music</span>
-          <input type="range" min="0" max="1" step="0.01" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} style={{ flex: 1, accentColor: controllerSurface.accent }} />
+          <input type="range" min="0" max="1" step="0.01" value={musicVolume} onChange={(e) => setMusicVolume(parseFloat(e.target.value))} style={{ flex: 1, accentColor: isGlassUi ? uiAccent : appearance.sliderColor }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <span style={{ fontSize: '0.65rem', width: 44 }}>Master</span>
-          <input type="range" min="0" max="1" step="0.01" value={masterVolume} onChange={(e) => setMasterVolume(parseFloat(e.target.value))} style={{ flex: 1, accentColor: controllerSurface.accent }} />
+          <input type="range" min="0" max="1" step="0.01" value={masterVolume} onChange={(e) => setMasterVolume(parseFloat(e.target.value))} style={{ flex: 1, accentColor: isGlassUi ? uiAccent : appearance.sliderColor }} />
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginBottom: showAdvanced ? 8 : 0 }}>
-          <button onClick={() => document.getElementById('floating-audio-upload')?.click()} style={{ flex: 1, padding: '6px 4px', ...controlButtonStyle }}>
+          <button onClick={() => document.getElementById('floating-audio-upload')?.click()} style={{ ...floatingButtonStyle, flex: 1, padding: '6px 4px' }}>
             Add Music
           </button>
-          <button onClick={() => updateController({ muted: !controller.muted })} style={{ flex: 1, padding: '6px 4px', ...controlButtonStyle }}>
+          <button onClick={() => updateController({ muted: !controller.muted })} style={{ ...floatingButtonStyle, flex: 1, padding: '6px 4px' }}>
             {controller.muted ? 'Unmute' : 'Mute'}
           </button>
-          <button onClick={() => setShowAdvanced(current => !current)} style={{ flex: 1, padding: '6px 4px', ...controlButtonStyle }}>
+          <button onClick={() => setShowAdvanced(current => !current)} style={{ ...floatingButtonStyle, flex: 1, padding: '6px 4px' }}>
             Advanced
           </button>
           <input id="floating-audio-upload" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleMusicUpload} style={{ display: 'none' }} />
@@ -275,10 +246,10 @@ const AudioController: React.FC = () => {
 
         {showAdvanced && (
           <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 7, paddingTop: 2 }}>
-            <div style={panelCardStyle}>
+            <div style={{ padding: 7, border: `1px solid ${floatingCardBorder}`, borderRadius: 6, background: floatingCardBg }}>
               <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.68rem', fontWeight: 700 }}>
                 Playback
-                <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value as typeof playbackMode)} style={selectStyle}>
+                <select value={playbackMode} onChange={(e) => setPlaybackMode(e.target.value as typeof playbackMode)} style={{ padding: 5, borderRadius: buttonRadius, background: isGlassUi ? 'rgba(2, 6, 23, 0.82)' : undefined, color: isGlassUi ? '#e2e8f0' : undefined, border: isGlassUi ? '1px solid rgba(148, 163, 184, 0.22)' : undefined }}>
                   <option value="sequence">Play Through</option>
                   <option value="repeat-playlist">Repeat Playlist</option>
                   <option value="loop-track">Loop Current</option>
@@ -287,17 +258,17 @@ const AudioController: React.FC = () => {
               </label>
             </div>
             {playlist.length > 0 && (
-              <div style={panelCardStyle}>
+              <div style={{ padding: 7, border: `1px solid ${floatingCardBorder}`, borderRadius: 6, background: floatingCardBg }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 6 }}>
                   <strong style={{ fontSize: '0.68rem' }}>Queue</strong>
-                  <button onClick={clearPlaylist} style={{ fontSize: '0.6rem', padding: '2px 6px', ...controlButtonStyle }}>Clear</button>
+                  <button onClick={clearPlaylist} style={{ ...floatingButtonStyle, fontSize: '0.6rem', padding: '2px 6px' }}>Clear</button>
                 </div>
                 {playlist.map((track, index) => (
                   <div key={track.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.62rem', marginBottom: 4 }}>
                     <span style={{ flex: 1, fontWeight: index === currentTrackIndex ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {track.name}
                     </span>
-                    <button onClick={() => removePlaylistTrack(track.id)} style={{ fontSize: '0.58rem', padding: '1px 5px', ...controlButtonStyle }}>Remove</button>
+                    <button onClick={() => removePlaylistTrack(track.id)} style={{ ...floatingButtonStyle, fontSize: '0.58rem', padding: '1px 5px' }}>Remove</button>
                   </div>
                 ))}
               </div>
@@ -307,13 +278,13 @@ const AudioController: React.FC = () => {
               const soundName = library.find(sound => sound.id === rules.find(rule => rule.event === eventName)?.soundId)?.name ?? 'No sound';
 
               return (
-                <div key={eventName} style={panelCardStyle}>
+                <div key={eventName} style={{ padding: 7, border: `1px solid ${floatingCardBorder}`, borderRadius: 6, background: floatingCardBg }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.68rem', fontWeight: 700, textTransform: 'capitalize' }}>
                     <input type="checkbox" checked={category.enabled} onChange={(e) => updateCategory(eventName, { enabled: e.target.checked })} />
                     {eventName}
                   </label>
-                  <div style={{ fontSize: '0.58rem', opacity: 0.7, margin: '3px 0 5px' }}>{soundName}</div>
-                  <input type="range" min="0" max="1" step="0.01" value={category.volume} onChange={(e) => updateCategory(eventName, { volume: parseFloat(e.target.value) })} style={{ width: '100%', accentColor: controllerSurface.accent }} />
+                  <div style={{ fontSize: '0.58rem', opacity: 0.7, color: floatingMutedText, margin: '3px 0 5px' }}>{soundName}</div>
+                  <input type="range" min="0" max="1" step="0.01" value={category.volume} onChange={(e) => updateCategory(eventName, { volume: parseFloat(e.target.value) })} style={{ width: '100%', accentColor: isGlassUi ? uiAccent : appearance.sliderColor }} />
                 </div>
               );
             })}

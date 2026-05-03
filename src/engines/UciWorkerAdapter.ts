@@ -40,12 +40,23 @@ const waitForWorkerMessage = (
   worker.addEventListener('error', handleError);
 });
 
+const resolveWorkerPath = (workerPath: string): string => {
+  if (
+    typeof window !== 'undefined' &&
+    workerPath.startsWith('/') &&
+    window.location.protocol === 'file:'
+  ) {
+    return new URL(workerPath.slice(1), window.location.href).toString();
+  }
+  return workerPath;
+};
+
 export const createUciWorkerBestMoveRequest = (
   workerPath: string,
   fen = 'startpos',
   depth = 1
 ): UciWorkerMoveRequest => {
-  const worker = new Worker(workerPath);
+  const worker = new Worker(resolveWorkerPath(workerPath));
   let cancelled = false;
   const cancel = () => {
     cancelled = true;

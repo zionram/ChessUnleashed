@@ -42,6 +42,9 @@ export const darkTemplate: Template = {
   boardOverlay: {
     image: '',
     opacity: 0.1,
+    color: '#1a1a2e',
+    colorEnabled: false,
+    colorOpacity: 0.3
   },
   background: {
     color: '#1a202c',

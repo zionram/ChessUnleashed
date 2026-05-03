@@ -28,7 +28,7 @@ Chess Unleashed v1.0 is a modular chess and custom-game platform in active beta 
 - Electron splash screen with real loading/status UI.
 - About / Support page with donation link placeholder.
 
-## Recent Release-Candidate Fixes
+## Recent Release-Candidate Fixes (Latest)
 
 - Package Manager Load Package and Extract Package now work with visible status/error handling.
 - Duplicate Package Manager title warning was removed.
@@ -44,6 +44,12 @@ Chess Unleashed v1.0 is a modular chess and custom-game platform in active beta 
 - Bot/opponent response waits until player movement animation finishes.
 - Check/in-check sound rules can pause/resume background music correctly.
 - Electron packaged startup splash screen was added.
+- Stockfish worker path fixed for packaged Electron: no longer uses absolute /engines/ path that fails under file:// protocol; resolves relative to app dist folder instead.
+- Applied package categories (visuals, pieces, sounds, events, animations, bots, rulesets) now show "Package applied and saved." confirmation. Persistence through SettingsContext and AudioContext localStorage is verified correct.
+- Builtin bot configs (including Stockfish path) are synced from current defaults on load, so path migrations apply to existing installations.
+- LAN multiplayer server hostname fallback fixed for packaged Electron (window.location.hostname is empty under file:// protocol; now defaults to localhost).
+- Package settings applied via the Environment > Packages path now correctly persist all categories (sound library, sound rules, events, animations, bots, rulesets, etc.). This was a legacy path that was missing ~10 categories.
+- AI Package Builder added under Tools > AI Package Builder: paste AI-generated JSON, validate, preview categories/warnings, apply selected categories or save as draft .json file.
 
 ## Known Limitations
 

@@ -419,7 +419,6 @@ function MainLayout() {
     <div
       className="App"
       data-sidebar-style={settings.uiAppearance.sidebarStyle}
-      data-density={settings.uiAppearance.density}
       style={{
         fontSize: `${settings.uiAppearance.baseFontSize}px`,
         fontFamily: settings.uiAppearance.fontFamily,
@@ -548,13 +547,9 @@ function MainLayout() {
       )}
 
       <div
-        className="workspace-container"
-        style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}
-      >
-      <div
         className="layout-grid workspace-grid"
         style={{
-          gridTemplateColumns: `${leftPanelCollapsed ? 52 : leftWidth}px 4px 1fr`
+          gridTemplateColumns: `${leftPanelCollapsed ? 52 : leftWidth}px 4px 1fr 4px ${rightPanelCollapsed ? 52 : rightWidth}px`
         }}
       >
         <aside className="left-panel mobile-hidden" style={getSidePanelStyles()}>
@@ -708,26 +703,15 @@ function MainLayout() {
           )}
         </main>
 
-      </div>
-
-        {/* Floating right panel — overlays the board area */}
-        <aside
-          className={`right-panel right-panel-float ${rightPanelOpen ? 'open' : ''}`}
-          style={{
-            ...getSidePanelStyles(),
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            height: '100%',
-            width: `${rightWidth}px`,
-            zIndex: 200,
-            transform: rightPanelCollapsed ? `translateX(${rightWidth}px)` : 'translateX(0)',
-            transition: 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
+        <div
+          className="resizer mobile-hidden"
+          onMouseDown={() => {
+            isDraggingRight.current = true;
+            document.body.style.cursor = 'col-resize';
           }}
-        >
+        />
+
+        <aside className={`right-panel ${rightPanelOpen ? 'open' : ''}`} style={getSidePanelStyles()}>
           <div
             className="panel-header"
             style={{
@@ -738,49 +722,40 @@ function MainLayout() {
               gap: '8px'
             }}
           >
-            <span>Workspace</span>
+            <span>{rightPanelCollapsed ? 'Tools' : 'Workspace Panels'}</span>
             <button
               onClick={toggleRightPanel}
-              title="Collapse workspace panel"
+              title={rightPanelCollapsed ? 'Restore controls panel' : 'Collapse controls panel'}
               style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
             >
-              ›
+              {rightPanelCollapsed ? '<' : '>'}
             </button>
           </div>
-          <div style={{ padding: `${densitySpacing}px`, flex: 1, overflowY: 'auto', minHeight: 0 }}>
-            <ViewManager />
+          <div
+            className="panel-header"
+            style={{ display: 'none' }}
+          >
+            Controls <button onClick={toggleRightPanel} style={{ float: 'right' }}>✕</button>
           </div>
+          {rightPanelCollapsed ? (
+            <button
+              onClick={() => setRightPanelCollapsed(false)}
+              title="Restore controls panel"
+              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
+            >
+              Open
+            </button>
+          ) : (
+            <div
+              style={{
+                // Staged uiAppearance integration: scoped control-panel density only.
+                padding: `${densitySpacing}px`
+              }}
+            >
+              <ViewManager />
+            </div>
+          )}
         </aside>
-
-        {/* Activator tab — visible when panel is collapsed */}
-        <button
-          className="right-panel-activator mobile-hidden"
-          onClick={() => setRightPanelCollapsed(false)}
-          title="Open workspace panel"
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: '50%',
-            zIndex: 201,
-            padding: '6px 4px',
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
-            transform: 'translateY(-50%)',
-            opacity: rightPanelCollapsed ? 1 : 0,
-            pointerEvents: rightPanelCollapsed ? 'auto' : 'none',
-            transition: 'opacity 0.2s',
-            fontSize: '0.68rem',
-            letterSpacing: '0.06em',
-            cursor: 'pointer',
-            borderRadius: `${getButtonRadius()}px 0 0 ${getButtonRadius()}px`,
-            backgroundColor: isGlassWorkspace ? 'rgba(2,6,23,0.82)' : settings.uiAppearance.toolbarBackgroundColor,
-            color: isGlassWorkspace ? '#94a3b8' : '#e5edf7',
-            border: `1px solid ${isGlassWorkspace ? 'rgba(148,163,184,0.22)' : 'rgba(255,255,255,0.12)'}`,
-            borderRight: 'none'
-          }}
-        >
-          ‹ Workspace
-        </button>
       </div>
 
       <div className="mobile-bottom-nav mobile-only">

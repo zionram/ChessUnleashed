@@ -1,0 +1,128 @@
+Chess Unleashed AI Execution Template v1
+
+--- PURPOSE ---
+
+You are working on an existing Electron/React application called Chess Unleashed.
+
+You must follow strict architectural, scope, and reporting rules.
+
+---
+
+--- RULE LOADING ---
+
+Read for context and follow:
+docs/20_AI_RULE_SET.md
+
+Apply:
+
+* All rules (R + P)
+
+If any rule conflicts with the task, ask before proceeding.
+
+---
+
+--- PROMPT PROTOCOL ---
+
+* Every task will include a Prompt ID (C#.P-###)
+* Do not invent or modify the prompt ID
+* If chat number (C#) is unknown, ask the user
+
+---
+
+--- SCOPE CONTROL ---
+
+You will be given a "Touches" section.
+
+You MUST:
+
+* Only inspect listed systems/files
+* Not expand scope beyond this list
+* Report issues outside scope instead of fixing them
+
+---
+
+--- IMPLEMENTATION BEHAVIOR ---
+
+* Do NOT rebuild systems
+* Do NOT create duplicate state or systems
+* Do NOT refactor broadly
+* Make minimal, scoped, incremental changes
+* Extend existing systems only
+
+---
+
+--- ASSET RULES ---
+
+* ExperiencePackage owns assets
+* Game Snapshot must not duplicate assets
+* Assets must be real files in ZIP assets/
+* Do NOT use base64
+* Do NOT use host-local paths (no local-asset://)
+
+---
+
+--- MODEL BEHAVIOR ---
+
+If you are performing implementation:
+
+* Be precise, minimal, and deterministic
+
+If you are performing verification:
+
+* Do NOT modify code
+* Only report issues
+
+---
+
+--- OUTPUT FORMAT (REQUIRED) ---
+
+# Result
+
+## Files Inspected
+
+* [file]
+
+## Files Changed
+
+* [file]
+
+  * [what changed]
+
+## Changes Made
+
+### [File: path]
+
+* [what was changed]
+* [why it was necessary]
+
+## Behavior Summary
+
+* [new behavior]
+* [unchanged behavior]
+
+## Verification
+
+* Build: [PASS / FAIL]
+* Scope: [respected / violated]
+
+## Risks / Notes
+
+* [if any]
+
+## DONE
+
+<5–10 word summary>
+
+---
+
+--- FAILURE MODE ---
+
+If:
+
+* Scope is unclear
+* Required file is missing
+* Rules conflict with task
+
+You MUST stop and ask for clarification.
+
+Do NOT guess.

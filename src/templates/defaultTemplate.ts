@@ -81,6 +81,9 @@ export interface Template {
   boardOverlay: {
     image: string;
     opacity: number;
+    color?: string;
+    colorEnabled?: boolean;
+    colorOpacity?: number;
   };
   background: LayerConfig;
   frameLayer: LayerConfig;
@@ -164,6 +167,9 @@ export const defaultTemplate: Template = {
   boardOverlay: {
     image: '',
     opacity: 0.2,
+    color: '#4169e1',
+    colorEnabled: false,
+    colorOpacity: 0.25
   },
   background: { ...defaultLayer },
   frameLayer: { ...defaultLayer, color: 'transparent', size: 'auto', scale: 100, lockToBoard: false, frameSizeMode: 'responsive' },

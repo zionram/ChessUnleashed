@@ -411,8 +411,8 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
       ...(activeImport.importedAssets?.length ? { importedAssets: activeImport.importedAssets } : {})
     });
     setThemeDraft(null);
-    setMessage(`Applied package: ${activeImport.name}`);
-    setImportStatus('Package loaded');
+    setMessage(`Package applied and saved. (${activeImport.name})`);
+    setImportStatus('Package applied and saved');
     console.info('[Package Manager] Package applied:', activeImport.name);
     setPendingImport(null);
     closeOverlay?.();

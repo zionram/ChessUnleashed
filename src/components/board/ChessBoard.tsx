@@ -357,6 +357,17 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
   }, [currentBoardMap, pressureMap, activePathSources, selectedSquare, legalMoves, settings.template, settings.isThemeEditorMode, orientation, movingPiece?.to]);
 
   const { boardColors, boardOverlay } = settings.template;
+
+  const boardBgImage = (() => {
+    const layers: string[] = [];
+    if (boardOverlay.image) layers.push(`url(${boardOverlay.image})`);
+    if (boardOverlay.colorEnabled && boardOverlay.color) {
+      const a = Math.round((boardOverlay.colorOpacity ?? 0.25) * 255).toString(16).padStart(2, '0');
+      layers.push(`linear-gradient(${boardOverlay.color}${a}, ${boardOverlay.color}${a})`);
+    }
+    return layers.length ? layers.join(', ') : 'none';
+  })();
+
   const getTriggeredAnimationName = (preset: string) => `event-animation-${preset}`;
   const renderTriggeredAnimation = () => {
     if (!triggeredAnimation) return null;
@@ -482,7 +493,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
           margin: '20px auto',
           boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
           position: 'relative',
-          backgroundImage: boardOverlay.image ? `url(${boardOverlay.image})` : 'none',
+          backgroundImage: boardBgImage,
           backgroundSize: 'cover',
           backgroundColor: boardColors.dark
         }}

@@ -849,6 +849,9 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (payload.compliancePolicy) setCompliancePolicy(payload.compliancePolicy);
     }
     if (type === 'asset_request' && playerColor === 'w' && socket && roomId) {
+      // Follow-up C.4.P-353: asset_response sends raw template settings including local-asset:// URLs
+      // that only resolve on the host device. Full host asset transfer should use ExperiencePackage
+      // zip transfer so guests receive actual media files, not host-local asset refs.
       socket.send(JSON.stringify({
         type: 'asset_response',
         payload: {
@@ -868,30 +871,32 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (type === 'chat') { setChat(prev => [...prev, payload]); playEvent('move'); }
   };
 
-  const getMultiplayerServerHost = (serverIpOverride?: string) => {
+  const getMultiplayerServerEndpoint = (serverIpOverride?: string) => {
     const { mode, homeUrl, customUrl } = settings.multiplayerServer;
     const configuredHost = mode === 'home'
       ? homeUrl
       : mode === 'custom'
         ? customUrl
-        : window.location.hostname;
-    const rawHost = (serverIpOverride || configuredHost || window.location.hostname).trim();
-    const normalizedHost = rawHost
+        : 'localhost';
+    const rawHost = (serverIpOverride || configuredHost || 'localhost').trim();
+    const normalized = rawHost
       .replace(/^wss?:\/\//i, '')
       .replace(/^https?:\/\//i, '')
-      .replace(/\/.*$/, '')
-      .replace(/:8080$/, '');
+      .replace(/\/.*$/, '');
+    const portMatch = normalized.match(/:(\d+)$/);
+    const port = portMatch ? Number(portMatch[1]) : 8080;
+    const normalizedHost = normalized.replace(/:\d+$/, '');
 
-    return normalizedHost || window.location.hostname;
+    return { host: normalizedHost || 'localhost', port };
   };
 
   const createRoom = (serverIpOverride?: string) => {
     if (!canStartGame()) return;
     clearGameSnapshot();
     setVsComputer(false);
-    const host = getMultiplayerServerHost(serverIpOverride);
+    const { host, port } = getMultiplayerServerEndpoint(serverIpOverride);
     
-    const ws = new WebSocket(`ws://${host}:8080`);
+    const ws = new WebSocket(`ws://${host}:${port}`);
     ws.onopen = () => {
         ws.send(JSON.stringify({ 
           type: 'create',
@@ -908,11 +913,11 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const joinRoom = (serverIpOverride: string, rId: string) => {
     clearGameSnapshot();
     setVsComputer(false);
-    const host = getMultiplayerServerHost(serverIpOverride);
+    const { host, port } = getMultiplayerServerEndpoint(serverIpOverride);
 
     const normId = rId.toUpperCase();
     const storedToken = sessionStorage.getItem(`chess_token_${normId}`);
-    const ws = new WebSocket(`ws://${host}:8080`);
+    const ws = new WebSocket(`ws://${host}:${port}`);
     ws.onopen = () => ws.send(JSON.stringify({ 
       type: 'join', 
       payload: { 

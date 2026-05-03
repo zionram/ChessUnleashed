@@ -1,5 +1,7 @@
 import electron from 'electron';
+import dgram from 'dgram';
 import fs from 'fs/promises';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 
@@ -9,6 +11,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 let mainWindow = null;
 let splashWindow = null;
 let localServer = null;
+let lanDiscoverySocket = null;
+let lanBroadcastTimer = null;
+let lanStalePruneTimer = null;
+let lanBroadcastPayload = null;
+
+const LAN_DISCOVERY_PORT = Number(process.env.CHESS_UNLEASHED_LAN_DISCOVERY_PORT || 49494);
+const LAN_DISCOVERY_APP_ID = 'chess-unleashed-lan-v1';
+const LAN_DISCOVERY_STALE_MS = 6000;
 
 const singleInstanceLock = app.requestSingleInstanceLock();
 if (!singleInstanceLock) {
@@ -40,6 +50,21 @@ const resolveLocalAssetPath = (packageId, relativePath) => {
 const getDevServerUrl = () => process.env.VITE_DEV_SERVER_URL || process.env.ELECTRON_START_URL;
 
 const splashHtmlPath = path.join(__dirname, 'splash.html');
+
+function getLanAddresses() {
+  const addresses = [];
+  Object.values(os.networkInterfaces()).forEach(items => {
+    (items || []).forEach(item => {
+      if (!item || item.family !== 'IPv4' || item.internal) return;
+      addresses.push(item.address);
+    });
+  });
+  return addresses;
+}
+
+function getPrimaryLanAddress() {
+  return getLanAddresses()[0] || '127.0.0.1';
+}
 
 async function resolveSplashImageUrl() {
   const candidates = [
@@ -107,18 +132,121 @@ function closeSplashWindow() {
 
 async function startLocalServer() {
   if (process.env.CHESS_UNLEASHED_START_SERVER === '0') return;
+  if (localServer) return localServer;
 
   try {
     const { startChessServer } = await import('../server/chessServer.js');
     const port = Number(process.env.CHESS_UNLEASHED_SERVER_PORT || 8080);
     localServer = startChessServer({
       port,
-      host: '127.0.0.1',
+      host: '0.0.0.0',
       logPrefix: '[Chess Unleashed Local Server]'
     });
+    return localServer;
   } catch (error) {
     console.error('[Chess Unleashed] Local multiplayer server did not start:', error);
+    return null;
   }
+}
+
+function getLocalServerInfo() {
+  const port = Number(process.env.CHESS_UNLEASHED_SERVER_PORT || localServer?.port || 8080);
+  const addresses = getLanAddresses();
+  const primaryAddress = addresses[0] || '127.0.0.1';
+  return {
+    port,
+    addresses,
+    primaryAddress,
+    manualUrl: `${primaryAddress}:${port}`,
+    discoveryPort: LAN_DISCOVERY_PORT,
+    available: !!localServer
+  };
+}
+
+const discoveredLanGames = new Map();
+
+function getVisibleLanGames() {
+  const now = Date.now();
+  for (const [id, game] of discoveredLanGames.entries()) {
+    if (now - game.lastSeen > LAN_DISCOVERY_STALE_MS) discoveredLanGames.delete(id);
+  }
+  return Array.from(discoveredLanGames.values())
+    .sort((a, b) => b.lastSeen - a.lastSeen);
+}
+
+function publishLanGames() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  mainWindow.webContents.send('chess-lan:games-updated', getVisibleLanGames());
+}
+
+function ensureLanDiscoverySocket() {
+  if (lanDiscoverySocket) return lanDiscoverySocket;
+
+  lanDiscoverySocket = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+  lanDiscoverySocket.on('error', (error) => {
+    console.warn('[Chess Unleashed LAN] Discovery socket error:', error.message);
+  });
+  lanDiscoverySocket.on('message', (message, remote) => {
+    try {
+      const payload = JSON.parse(message.toString('utf8'));
+      if (payload?.appId !== LAN_DISCOVERY_APP_ID) return;
+      if (!payload.roomId || !payload.serverPort) return;
+      const hostAddress = payload.hostAddress || remote.address;
+      const id = `${hostAddress}:${payload.serverPort}:${payload.roomId}`;
+      discoveredLanGames.set(id, {
+        id,
+        appId: LAN_DISCOVERY_APP_ID,
+        appVersion: payload.appVersion || app.getVersion(),
+        hostDisplayName: payload.hostDisplayName || 'LAN Host',
+        hostAddress,
+        serverPort: Number(payload.serverPort),
+        roomId: String(payload.roomId).toUpperCase(),
+        gameModeLabel: payload.gameModeLabel || 'Standard Chess',
+        timestamp: payload.timestamp || new Date().toISOString(),
+        lastSeen: Date.now()
+      });
+      publishLanGames();
+    } catch (error) {
+      console.warn('[Chess Unleashed LAN] Ignored invalid discovery packet:', error.message);
+    }
+  });
+  lanDiscoverySocket.bind(LAN_DISCOVERY_PORT, () => {
+    try {
+      lanDiscoverySocket?.setBroadcast(true);
+    } catch (error) {
+      console.warn('[Chess Unleashed LAN] Broadcast mode unavailable:', error.message);
+    }
+  });
+
+  if (!lanStalePruneTimer) {
+    lanStalePruneTimer = setInterval(publishLanGames, 2000);
+  }
+
+  return lanDiscoverySocket;
+}
+
+function sendLanBroadcast() {
+  if (!lanBroadcastPayload) return;
+  const socket = ensureLanDiscoverySocket();
+  const message = Buffer.from(JSON.stringify({
+    appId: LAN_DISCOVERY_APP_ID,
+    appVersion: app.getVersion(),
+    ...lanBroadcastPayload,
+    hostAddress: getPrimaryLanAddress(),
+    serverPort: Number(process.env.CHESS_UNLEASHED_SERVER_PORT || localServer?.port || 8080),
+    timestamp: new Date().toISOString()
+  }));
+  socket.send(message, 0, message.length, LAN_DISCOVERY_PORT, '255.255.255.255', (error) => {
+    if (error) console.warn('[Chess Unleashed LAN] Broadcast failed:', error.message);
+  });
+}
+
+function stopLanBroadcast() {
+  if (lanBroadcastTimer) {
+    clearInterval(lanBroadcastTimer);
+    lanBroadcastTimer = null;
+  }
+  lanBroadcastPayload = null;
 }
 
 async function createWindow() {
@@ -201,6 +329,46 @@ ipcMain.handle('chess-assets:save-package-assets', async (_event, payload) => {
   return { packageId, refs, assets: registryAssets };
 });
 
+ipcMain.handle('chess-lan:start-listening', async () => {
+  try {
+    ensureLanDiscoverySocket();
+    publishLanGames();
+    return { available: true, games: getVisibleLanGames(), serverInfo: getLocalServerInfo() };
+  } catch (error) {
+    console.warn('[Chess Unleashed LAN] Listening failed:', error);
+    return { available: false, games: [], error: 'LAN discovery is unavailable. Manual IP join is still available.' };
+  }
+});
+
+ipcMain.handle('chess-lan:get-server-info', async () => {
+  await startLocalServer();
+  return getLocalServerInfo();
+});
+
+ipcMain.handle('chess-lan:start-broadcast', async (_event, payload) => {
+  await startLocalServer();
+  ensureLanDiscoverySocket();
+  lanBroadcastPayload = {
+    hostDisplayName: payload?.hostDisplayName || 'LAN Host',
+    roomId: String(payload?.roomId || '').toUpperCase(),
+    gameModeLabel: payload?.gameModeLabel || 'Standard Chess'
+  };
+  if (!lanBroadcastPayload.roomId) {
+    stopLanBroadcast();
+    return { available: false, error: 'Room is not ready yet.' };
+  }
+  sendLanBroadcast();
+  if (!lanBroadcastTimer) {
+    lanBroadcastTimer = setInterval(sendLanBroadcast, 1500);
+  }
+  return { available: true, serverInfo: getLocalServerInfo() };
+});
+
+ipcMain.handle('chess-lan:stop-broadcast', async () => {
+  stopLanBroadcast();
+  return { available: true };
+});
+
 app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -229,6 +397,13 @@ app.on('activate', () => {
 
 app.on('before-quit', () => {
   localServer?.wss?.close();
+  stopLanBroadcast();
+  if (lanStalePruneTimer) {
+    clearInterval(lanStalePruneTimer);
+    lanStalePruneTimer = null;
+  }
+  lanDiscoverySocket?.close();
+  lanDiscoverySocket = null;
   closeSplashWindow();
 });
 

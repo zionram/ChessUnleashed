@@ -8,9 +8,10 @@ interface DynamicMenuProps {
   onAction?: (actionId: string) => void;
   depth?: number;
   onRootItemSelect?: (item: MenuItem | null) => void;
+  activeRootItemId?: string | null;
 }
 
-const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, onRootItemSelect }) => {
+const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, onRootItemSelect, activeRootItemId = null }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<MenuItem | null>(null);
   const [onCloseRequest, setOnCloseRequest] = useState<(() => void) | null>(null);
@@ -26,7 +27,9 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
 
   const handleItemClick = (item: MenuItem) => {
     if (item.type === 'submenu') {
-      const isCurrentlyActive = activeSubMenu === item.id;
+      const isCurrentlyActive = isRootToolGrid && onRootItemSelect
+        ? activeRootItemId === item.id
+        : activeSubMenu === item.id;
       setActiveSubMenu(isCurrentlyActive ? null : item.id);
       if (isRootToolGrid && onRootItemSelect) {
         onRootItemSelect(isCurrentlyActive ? null : item);
@@ -51,7 +54,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
       }}
     >
       {items.map(item => {
-        const isActive = activeSubMenu === item.id;
+        const isActive = isRootToolGrid && activeRootItemId ? activeRootItemId === item.id : activeSubMenu === item.id;
         const showIconTile = isRootToolGrid;
         const fallbackIcon = item.label?.trim()?.charAt(0)?.toUpperCase() ?? '•';
 
@@ -76,16 +79,23 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
                 justifyContent: showIconTile ? 'center' : 'space-between',
                 alignItems: 'center',
                 gap: showIconTile ? '4px' : (isCompact ? '6px' : '10px'),
-                border: showIconTile
+                borderTop: showIconTile
                   ? `1px solid ${isActive ? `${accentColor}88` : 'rgba(148, 163, 184, 0.14)'}`
                   : undefined,
-                borderBottom: showIconTile ? undefined : `1px solid ${menuBorderColor}`,
+                borderRight: showIconTile
+                  ? `1px solid ${isActive ? `${accentColor}88` : 'rgba(148, 163, 184, 0.14)'}`
+                  : undefined,
+                borderBottom: showIconTile
+                  ? `1px solid ${isActive ? `${accentColor}88` : 'rgba(148, 163, 184, 0.14)'}`
+                  : `1px solid ${menuBorderColor}`,
+                borderLeft: showIconTile
+                  ? `1px solid ${isActive ? `${accentColor}88` : 'rgba(148, 163, 184, 0.14)'}`
+                  : (isActive ? `3px solid ${accentColor}` : '3px solid transparent'),
                 backgroundColor: isActive
                   ? `${accentColor}20`
                   : showIconTile
                     ? 'rgba(8, 17, 34, 0.48)'
                     : 'transparent',
-                borderLeft: showIconTile ? undefined : (isActive ? `3px solid ${accentColor}` : '3px solid transparent'),
                 borderRadius: showIconTile ? 8 : (isCompact ? 8 : 0),
                 margin: showIconTile ? 0 : (isCompact ? '2px 6px' : 0),
                 transition: 'background-color 0.2s, border-color 0.2s, transform 0.2s, box-shadow 0.2s',

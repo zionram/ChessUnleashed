@@ -101,6 +101,13 @@ function MainLayout() {
   });
 
   const [activeLauncherItem, setActiveLauncherItem] = useState<MenuItem | null>(null);
+  const [activeLauncherTabId, setActiveLauncherTabId] = useState<string | null>(null);
+  const [activeLauncherNestedTabs, setActiveLauncherNestedTabs] = useState<Record<string, string>>({});
+  const [activeLauncherOverlay, setActiveLauncherOverlay] = useState<MenuItem | null>(null);
+  const [launcherOverlayCloseRequest, setLauncherOverlayCloseRequest] = useState<(() => void) | null>(null);
+  const [launcherWindowPosition, setLauncherWindowPosition] = useState({ x: 360, y: 110 });
+  const isDraggingLauncherWindow = useRef(false);
+  const launcherWindowDragOffset = useRef({ x: 0, y: 0 });
   const [leftWidth, setLeftWidth] = useState(280);
   const [rightWidth, setRightWidth] = useState(320);
   const [dismissedGameEndOverlay, setDismissedGameEndOverlay] = useState(false);
@@ -143,6 +150,11 @@ function MainLayout() {
   }, [activeCustomRulesetId, settings.customRulesets]);
 
   useEffect(() => {
+    setActiveLauncherTabId(activeLauncherItem?.children?.[0]?.id ?? null);
+    setActiveLauncherNestedTabs({});
+  }, [activeLauncherItem?.id]);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (window.innerWidth <= 768) return;
       if (isDraggingLeft.current) setLeftWidth(Math.max(200, Math.min(500, e.clientX)));
@@ -153,6 +165,36 @@ function MainLayout() {
       isDraggingRight.current = false;
       document.body.style.cursor = 'default';
     };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingLauncherWindow.current) return;
+
+      const nextX = e.clientX - launcherWindowDragOffset.current.x;
+      const nextY = e.clientY - launcherWindowDragOffset.current.y;
+      const maxX = Math.max(0, window.innerWidth - 220);
+      const maxY = Math.max(0, window.innerHeight - 120);
+
+      setLauncherWindowPosition({
+        x: Math.max(8, Math.min(maxX, nextX)),
+        y: Math.max(48, Math.min(maxY, nextY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      if (!isDraggingLauncherWindow.current) return;
+      isDraggingLauncherWindow.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
@@ -415,6 +457,129 @@ function MainLayout() {
       borderTop: `1px solid ${frameColor}`
     };
   };
+
+
+  const openLauncherRoot = (item: MenuItem | null) => {
+    setActiveLauncherItem(item);
+    setActiveLauncherOverlay(null);
+    setLauncherOverlayCloseRequest(null);
+  };
+
+
+  const getActiveChild = (item: MenuItem): MenuItem | null => {
+    if (!item.children?.length) return null;
+    const activeChildId = activeLauncherNestedTabs[item.id] ?? item.children[0].id;
+    return item.children.find(child => child.id === activeChildId) ?? item.children[0];
+  };
+
+  const getLauncherTabButtonStyle = (active: boolean): CSSProperties => ({
+    padding: '7px 10px',
+    borderRadius: '8px 8px 0 0',
+    border: active
+      ? `1px solid ${settings.uiAppearance.accentColor}`
+      : isGlassWorkspace
+        ? '1px solid rgba(148, 163, 184, 0.18)'
+        : '1px solid #d0d7de',
+    borderBottom: active
+      ? `2px solid ${settings.uiAppearance.accentColor}`
+      : isGlassWorkspace
+        ? '1px solid rgba(148, 163, 184, 0.14)'
+        : '1px solid #d0d7de',
+    background: active
+      ? (isGlassWorkspace ? 'rgba(14, 47, 72, 0.92)' : '#eef6ff')
+      : (isGlassWorkspace ? 'rgba(10, 18, 32, 0.76)' : '#f6f8fa'),
+    color: isGlassWorkspace ? '#dbeafe' : '#1f2937',
+    cursor: 'pointer',
+    fontSize: '0.78rem',
+    fontWeight: 700,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: 150,
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis'
+  });
+
+  const getLauncherActionButtonStyle = (): CSSProperties => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    width: '100%',
+    padding: '9px 11px',
+    borderRadius: 8,
+    border: isGlassWorkspace ? '1px solid rgba(148, 163, 184, 0.18)' : '1px solid #d0d7de',
+    background: isGlassWorkspace ? 'rgba(10, 20, 38, 0.72)' : '#ffffff',
+    color: isGlassWorkspace ? '#dbeafe' : '#1f2937',
+    cursor: 'pointer',
+    fontSize: '0.82rem',
+    textAlign: 'left'
+  });
+
+  const renderLauncherItemContent = (item: MenuItem): React.ReactNode => {
+    if (item.children?.length) {
+      const activeChild = getActiveChild(item);
+      return (
+        <div className="launcher-nested-tab-panel">
+          <div className="launcher-nested-tab-row" role="tablist" aria-label={`${item.label} tabs`}>
+            {item.children.map(child => (
+              <button
+                key={child.id}
+                type="button"
+                role="tab"
+                aria-selected={activeChild?.id === child.id}
+                className={`launcher-nested-tab ${activeChild?.id === child.id ? 'active' : ''}`}
+                onClick={() => setActiveLauncherNestedTabs(current => ({ ...current, [item.id]: child.id }))}
+                title={child.label}
+                style={getLauncherTabButtonStyle(activeChild?.id === child.id)}
+              >
+                {child.icon}
+                <span>{child.label}</span>
+              </button>
+            ))}
+          </div>
+          <div className="launcher-nested-tab-content">
+            {activeChild && renderLauncherItemContent(activeChild)}
+          </div>
+        </div>
+      );
+    }
+
+    if (item.type === 'overlay' && item.component) {
+      return (
+        <div className="launcher-action-card">
+          <p>{item.label} opens as a workspace dialog.</p>
+          <button type="button" onClick={() => setActiveLauncherOverlay(item)} style={getLauncherActionButtonStyle()}>
+            <span>Open {item.overlayTitle || item.label}</span>
+            <span>↗</span>
+          </button>
+        </div>
+      );
+    }
+
+    if (item.actionId) {
+      return (
+        <div className="launcher-action-card">
+          <p>Open or toggle this workspace tool.</p>
+          <button type="button" onClick={() => handleMenuAction(item.actionId!)} style={getLauncherActionButtonStyle()}>
+            <span>{item.icon} {item.label}</span>
+            <span>Open</span>
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="launcher-action-card">
+        <p>No action is registered for this item yet.</p>
+      </div>
+    );
+  };
+
+  const activeLauncherTab = activeLauncherItem?.children?.find(child => child.id === activeLauncherTabId)
+    ?? activeLauncherItem?.children?.[0]
+    ?? null;
 
   return (
     <div
@@ -715,7 +880,8 @@ function MainLayout() {
               <DynamicMenu
                 items={MENU_SCHEMA}
                 onAction={handleMenuAction}
-                onRootItemSelect={(item) => setActiveLauncherItem(item)}
+                onRootItemSelect={openLauncherRoot}
+                activeRootItemId={activeLauncherItem?.id ?? null}
               />
               <div
                 className="welcome-sidebar-container"
@@ -729,51 +895,113 @@ function MainLayout() {
 
         {activeLauncherItem && (
           <div
-            className="launcher-sub-panel"
+            className="launcher-category-window"
             style={{
               ...getSidePanelStyles(),
-              position: 'absolute',
-              left: leftPanelCollapsed ? 52 : leftWidth,
-              top: 0,
-              height: '100%',
-              width: 256,
-              zIndex: 198,
-              transition: 'left 0.22s ease',
+              position: 'fixed',
+              left: launcherWindowPosition.x,
+              top: launcherWindowPosition.y,
+              width: 'min(620px, calc(100vw - 180px))',
+              minWidth: 420,
+              maxHeight: 'min(68vh, 560px)',
+              zIndex: 2600,
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              borderRadius: 14
             }}
           >
             <div
-              className="panel-header"
+              className="launcher-window-titlebar"
+              onMouseDown={(event) => {
+                if ((event.target as HTMLElement).closest('button')) return;
+                isDraggingLauncherWindow.current = true;
+                launcherWindowDragOffset.current = {
+                  x: event.clientX - launcherWindowPosition.x,
+                  y: event.clientY - launcherWindowPosition.y
+                };
+                document.body.style.cursor = 'move';
+                document.body.style.userSelect = 'none';
+              }}
+              title="Drag window"
               style={{
                 borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: '8px',
-                flexShrink: 0
+                gap: '10px',
+                flexShrink: 0,
+                cursor: 'move',
+                userSelect: 'none'
               }}
             >
-              <span>{activeLauncherItem.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                <span>{activeLauncherItem.icon}</span>
+                <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeLauncherItem.label}</strong>
+              </div>
               <button
                 onClick={() => setActiveLauncherItem(null)}
-                title="Close panel"
-                style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
+                title="Close window"
+                style={{ padding: '3px 9px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
               >
                 ✕
               </button>
             </div>
-            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
-              {activeLauncherItem.children && (
-                <DynamicMenu
-                  items={activeLauncherItem.children}
-                  onAction={handleMenuAction}
-                  depth={1}
-                />
-              )}
-            </div>
+
+            {activeLauncherItem.children?.length ? (
+              <>
+                <div className="launcher-window-tab-row" role="tablist" aria-label={`${activeLauncherItem.label} tabs`}>
+                  {activeLauncherItem.children.map(child => (
+                    <button
+                      key={child.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeLauncherTab?.id === child.id}
+                      className={`launcher-window-tab ${activeLauncherTab?.id === child.id ? 'active' : ''}`}
+                      onClick={() => setActiveLauncherTabId(child.id)}
+                      title={child.label}
+                      style={getLauncherTabButtonStyle(activeLauncherTab?.id === child.id)}
+                    >
+                      {child.icon}
+                      <span>{child.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="launcher-window-content">
+                  {activeLauncherTab && renderLauncherItemContent(activeLauncherTab)}
+                </div>
+              </>
+            ) : (
+              <div className="launcher-window-content">
+                {renderLauncherItemContent(activeLauncherItem)}
+              </div>
+            )}
           </div>
+        )}
+
+        {activeLauncherOverlay && activeLauncherOverlay.component && (
+          <Overlay
+            isOpen={!!activeLauncherOverlay}
+            onClose={() => {
+              setActiveLauncherOverlay(null);
+              setLauncherOverlayCloseRequest(null);
+            }}
+            onCloseAttempt={launcherOverlayCloseRequest || undefined}
+            title={activeLauncherOverlay.overlayTitle || activeLauncherOverlay.label}
+          >
+            {(() => {
+              const LauncherOverlayComponent = activeLauncherOverlay.component!;
+              return (
+                <LauncherOverlayComponent
+                  registerCloseAttempt={(fn: () => void) => setLauncherOverlayCloseRequest(() => fn)}
+                  closeOverlay={() => {
+                    setActiveLauncherOverlay(null);
+                    setLauncherOverlayCloseRequest(null);
+                  }}
+                />
+              );
+            })()}
+          </Overlay>
         )}
 
         <aside

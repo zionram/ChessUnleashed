@@ -1,6 +1,6 @@
 # Known Limitations and Roadmap
 
-Status: Current release-candidate notes
+Status: Current release-candidate notes, updated with workspace-window roadmap
 
 These items should be represented honestly in handoffs, release notes, and tester instructions.
 
@@ -19,6 +19,28 @@ These items should be represented honestly in handoffs, release notes, and teste
 - Official profiles/accounts/rankings are future work.
 - Browser mode durable imported asset persistence may be session-only.
 - Settings Builder and Validation may need clarification before being presented as fully finished.
+
+## Workspace / Windowing Roadmap — 2026-05-03
+
+Current verified:
+
+- Left launcher root icons open floating category windows.
+- Launcher category content uses tabs instead of vertical `DynamicMenu` rows.
+- Old `launcher-sub-panel` behavior was identified as wrong and removed from active launcher behavior.
+- Launcher category window can be dragged by its title bar.
+
+Still partial / future:
+
+- Launcher window resize handle is not yet verified complete.
+- Launcher window position persistence is not decided.
+- Per-category remembered window positions/tabs are not decided.
+- Multiple simultaneous launcher windows are not implemented.
+- Reusable `FloatingWindow` extraction is future work.
+- Dockable/detachable tabs are future work.
+- The chessboard as a movable non-dockable board-stage object is future work.
+- Board-stage movement should be intentional, likely through design mode, right-click “Move Board,” modifier drag, or a hidden handle.
+
+Do not claim a full window manager exists yet.
 
 ## Tactical Events
 
@@ -46,7 +68,11 @@ Future animation work may include:
 
 ## Package Roadmap
 
-Current packages are reusable setup/config/assets packages. Runtime game snapshots are separate. Future work may add explicit optional save-slot exports, cloud sync, or manual snapshot management, but those must not be mixed into normal ExperiencePackage exports by default.
+Current packages are reusable setup/config/assets packages.
+
+Runtime game snapshots are separate.
+
+Future work may add explicit optional save-slot exports, cloud sync, or manual snapshot management, but those must not be mixed into normal ExperiencePackage exports by default.
 
 ## Release Rule
 

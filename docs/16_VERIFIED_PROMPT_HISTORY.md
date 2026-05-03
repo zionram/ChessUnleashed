@@ -2,7 +2,9 @@
 
 Status: Current summary, not a full commit log
 
-This file summarizes recent verified prompts so future AI/dev handoffs understand what changed. The current codebase remains the source of truth.
+This file summarizes recent verified prompts so future AI/dev handoffs understand what changed.
+
+The current codebase remains the source of truth.
 
 ## Documentation
 
@@ -73,9 +75,40 @@ This file summarizes recent verified prompts so future AI/dev handoffs understan
 - C.4.P-106_110_BATCH: Added Game Snapshot resume foundation.
 - C.4.P-167_170_BATCH: Updated package/category handling and clarified Save/Resume versus ExperiencePackage.
 - C.4.P-343_PACKAGE_MANAGER_DEBUG_FIX: Confirmed Package Manager excludes live game state by default.
-- C.4.P-353_362_BATCH: Fixed Stockfish worker path resolution in packaged Electron (file:// protocol), updated BUNDLED_STOCKFISH_BOT path to relative form, synced builtin bot configs from defaults on load so path migrations apply to existing users. Updated apply-package success message to "Package applied and saved." Audited asset_response host transfer — still uses raw template inline (follow-up documented). Verified package import persistence chain is correct end-to-end.
-- C.4.P-369_374_FIX: Fixed LAN server hostname bug (window.location.hostname empty under file:// protocol → fallback to 'localhost') in MultiplayerView.tsx and GameContext.tsx. Fixed SettingsPanelShellView.tsx legacy applyExperiencePackage missing ~10 categories — root cause of package settings not persisting after restart via Environment path.
-- C.4.P-385_394_BATCH: Added AI Package Builder view (Tools > AI Package Builder). Paste AI-generated JSON, validate against ExperiencePackage schema, preview categories and warnings (missing sound refs, invalid events/rulesets, asset-only refs requiring zip), select categories to apply, apply or save as draft .json. No external API calls.
-- C.4.P-395_402_BATCH: Polished AI Package Builder. Moved to Advanced > Gaming (alongside other builders). Added 4 copyable AI prompt templates (Theme, Sound/Events, Animation, Full Experience). Added Normalize button (strips unknown keys, runtime game state fields, fills missing format/metadata defaults). Extended validation to surface non-blocking notices (unknown content keys, runtime state detected, package:// refs requiring zip). Added Experimental badge. Added All/None category toggles. Unknown categories shown grayed-out and disabled in checklist. Added docs/AI_PACKAGE_CREATION_GUIDE.md (full schema reference, 3 example packages, prompting workflow).
-- C.4.P-403_AI_BUILDER_UX: Added Universal Package Prompt as primary action in AI Package Builder (always visible, blue card, "Copy Universal Package Prompt" button covers all categories). Demoted Theme/Sound/Animation/Full specialized prompts to collapsible "Optional: Specialized Prompts" section. Updated AI_PACKAGE_CREATION_GUIDE.md to explain universal prompt is recommended for most users.
-- C.4.P-404_412_BATCH: Added Active Template Audit view (Advanced > System > Active Template Audit). Reads active template (draft if editing, otherwise applied). Reports: template identity, piece theme (unified/team), board colors, background layer, board overlay, frame layer (with frameSizeMode/fixedWidth/fixedHeight), layer upload limit (3MB), responsive board note with runtime DOM measurement (.board-container getBoundingClientRect). Generates AI asset recommendations based on active frameSizeMode/fixedWidth/fixedHeight/background. Download .md report, Download .json, Copy report, Regenerate buttons. No rendering changes.
+
+## Obsidian Workspace / Launcher Windows — 2026-05-03
+
+- C5.P-044_WORKSPACE_FLOATING_DOCKS: Added/verified workspace-container direction, right dock floating over workspace background, right dock activator, and glass dock styling. User clarified docks should float over the workspace/background layer, not necessarily cover the chessboard by default.
+- C5.P-045_LEFT_LAUNCHER_ATTEMPT: Initial attempt failed to produce true floating tabbed launcher windows. It reused right-dock or second-sidebar behavior.
+- C5.P-046_FIX_LEFT_LAUNCHER_ROUTING: Clarified that left launcher category windows must not route into the right dock. Still not sufficient because old launcher panel render path remained.
+- C5.P-047_FIX_FLOATING_TABBED_CATEGORY_WINDOW: Narrowed target to converting launcher submenu panel into a floating tabbed category window. Diagnosis continued.
+- C5.P-048_FIX_LAUNCHER_WINDOW_TABS: Correctly removed `DynamicMenu` from active launcher window content and rendered first-level children as tabs. Reported DONE: Launcher window tabs replace vertical DynamicMenu rows.
+
+Verified discoveries and direct fixes:
+
+- `launcher-sub-panel` in `src/App.tsx` was the old wrong second-sidebar surface.
+- `launcher-category-window` is the intended floating launcher surface.
+- `launcher-sub-panel` should not remain in active launcher JSX or CSS.
+- `DynamicMenu` should remain for the root left icon launcher only.
+- DynamicMenu border warning was fixed by using explicit `borderTop`, `borderRight`, `borderBottom`, and `borderLeft`.
+- Launcher category window was made draggable by title bar in a direct patch.
+- Initial draggable patch inserted duplicate launcher helpers in outer `function App()` and caused `ReferenceError: activeLauncherItem is not defined`.
+- Scope fix removed the duplicate helper block from outer `App()` and kept launcher state/effects inside `MainLayout`.
+- User verified the corrected draggable launcher patch worked.
+
+Current verified launcher state:
+
+- left root icon opens a detached floating category window
+- first-level children appear as tabs
+- nested children appear inside selected tab
+- leaf action/overlay items remain reachable
+- title bar drag works
+- right dock remains independent
+
+Remaining:
+
+- resize handle
+- position persistence decision
+- reusable FloatingWindow component decision
+- future dockable/detachable window system
+- future movable non-dockable board-stage object

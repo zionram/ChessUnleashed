@@ -88,35 +88,11 @@
   border: 1px solid #456789;
 }
 
-.workspace-container {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
 .layout-grid {
   display: grid;
   flex: 1;
   overflow: hidden;
   min-height: 0;
-}
-
-.right-panel-float {
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
-}
-
-.right-panel-activator {
-  font: inherit;
-  font-size: 0.68rem;
-}
-
-@media (max-width: 768px) {
-  .right-panel-activator {
-    display: none !important;
-  }
 }
 
 .resizer {
@@ -153,41 +129,13 @@
 }
 
 .center-panel {
-  background-color: transparent;
+  background-color: #ecf0f1;
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
   display: grid;
   grid-template-rows: 1fr auto;
-}
-
-.left-panel-float {
-  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.16);
-}
-
-.launcher-sub-panel {
-  background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.13);
-}
-
-.right-panel-resizer {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 6px;
-  cursor: col-resize;
-  z-index: 10;
-  background: transparent;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-
-.right-panel-resizer:hover {
-  background: rgba(148, 163, 184, 0.22);
 }
 
 .center-chat-bar {
@@ -357,7 +305,7 @@
   .mobile-hidden {
     display: none !important;
   }
-
+  
   .layout-grid {
     display: block;
     flex: 1;
@@ -382,20 +330,8 @@
     background: white;
   }
 
-  .right-panel-float {
-    position: fixed !important;
-    transform: none !important;
-    right: -100% !important;
-    top: 0 !important;
-    height: 100% !important;
-    width: 85% !important;
-    transition: right 0.3s ease !important;
-  }
-
-  .right-panel.open,
-  .right-panel-float.open {
-    right: 0 !important;
-    transform: none !important;
+  .right-panel.open {
+    right: 0;
   }
 
   .mobile-bottom-nav {
@@ -594,25 +530,9 @@
 }
 
 .App[data-sidebar-style="glass"] .center-panel {
-  background: transparent;
-}
-
-.App[data-sidebar-style="glass"] .left-panel-float {
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08), 4px 0 24px rgba(0, 0, 0, 0.48);
-  border-right: 1px solid rgba(56, 189, 248, 0.16) !important;
-}
-
-.App[data-sidebar-style="glass"] .launcher-sub-panel {
-  background: var(--cu-glass-panel-bg, rgba(13, 17, 23, 0.88)) !important;
-  color: #d8e2ef;
-  border-left: 1px solid rgba(56, 189, 248, 0.14) !important;
-  border-right: none !important;
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.06), 6px 0 28px rgba(0, 0, 0, 0.44);
-  backdrop-filter: blur(12px);
-}
-
-.App[data-sidebar-style="glass"] .right-panel-resizer:hover {
-  background: rgba(56, 189, 248, 0.18);
+  background:
+    linear-gradient(180deg, rgba(2, 6, 23, 0.46), rgba(2, 6, 23, 0.86)),
+    radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.08), transparent 46%);
 }
 
 .App[data-sidebar-style="glass"] .workspace-board-area {
@@ -632,11 +552,6 @@
   color: #d8e2ef;
   backdrop-filter: blur(12px);
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
-}
-
-.App[data-sidebar-style="glass"] .right-panel-float {
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08), -8px 0 32px rgba(0, 0, 0, 0.5);
-  border-left: 1px solid rgba(56, 189, 248, 0.16) !important;
 }
 
 .App[data-sidebar-style="glass"] .left-panel {
@@ -819,532 +734,12 @@
   font-size: 0.8rem;
 }
 
-/* === Obsidian range slider polish === */
-.App[data-sidebar-style="glass"] input[type="range"] {
-  accent-color: var(--cu-accent, #38bdf8);
-  height: 18px;
-  background: transparent !important;
+/* === Launcher window drag affordance === */
+.launcher-window-titlebar {
+  cursor: move;
+  user-select: none;
 }
 
-.App[data-sidebar-style="glass"] input[type="range"]::-webkit-slider-runnable-track {
-  height: 6px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    rgba(56, 189, 248, 0.34),
-    rgba(100, 116, 139, 0.24)
-  );
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 14px;
-  height: 14px;
-  margin-top: -5px;
-  border-radius: 999px;
-  background: var(--cu-accent, #38bdf8);
-  border: 1px solid rgba(203, 213, 225, 0.34);
-  box-shadow:
-    0 0 0 2px rgba(56, 189, 248, 0.10),
-    0 0 8px rgba(56, 189, 248, 0.20);
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]:hover::-webkit-slider-runnable-track {
-  background: linear-gradient(
-    90deg,
-    rgba(56, 189, 248, 0.46),
-    rgba(100, 116, 139, 0.28)
-  );
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]:hover::-webkit-slider-thumb {
-  box-shadow:
-    0 0 0 3px rgba(56, 189, 248, 0.13),
-    0 0 12px rgba(56, 189, 248, 0.28);
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-track {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(100, 116, 139, 0.24);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-progress {
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(56, 189, 248, 0.40);
-}
-
-.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: var(--cu-accent, #38bdf8);
-  border: 1px solid rgba(203, 213, 225, 0.34);
-  box-shadow:
-    0 0 0 2px rgba(56, 189, 248, 0.10),
-    0 0 8px rgba(56, 189, 248, 0.20);
-}
-
-/* === Obsidian softer text / panel hierarchy === */
-.App[data-sidebar-style="glass"] {
-  color: #cbd5e1;
-}
-
-.App[data-sidebar-style="glass"] .view-container,
-.App[data-sidebar-style="glass"] .active-view-panel {
-  color: #cbd5e1;
-}
-
-.App[data-sidebar-style="glass"] .view-container h1,
-.App[data-sidebar-style="glass"] .view-container h2,
-.App[data-sidebar-style="glass"] .view-container h3,
-.App[data-sidebar-style="glass"] .view-container h4,
-.App[data-sidebar-style="glass"] .active-view-panel h1,
-.App[data-sidebar-style="glass"] .active-view-panel h2,
-.App[data-sidebar-style="glass"] .active-view-panel h3,
-.App[data-sidebar-style="glass"] .active-view-panel h4,
-.App[data-sidebar-style="glass"] .workspace-panel-titlebar h4 {
-  color: #e2e8f0 !important;
-}
-
-.App[data-sidebar-style="glass"] .view-container p,
-.App[data-sidebar-style="glass"] .view-container span,
-.App[data-sidebar-style="glass"] .view-container label,
-.App[data-sidebar-style="glass"] .workspace-panel-titlebar span,
-.App[data-sidebar-style="glass"] .header-guest-label {
-  color: #94a3b8;
-}
-
-.App[data-sidebar-style="glass"] .active-view-panel,
-.App[data-sidebar-style="glass"] .view-container section {
-  background: rgba(7, 17, 31, 0.72);
-  border-color: rgba(148, 163, 184, 0.14);
-}
-
-.App[data-sidebar-style="glass"] .view-container button,
-.App[data-sidebar-style="glass"] .view-container select,
-.App[data-sidebar-style="glass"] .view-container input:not([type="color"]):not([type="range"]):not([type="checkbox"]) {
-  background: rgba(15, 23, 42, 0.66) !important;
-  color: #cbd5e1 !important;
-  border-color: rgba(148, 163, 184, 0.18) !important;
-}
-
-.App[data-sidebar-style="glass"] .view-container button:hover,
-.App[data-sidebar-style="glass"] .view-container select:hover {
-  background: rgba(20, 30, 48, 0.74) !important;
-  border-color: rgba(148, 163, 184, 0.28) !important;
-}
-
-.App[data-sidebar-style="glass"] .view-container button:disabled {
-  opacity: 0.55;
-  color: #64748b !important;
-}
-
-.App[data-sidebar-style="glass"] .view-container input[type="color"] {
-  background: rgba(15, 23, 42, 0.66);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 4px;
-}
-
-/* === Obsidian scrollbar polish: softer, wider, squared === */
-.App[data-sidebar-style="glass"] .left-panel,
-.App[data-sidebar-style="glass"] .right-panel,
-.App[data-sidebar-style="glass"] .center-panel,
-.App[data-sidebar-style="glass"] .view-container,
-.App[data-sidebar-style="glass"] .active-view-panel,
-.App[data-sidebar-style="glass"] .panel-tab-strip,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet {
-  scrollbar-width: auto;
-  scrollbar-color: rgba(100, 116, 139, 0.76) rgba(8, 17, 34, 0.70);
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar {
-  width: 13px;
-  height: 13px;
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-track {
-  background: rgba(8, 17, 34, 0.70);
-  border-radius: 3px;
-  border: 1px solid rgba(148, 163, 184, 0.10);
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.76);
-  border-radius: 3px;
-  border: 2px solid rgba(8, 17, 34, 0.70);
-  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.08);
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.86);
-}
-
-/* === Obsidian overlay / Let's Play panel polish === */
-.App[data-sidebar-style="glass"] .overlay-content,
-.App[data-sidebar-style="glass"] .overlay-panel,
-.App[data-sidebar-style="glass"] .modal-content,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet {
-  background: rgba(7, 17, 31, 0.94) !important;
-  color: #cbd5e1 !important;
-  border: 1px solid rgba(148, 163, 184, 0.18) !important;
-  box-shadow:
-    0 24px 80px rgba(0, 0, 0, 0.62),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
-  backdrop-filter: blur(14px);
-}
-
-.App[data-sidebar-style="glass"] .overlay-content h1,
-.App[data-sidebar-style="glass"] .overlay-content h2,
-.App[data-sidebar-style="glass"] .overlay-content h3,
-.App[data-sidebar-style="glass"] .overlay-content h4,
-.App[data-sidebar-style="glass"] .overlay-panel h1,
-.App[data-sidebar-style="glass"] .overlay-panel h2,
-.App[data-sidebar-style="glass"] .overlay-panel h3,
-.App[data-sidebar-style="glass"] .overlay-panel h4,
-.App[data-sidebar-style="glass"] .modal-content h1,
-.App[data-sidebar-style="glass"] .modal-content h2,
-.App[data-sidebar-style="glass"] .modal-content h3,
-.App[data-sidebar-style="glass"] .modal-content h4 {
-  color: #e2e8f0 !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content section,
-.App[data-sidebar-style="glass"] .overlay-panel section,
-.App[data-sidebar-style="glass"] .modal-content section,
-.App[data-sidebar-style="glass"] .overlay-content .card,
-.App[data-sidebar-style="glass"] .overlay-panel .card,
-.App[data-sidebar-style="glass"] .modal-content .card {
-  background: rgba(10, 20, 38, 0.80) !important;
-  color: #cbd5e1 !important;
-  border: 1px solid rgba(148, 163, 184, 0.16) !important;
-  border-radius: 10px !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content button,
-.App[data-sidebar-style="glass"] .overlay-panel button,
-.App[data-sidebar-style="glass"] .modal-content button {
-  background: rgba(15, 23, 42, 0.72) !important;
-  color: #cbd5e1 !important;
-  border: 1px solid rgba(148, 163, 184, 0.20) !important;
-  border-radius: var(--cu-btn-radius, 4px) !important;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
-}
-
-.App[data-sidebar-style="glass"] .overlay-content button:hover,
-.App[data-sidebar-style="glass"] .overlay-panel button:hover,
-.App[data-sidebar-style="glass"] .modal-content button:hover {
-  border-color: rgba(56, 189, 248, 0.42) !important;
-  background: rgba(14, 47, 72, 0.72) !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content p,
-.App[data-sidebar-style="glass"] .overlay-content span,
-.App[data-sidebar-style="glass"] .overlay-content label,
-.App[data-sidebar-style="glass"] .overlay-content div,
-.App[data-sidebar-style="glass"] .overlay-panel p,
-.App[data-sidebar-style="glass"] .overlay-panel span,
-.App[data-sidebar-style="glass"] .overlay-panel label,
-.App[data-sidebar-style="glass"] .overlay-panel div,
-.App[data-sidebar-style="glass"] .modal-content p,
-.App[data-sidebar-style="glass"] .modal-content span,
-.App[data-sidebar-style="glass"] .modal-content label,
-.App[data-sidebar-style="glass"] .modal-content div {
-  color: inherit;
-}
-
-/* === Obsidian inline-style override deep darkening === */
-.App[data-sidebar-style="glass"] .overlay-content [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background:rgb(255, 255, 255)"] {
-  background: rgba(10, 20, 38, 0.82) !important;
-  color: #cbd5e1 !important;
-  border-color: rgba(148, 163, 184, 0.16) !important;
-  box-shadow: none !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="border:1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="border: 1px solid rgb(208, 215, 222)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="border:1px solid rgb(208, 215, 222)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="border:1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="border: 1px solid rgb(208, 215, 222)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="border:1px solid rgb(208, 215, 222)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="border:1px solid rgb(229, 231, 235)"] {
-  border-color: rgba(148, 163, 184, 0.16) !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color:rgb(102, 102, 102)"] {
-  color: #cbd5e1 !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .overlay-panel [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"] {
-  background: rgba(10, 20, 38, 0.76) !important;
-  border-color: rgba(148, 163, 184, 0.14) !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content button[style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-content button[style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-content button[style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-content button[style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-panel button[style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-panel button[style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .overlay-panel button[style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .overlay-panel button[style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet button[style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .mobile-menu-sheet button[style*="background:rgb(248, 250, 252)"] {
-  background: rgba(15, 23, 42, 0.74) !important;
-  color: #d7e2ee !important;
-  border-color: rgba(148, 163, 184, 0.18) !important;
-}
-
-/* Slightly darker / quieter text in overlays */
-.App[data-sidebar-style="glass"] .overlay-content,
-.App[data-sidebar-style="glass"] .overlay-panel,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet {
-  color: #c4d1df !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content p,
-.App[data-sidebar-style="glass"] .overlay-content span,
-.App[data-sidebar-style="glass"] .overlay-content label,
-.App[data-sidebar-style="glass"] .overlay-content li,
-.App[data-sidebar-style="glass"] .overlay-panel p,
-.App[data-sidebar-style="glass"] .overlay-panel span,
-.App[data-sidebar-style="glass"] .overlay-panel label,
-.App[data-sidebar-style="glass"] .overlay-panel li,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet p,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet span,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet label,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet li {
-  color: #b1bfd0 !important;
-}
-
-.App[data-sidebar-style="glass"] .overlay-content h1,
-.App[data-sidebar-style="glass"] .overlay-content h2,
-.App[data-sidebar-style="glass"] .overlay-content h3,
-.App[data-sidebar-style="glass"] .overlay-content h4,
-.App[data-sidebar-style="glass"] .overlay-panel h1,
-.App[data-sidebar-style="glass"] .overlay-panel h2,
-.App[data-sidebar-style="glass"] .overlay-panel h3,
-.App[data-sidebar-style="glass"] .overlay-panel h4,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet h1,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet h2,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet h3,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet h4 {
-  color: #dde7f3 !important;
-}
-
-/* Scrollbars closer to the mockup: larger, squarer, softer */
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar {
-  width: 14px;
-  height: 14px;
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-track,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-track {
-  background: rgba(11, 18, 30, 0.82);
-  border-radius: 2px;
-  border: 1px solid rgba(100, 116, 139, 0.14);
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb {
-  background: rgba(106, 118, 134, 0.72);
-  border-radius: 2px;
-  border: 2px solid rgba(11, 18, 30, 0.82);
-  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.05);
-}
-
-.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb:hover,
-.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb:hover {
-  background: rgba(130, 145, 165, 0.82);
-}
-
-/* === Obsidian inline-style override extended workspace-panel darkening === */
-.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(255, 255, 255)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(255, 255, 255)"] {
-  background: rgba(10, 20, 38, 0.82) !important;
-  color: #cbd5e1 !important;
-  border-color: rgba(148, 163, 184, 0.16) !important;
-  box-shadow: none !important;
-}
-
-.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(229, 231, 235)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(229, 231, 235)"] {
-  border-color: rgba(148, 163, 184, 0.16) !important;
-}
-
-.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(31, 41, 55)"],
-.App[data-sidebar-style="view-container"] [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(102, 102, 102)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(44, 62, 80)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(31, 41, 55)"],
-.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(31, 41, 55)"] {
-  color: #b8c7d8 !important;
-}
-
-/* Common boxed cards inside workspace panels */
-.App[data-sidebar-style="glass"] .right-panel [style*="padding: 10px; background: rgb(248, 250, 252); border-radius: 8px; border: 1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="padding: 10px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .right-panel [style*="padding: 12px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .view-container [style*="padding: 10px; background: rgb(248, 250, 252); border-radius: 8px; border: 1px solid rgb(226, 232, 240)"],
-.App[data-sidebar-style="glass"] .view-container [style*="padding: 10px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
-.App[data-sidebar-style="glass"] .view-container [style*="padding: 12px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"] {
-  background: rgba(11, 22, 40, 0.80) !important;
-  border-color: rgba(148, 163, 184, 0.16) !important;
-  color: #cbd5e1 !important;
-}
-
-/* Buttons that are still default-light */
-.App[data-sidebar-style="glass"] .right-panel button[style*="background: rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .right-panel button[style*="background:rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .right-panel button[style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .right-panel button[style*="background:rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .view-container button[style*="background: rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .view-container button[style*="background:rgb(248, 249, 250)"],
-.App[data-sidebar-style="glass"] .view-container button[style*="background: rgb(248, 250, 252)"],
-.App[data-sidebar-style="glass"] .view-container button[style*="background:rgb(248, 250, 252)"] {
-  background: rgba(15, 23, 42, 0.72) !important;
-  color: #d6e2ef !important;
-  border-color: rgba(148, 163, 184, 0.18) !important;
-}
-
-/* Specific history controls/list pattern */
-.App[data-sidebar-style="glass"] .history-controls,
-.App[data-sidebar-style="glass"] .history-list {
-  background: rgba(11, 22, 40, 0.80) !important;
-  border-color: rgba(148, 163, 184, 0.16) !important;
-  color: #b8c7d8 !important;
-}
-
-.App[data-sidebar-style="glass"] .history-list button,
-.App[data-sidebar-style="glass"] .history-controls button {
-  background: rgba(15, 23, 42, 0.72) !important;
-  color: #d6e2ef !important;
-  border-color: rgba(148, 163, 184, 0.18) !important;
+.launcher-window-titlebar button {
+  cursor: pointer;
 }

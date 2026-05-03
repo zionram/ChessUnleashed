@@ -1,6 +1,6 @@
 # AI Handoff Protocol
 
-Status: Active instructions for future AI/dev work
+Status: Active instructions for future AI/dev work, updated with launcher-window caution
 
 Chess Unleashed is a functioning release-candidate project. Treat it as existing software with working systems, not a greenfield rebuild.
 
@@ -28,6 +28,37 @@ Chess Unleashed is a functioning release-candidate project. Treat it as existing
 - Preserve Package Manager real-file zip behavior when touching packages.
 - Preserve Sound Rules and Animation Rules when touching Event Builder.
 
+## Launcher / Workspace Handoff Rules — 2026-05-03
+
+When working on Obsidian Workspace / launcher windows:
+
+- Search for `launcher-sub-panel` before editing. It was the old wrong sidebar panel.
+- Do not restore `launcher-sub-panel`.
+- Use `launcher-category-window` as the launcher category surface.
+- Use `DynamicMenu` for the root icon launcher only.
+- Do not use `DynamicMenu` recursively for launcher window content.
+- Do not route left launcher category windows into the right dock.
+- Do not treat `ViewManager` as the owner of left launcher windows.
+- Keep launcher drag/resize state inside `MainLayout`.
+- Do not put `activeLauncherItem` references or launcher helpers inside outer `function App()`.
+- If the app crashes with `ReferenceError: activeLauncherItem is not defined`, inspect for launcher code accidentally inserted into the provider-only `App()` wrapper.
+
+Expected outer `App()` shape:
+
+```tsx
+function App() {
+  return (
+    <AudioProvider>
+      <SettingsProvider>
+        <GameProvider>
+          <MainLayout />
+        </GameProvider>
+      </SettingsProvider>
+    </AudioProvider>
+  );
+}
+```
+
 ## Current Release-Candidate Watch Areas
 
 - Package Manager Load/Save/Extract must keep visible progress/status/error handling.
@@ -38,6 +69,8 @@ Chess Unleashed is a functioning release-candidate project. Treat it as existing
 - Event Builder, Sound Editor, and Animation Builder are complex center-panel tools.
 - Piece Set and Layer edits must merge into the same theme draft without overwriting each other.
 - Frame sizing/lock and welcome sidebar color controls should work in packaged Electron, not only browser mode.
+- Launcher category windows should remain independent from right dock workspace tabs.
+- Board overlay color layer should remain optional/invisible unless enabled.
 
 ## Build Expectations
 
@@ -67,3 +100,17 @@ When handing work to another AI/dev, include:
 - known limitations or follow-up
 
 If uncertain, say Needs verification instead of guessing.
+
+## Useful Launcher Verification Commands
+
+```powershell
+Select-String -Path .\src\**\*.tsx,.\src\**\*.css -Pattern "launcher-sub-panel"
+```
+
+```powershell
+Select-String -Path .\src\App.tsx,.\src\App.css -Pattern "launcher-category-window","launcher-window-titlebar","launcherWindowPosition"
+```
+
+```powershell
+Select-String -Path .\src\App.tsx -Pattern "function App","MainLayout","activeLauncherItem"
+```

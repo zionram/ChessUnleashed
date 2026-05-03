@@ -1,6 +1,6 @@
 # Do Not Rebuild
 
-Status: Active project rule
+Status: Active project rule, updated with workspace-window cautions
 
 Chess Unleashed is existing functioning software. Future work should be small, scoped, and compatible with current ownership boundaries.
 
@@ -35,6 +35,18 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Animation Rules connect events to animations.
 - Sound Rules connect events to sounds.
 
+## Workspace / Launcher Window Rules — 2026-05-03
+
+- Do not restore `launcher-sub-panel`.
+- Do not create a duplicate left launcher system.
+- Do not route left launcher category windows into the right dock.
+- Do not use `DynamicMenu` recursively inside `launcher-category-window`.
+- Do not create a global window manager until explicitly requested.
+- Do not add drag/resize logic outside the component scope that owns the state.
+- `activeLauncherItem` belongs inside `MainLayout`, not the outer provider-only `App()` wrapper.
+- Keep `DynamicMenu` limited to the root icon launcher unless explicitly changing the old recursive menu behavior elsewhere.
+- Launcher category windows should be floating, tabbed, and independent from the right dock.
+
 ## Systems Not To Replace
 
 - Standard Chess/chess runtime.
@@ -47,11 +59,30 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Event Builder and CustomEventRuntime architecture.
 - Animation Builder and movement animation path.
 - Theme/Piece template data model.
+- Right dock / `ViewManager` architecture unless explicitly scoped.
+- Existing Overlay architecture unless explicitly scoped.
 
 ## Package Rule
 
-Do not mix runtime Game Snapshot state into ExperiencePackage exports by default. Packages are reusable; snapshots are games in progress.
+Do not mix runtime Game Snapshot state into ExperiencePackage exports by default.
+
+Packages are reusable; snapshots are games in progress.
 
 ## Media Rule
 
-Do not put GIF/PNG/MP3/WAV/MIDI binary data into JSON/localStorage as giant base64 strings. Use package assets, durable asset storage, or file references through the existing helpers.
+Do not put GIF/PNG/MP3/WAV/MIDI binary data into JSON/localStorage as giant base64 strings.
+
+Use package assets, durable asset storage, or file references through the existing helpers.
+
+## Vite / React Warning Rule
+
+Do not edit `node_modules/.vite/deps` or `react-dom_client.js`.
+
+If React reports a style warning, fix the source component style object.
+
+If cache is stale, clear Vite cache instead:
+
+```bat
+rmdir /s /q node_modules\.vite
+npm.cmd run dev
+```

@@ -7,9 +7,10 @@ interface DynamicMenuProps {
   items: MenuItem[];
   onAction?: (actionId: string) => void;
   depth?: number;
+  onRootItemSelect?: (item: MenuItem | null) => void;
 }
 
-const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0 }) => {
+const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, onRootItemSelect }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<MenuItem | null>(null);
   const [onCloseRequest, setOnCloseRequest] = useState<(() => void) | null>(null);
@@ -25,7 +26,11 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0 })
 
   const handleItemClick = (item: MenuItem) => {
     if (item.type === 'submenu') {
-      setActiveSubMenu(activeSubMenu === item.id ? null : item.id);
+      const isCurrentlyActive = activeSubMenu === item.id;
+      setActiveSubMenu(isCurrentlyActive ? null : item.id);
+      if (isRootToolGrid && onRootItemSelect) {
+        onRootItemSelect(isCurrentlyActive ? null : item);
+      }
     } else if (item.type === 'overlay') {
       setActiveOverlay(item);
     } else if (item.actionId && onAction) {
@@ -152,7 +157,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0 })
               )}
             </div>
 
-            {activeSubMenu === item.id && item.children && (
+            {activeSubMenu === item.id && item.children && !(isRootToolGrid && onRootItemSelect) && (
               <div
                 className="sub-menu-nest"
                 style={{

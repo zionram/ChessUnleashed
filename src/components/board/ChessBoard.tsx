@@ -356,17 +356,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
     return arr;
   }, [currentBoardMap, pressureMap, activePathSources, selectedSquare, legalMoves, settings.template, settings.isThemeEditorMode, orientation, movingPiece?.to]);
 
-  const { boardColors, boardOverlay } = settings.template;
-
-  const boardBgImage = (() => {
-    const layers: string[] = [];
-    if (boardOverlay.image) layers.push(`url(${boardOverlay.image})`);
-    if (boardOverlay.colorEnabled && boardOverlay.color) {
-      const a = Math.round((boardOverlay.colorOpacity ?? 0.25) * 255).toString(16).padStart(2, '0');
-      layers.push(`linear-gradient(${boardOverlay.color}${a}, ${boardOverlay.color}${a})`);
-    }
-    return layers.length ? layers.join(', ') : 'none';
-  })();
+  const { boardOverlay } = settings.template;
 
   const getTriggeredAnimationName = (preset: string) => `event-animation-${preset}`;
   const renderTriggeredAnimation = () => {
@@ -488,17 +478,41 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
           display: 'grid',
           gridTemplateColumns: 'repeat(8, 1fr)',
           width: 'min(90vw, 600px)',
-          border: `10px solid ${boardColors.dark}`,
+          border: '1px solid rgba(148, 163, 184, 0.28)',
           borderRadius: '8px',
           margin: '20px auto',
           boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
           position: 'relative',
-          backgroundImage: boardBgImage,
-          backgroundSize: 'cover',
-          backgroundColor: boardColors.dark
+          backgroundColor: 'transparent',
+          overflow: 'hidden'
         }}
       >
         {squares}
+        {boardOverlay.colorEnabled && boardOverlay.color && (boardOverlay.colorOpacity ?? 0) > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundColor: boardOverlay.color,
+              opacity: boardOverlay.colorOpacity ?? 0,
+              pointerEvents: 'none',
+              zIndex: 3
+            }}
+          />
+        )}
+        {boardOverlay.image && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url(${boardOverlay.image})`,
+              backgroundSize: 'cover',
+              opacity: boardOverlay.opacity,
+              pointerEvents: 'none',
+              zIndex: 4
+            }}
+          />
+        )}
         {movingPiece && (() => {
           const from = getDisplayPosition(movingPiece.from, orientation);
           const to = getDisplayPosition(movingPiece.to, orientation);

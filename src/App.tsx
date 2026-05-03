@@ -39,7 +39,7 @@ import GameEndOverlay from './components/layout/GameEndOverlay';
 import Overlay from './components/layout/Overlay';
 import MobileMenuSheet from './components/menu/MobileMenuSheet';
 import ImportExportView from './views/ImportExportView';
-import { MENU_SCHEMA } from './config/menuSchema';
+import { MENU_SCHEMA, type MenuItem } from './config/menuSchema';
 import { clearErrorLogEntries, installGlobalErrorLogging } from './utils/ErrorLog';
 import { SETTINGS_STORAGE_KEY } from './context/SettingsContext';
 import { clearGameSnapshot, readGameSnapshot } from './runtime/GameSnapshot';
@@ -100,6 +100,7 @@ function MainLayout() {
     return snapshot?.gameType === 'custom' ? snapshot.selectedCustomRulesetId : null;
   });
 
+  const [activeLauncherItem, setActiveLauncherItem] = useState<MenuItem | null>(null);
   const [leftWidth, setLeftWidth] = useState(280);
   const [rightWidth, setRightWidth] = useState(320);
   const [dismissedGameEndOverlay, setDismissedGameEndOverlay] = useState(false);
@@ -551,64 +552,19 @@ function MainLayout() {
         className="workspace-container"
         style={{ flex: 1, position: 'relative', overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}
       >
-      <div
-        className="layout-grid workspace-grid"
-        style={{
-          gridTemplateColumns: `${leftPanelCollapsed ? 52 : leftWidth}px 4px 1fr`
-        }}
-      >
-        <aside className="left-panel mobile-hidden" style={getSidePanelStyles()}>
-          <div
-            className="panel-header"
-            style={{
-              borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-          >
-            <span>{leftPanelCollapsed ? 'Tools' : 'Tool Palette'}</span>
-            <button
-              onClick={() => setLeftPanelCollapsed(current => !current)}
-              title={leftPanelCollapsed ? 'Restore menu panel' : 'Collapse menu panel'}
-              style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
-            >
-              {leftPanelCollapsed ? '>' : '<'}
-            </button>
-          </div>
-          {leftPanelCollapsed ? (
-            <button
-              onClick={() => setLeftPanelCollapsed(false)}
-              title="Restore menu panel"
-              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
-            >
-              Menu
-            </button>
-          ) : (
-            <>
-              <DynamicMenu items={MENU_SCHEMA} onAction={handleMenuAction} />
-              <div
-                className="welcome-sidebar-container"
-                style={getWelcomeContainerStyles()}
-              >
-                <WelcomeView />
-              </div>
-            </>
-          )}
-        </aside>
+        {/* Template background layers fill the full workspace */}
+        <div data-layer="background-color" style={{ ...getLayerColorStyles(background), zIndex: 0 }} />
+        <div data-layer="background-image" style={{ ...getLayerImageStyles(background), zIndex: 0 }} />
 
         <div
-          className="resizer mobile-hidden"
-          onMouseDown={() => {
-            isDraggingLeft.current = true;
-            document.body.style.cursor = 'col-resize';
+          className="layout-grid workspace-grid"
+          style={{
+            gridTemplateColumns: '1fr',
+            position: 'relative',
+            zIndex: 1
           }}
-        />
-
+        >
         <main ref={centerPanelRef} className="center-panel" style={{ position: 'relative' }}>
-          <div data-layer="background-color" style={{ ...getLayerColorStyles(background), zIndex: 0 }} />
-          <div data-layer="background-image" style={{ ...getLayerImageStyles(background), zIndex: 1 }} />
           <div data-layer="frame-image" style={{ ...getFrameLayerImageStyles(frameLayer), zIndex: 2 }} />
           {showGameEndOverlay && (
             <GameEndOverlay
@@ -707,10 +663,119 @@ function MainLayout() {
             <ChatContainer requiredPosition="bottom" />
           )}
         </main>
+        </div>
 
-      </div>
+        {/* Floating left dock */}
+        <aside
+          className="left-panel left-panel-float mobile-hidden"
+          style={{
+            ...getSidePanelStyles(),
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            height: '100%',
+            width: `${leftPanelCollapsed ? 52 : leftWidth}px`,
+            zIndex: 200,
+            transition: 'width 0.22s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          <div
+            className="panel-header"
+            style={{
+              borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '8px',
+              flexShrink: 0
+            }}
+          >
+            {!leftPanelCollapsed && <span>Tool Palette</span>}
+            <button
+              onClick={() => setLeftPanelCollapsed(current => !current)}
+              title={leftPanelCollapsed ? 'Expand launcher' : 'Collapse launcher'}
+              style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius(), marginLeft: 'auto' }}
+            >
+              {leftPanelCollapsed ? '›' : '‹'}
+            </button>
+          </div>
+          {leftPanelCollapsed ? (
+            <button
+              onClick={() => setLeftPanelCollapsed(false)}
+              title="Expand launcher"
+              style={{ margin: '8px 4px', padding: '8px 4px', fontSize: '0.65rem', borderRadius: getButtonRadius() }}
+            >
+              ›
+            </button>
+          ) : (
+            <>
+              <DynamicMenu
+                items={MENU_SCHEMA}
+                onAction={handleMenuAction}
+                onRootItemSelect={(item) => setActiveLauncherItem(item)}
+              />
+              <div
+                className="welcome-sidebar-container"
+                style={getWelcomeContainerStyles()}
+              >
+                <WelcomeView />
+              </div>
+            </>
+          )}
+        </aside>
 
-        {/* Floating right panel — overlays the board area */}
+        {activeLauncherItem && (
+          <div
+            className="launcher-sub-panel"
+            style={{
+              ...getSidePanelStyles(),
+              position: 'absolute',
+              left: leftPanelCollapsed ? 52 : leftWidth,
+              top: 0,
+              height: '100%',
+              width: 256,
+              zIndex: 198,
+              transition: 'left 0.22s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <div
+              className="panel-header"
+              style={{
+                borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '8px',
+                flexShrink: 0
+              }}
+            >
+              <span>{activeLauncherItem.label}</span>
+              <button
+                onClick={() => setActiveLauncherItem(null)}
+                title="Close panel"
+                style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+              {activeLauncherItem.children && (
+                <DynamicMenu
+                  items={activeLauncherItem.children}
+                  onAction={handleMenuAction}
+                  depth={1}
+                />
+              )}
+            </div>
+          </div>
+        )}
+
         <aside
           className={`right-panel right-panel-float ${rightPanelOpen ? 'open' : ''}`}
           style={{
@@ -728,6 +793,14 @@ function MainLayout() {
             overflow: 'hidden'
           }}
         >
+          {/* Left-edge resize handle */}
+          <div
+            className="right-panel-resizer"
+            onMouseDown={() => {
+              isDraggingRight.current = true;
+              document.body.style.cursor = 'col-resize';
+            }}
+          />
           <div
             className="panel-header"
             style={{

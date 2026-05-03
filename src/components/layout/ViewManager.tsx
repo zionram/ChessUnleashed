@@ -28,13 +28,14 @@ const ViewManager: React.FC = () => {
   const registeredViews = getRegisteredViews();
 
   const isMobile = window.innerWidth <= 768;
+  const buttonRadius = { rounded: 6, square: 2, minimal: 0 }[settings.uiAppearance.buttonStyle];
 
   const ToggleSwitch = ({ id, active }: { id: string, active: boolean }) => (
     <div 
       onClick={() => toggleView(id)}
       style={{
         width: '36px', height: '20px', borderRadius: '10px',
-        background: active ? '#27ae60' : '#ccc',
+        background: active ? settings.uiAppearance.accentColor : '#ccc',
         position: 'relative', cursor: 'pointer', transition: 'background 0.3s'
       }}
     >
@@ -59,10 +60,10 @@ const ViewManager: React.FC = () => {
               <h4 style={{ margin: 0 }}>Piece Editor</h4>
               {!isMobile && (
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => toggleMinimized('theme-editor')} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>
+                  <button onClick={() => toggleMinimized('theme-editor')} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>
                     {minimizedViews['theme-editor'] ? 'Restore' : 'Minimize'}
                   </button>
-                  <button onClick={() => setThemeEditorMode(false)} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>Close</button>
+                  <button onClick={() => setThemeEditorMode(false)} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>Close</button>
                 </div>
               )}
               {isMobile && <ToggleSwitch id="theme-editor" active={settings.isThemeEditorMode} />}
@@ -88,10 +89,10 @@ const ViewManager: React.FC = () => {
               <h4 style={{ margin: 0 }}>{viewConfig.name}</h4>
               {!isMobile && (
                 <div style={{ display: 'flex', gap: '6px' }}>
-                  <button onClick={() => toggleMinimized(viewConfig.id)} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>
+                  <button onClick={() => toggleMinimized(viewConfig.id)} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>
                     {minimizedViews[viewConfig.id] ? 'Restore' : 'Minimize'}
                   </button>
-                  <button onClick={() => toggleView(viewConfig.id)} style={{ padding: '2px 8px', fontSize: '0.7rem' }}>
+                  <button onClick={() => toggleView(viewConfig.id)} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>
                     Close
                   </button>
                 </div>

@@ -369,6 +369,34 @@ function MainLayout() {
     pointerEvents: 'none'
   });
 
+  const hexToRgba = (hex: string, alpha: number): string => {
+    if (!hex.startsWith('#') || hex.length !== 7) return `rgba(255, 255, 255, ${alpha})`;
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  };
+
+  const getSidePanelStyles = (): CSSProperties => {
+    const { sidebarStyle, panelOpacity, panelBackdropBlur, accentColor, panelBackgroundColor } = settings.uiAppearance;
+    if (sidebarStyle === 'glass') {
+      return {
+        backgroundColor: hexToRgba(panelBackgroundColor || '#ffffff', panelOpacity / 100),
+        ...(panelBackdropBlur > 0 ? { backdropFilter: `blur(${panelBackdropBlur}px)` } : {})
+      };
+    }
+    if (sidebarStyle === 'bordered') {
+      return { border: `2px solid ${accentColor}` };
+    }
+    return {};
+  };
+
+  const getButtonRadius = (): number => ({ rounded: 6, square: 2, minimal: 0 }[settings.uiAppearance.buttonStyle]);
+
+  const glassPanelBg = settings.uiAppearance.sidebarStyle === 'glass'
+    ? hexToRgba(settings.uiAppearance.panelBackgroundColor || '#ffffff', settings.uiAppearance.panelOpacity / 100)
+    : '';
+
   const getWelcomeContainerStyles = (): CSSProperties => {
     const mode = settings.uiAppearance.welcomeSidebarContainerFrameMode;
     const frameColor = mode === 'none'
@@ -387,13 +415,17 @@ function MainLayout() {
   return (
     <div
       className="App"
+      data-sidebar-style={settings.uiAppearance.sidebarStyle}
       style={{
-        // Staged uiAppearance integration: scoped app-shell font size only.
         fontSize: `${settings.uiAppearance.baseFontSize}px`,
-        fontFamily: settings.uiAppearance.fontFamily
-      }}
+        fontFamily: settings.uiAppearance.fontFamily,
+        backgroundColor: settings.uiAppearance.appBackgroundColor,
+        '--cu-accent': settings.uiAppearance.accentColor,
+        '--cu-btn-radius': `${getButtonRadius()}px`,
+        '--cu-glass-panel-bg': glassPanelBg,
+      } as CSSProperties}
     >
-      <header className="app-header">
+      <header className="app-header" style={{ backgroundColor: settings.uiAppearance.toolbarBackgroundColor }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1>Grandmaster</h1>
           <button
@@ -516,7 +548,7 @@ function MainLayout() {
           gridTemplateColumns: `${leftPanelCollapsed ? 52 : leftWidth}px 4px 1fr 4px ${rightPanelCollapsed ? 52 : rightWidth}px`
         }}
       >
-        <aside className="left-panel mobile-hidden">
+        <aside className="left-panel mobile-hidden" style={getSidePanelStyles()}>
           <div
             className="panel-header"
             style={{
@@ -531,7 +563,7 @@ function MainLayout() {
             <button
               onClick={() => setLeftPanelCollapsed(current => !current)}
               title={leftPanelCollapsed ? 'Restore menu panel' : 'Collapse menu panel'}
-              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+              style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
             >
               {leftPanelCollapsed ? '>' : '<'}
             </button>
@@ -540,7 +572,7 @@ function MainLayout() {
             <button
               onClick={() => setLeftPanelCollapsed(false)}
               title="Restore menu panel"
-              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem' }}
+              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
             >
               Menu
             </button>
@@ -675,7 +707,7 @@ function MainLayout() {
           }}
         />
 
-        <aside className={`right-panel ${rightPanelOpen ? 'open' : ''}`}>
+        <aside className={`right-panel ${rightPanelOpen ? 'open' : ''}`} style={getSidePanelStyles()}>
           <div
             className="panel-header"
             style={{
@@ -690,7 +722,7 @@ function MainLayout() {
             <button
               onClick={toggleRightPanel}
               title={rightPanelCollapsed ? 'Restore controls panel' : 'Collapse controls panel'}
-              style={{ padding: '2px 8px', fontSize: '0.7rem' }}
+              style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius() }}
             >
               {rightPanelCollapsed ? '<' : '>'}
             </button>
@@ -705,7 +737,7 @@ function MainLayout() {
             <button
               onClick={() => setRightPanelCollapsed(false)}
               title="Restore controls panel"
-              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem' }}
+              style={{ margin: '12px 8px', padding: '8px 4px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
             >
               Open
             </button>

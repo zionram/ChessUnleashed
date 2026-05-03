@@ -104,7 +104,7 @@
 }
 
 .resizer:hover {
-  background: #3498db;
+  background: var(--cu-accent, #3498db);
 }
 
 .left-panel, .right-panel {
@@ -203,7 +203,7 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  border-left: 4px solid #3498db;
+  border-left: 4px solid var(--cu-accent, #3498db);
 }
 
 /* Settings View Styling */
@@ -258,7 +258,7 @@
 }
 
 .sub-menu-nest {
-  border-left: 2px solid #3498db;
+  border-left: 2px solid var(--cu-accent, #3498db);
   margin-left: 15px;
 }
 
@@ -373,4 +373,73 @@
   .mobile-only-btn {
     display: none;
   }
+}
+
+/* === Glass / Workspace mode (data-sidebar-style="glass") === */
+
+[data-sidebar-style="glass"] .left-panel,
+[data-sidebar-style="glass"] .right-panel {
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-sidebar-style="glass"] .panel-header {
+  background: var(--cu-glass-panel-bg, rgba(13, 17, 23, 0.96));
+  color: #d4dae3;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+[data-sidebar-style="glass"] .right-panel .panel-header {
+  background: var(--cu-glass-panel-bg, rgba(13, 17, 23, 0.97));
+}
+
+[data-sidebar-style="glass"] .panel-header button {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  color: #c0c8d3;
+  border-radius: var(--cu-btn-radius, 4px);
+  cursor: pointer;
+}
+
+[data-sidebar-style="glass"] .panel-header button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-sidebar-style="glass"] .active-view-panel {
+  background: var(--cu-glass-panel-bg, rgba(13, 17, 23, 0.88));
+  border-left-color: var(--cu-accent, #3498db);
+  color: #d4dae3;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-sidebar-style="glass"] .active-view-panel h3,
+[data-sidebar-style="glass"] .active-view-panel h4,
+[data-sidebar-style="glass"] .right-panel .view-container h3,
+[data-sidebar-style="glass"] .right-panel .view-container h4 {
+  color: #d4dae3;
+}
+
+[data-sidebar-style="glass"] .active-view-panel button {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #c0c8d3;
+  border-radius: var(--cu-btn-radius, 4px);
+  cursor: pointer;
+}
+
+[data-sidebar-style="glass"] .active-view-panel button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+[data-sidebar-style="glass"] .right-panel .view-container select {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #c0c8d3;
+}
+
+[data-sidebar-style="glass"] .resizer {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+[data-sidebar-style="glass"] .menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
 }

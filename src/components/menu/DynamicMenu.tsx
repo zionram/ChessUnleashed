@@ -13,7 +13,11 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction }) => {
   const [activeOverlay, setActiveOverlay] = useState<MenuItem | null>(null);
   const [onCloseRequest, setOnCloseRequest] = useState<(() => void) | null>(null);
   const { settings } = useSettings();
-  const accentColor = settings.uiAppearance.accentColor;
+  const { accentColor, sidebarStyle } = settings.uiAppearance;
+  const isGlass = sidebarStyle === 'glass';
+  const menuTextColor = isGlass ? '#c8d0d9' : '#333';
+  const menuBorderColor = isGlass ? 'rgba(255, 255, 255, 0.06)' : '#f0f0f0';
+  const subMenuBgColor = isGlass ? 'rgba(0, 0, 0, 0.18)' : '#fff';
 
   const handleItemClick = (item: MenuItem) => {
     if (item.type === 'submenu') {
@@ -39,13 +43,12 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction }) => {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              borderBottom: '1px solid #f0f0f0',
-              // First uiAppearance integration point: accent color for active menu state.
+              borderBottom: `1px solid ${menuBorderColor}`,
               backgroundColor: activeSubMenu === item.id ? `${accentColor}14` : 'transparent',
               borderLeft: activeSubMenu === item.id ? `3px solid ${accentColor}` : '3px solid transparent',
               transition: 'background-color 0.2s',
               fontSize: '0.9rem',
-              color: '#333'
+              color: menuTextColor
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -60,7 +63,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction }) => {
           </div>
           
           {activeSubMenu === item.id && item.children && (
-            <div className="sub-menu-nest" style={{ backgroundColor: '#fff' }}>
+            <div className="sub-menu-nest" style={{ backgroundColor: subMenuBgColor }}>
               <DynamicMenu items={item.children} onAction={onAction} />
             </div>
           )}

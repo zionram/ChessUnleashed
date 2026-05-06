@@ -2,7 +2,7 @@ import React from 'react';
 
 const AboutSupportView: React.FC = () => {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.9rem', lineHeight: 1.5 }}>
+    <div className="cu-themed-embedded-view cu-about-support-view" style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.9rem', lineHeight: 1.5 }}>
       <section style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <h3 style={{ margin: 0, fontSize: '1rem' }}>About Chess Unleashed</h3>
         <p style={{ margin: 0 }}>

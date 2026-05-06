@@ -36,7 +36,7 @@ const EventLogView: React.FC = () => {
   };
 
   return (
-    <div className="event-log-container" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px', padding: '10px', boxSizing: 'border-box' }}>
+    <div className="event-log-container cu-themed-embedded-view cu-event-log-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '10px', padding: '10px', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Event Log</h2>
         <button 

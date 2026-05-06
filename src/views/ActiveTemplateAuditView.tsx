@@ -669,7 +669,7 @@ const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
   const bg = audit.background;
 
   return (
-    <div style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
+    <div className="cu-themed-embedded-view cu-active-template-audit-view" style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>

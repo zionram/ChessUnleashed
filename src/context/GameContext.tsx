@@ -20,6 +20,8 @@ import {
 } from '../packages/ExperienceCompliancePolicy';
 import type { Template } from '../templates';
 import { clearGameSnapshot, readGameSnapshot, writeGameSnapshot, type StandardGameSnapshot } from '../runtime/GameSnapshot';
+import { getFicsAdapter } from '../services/online/fics/FicsAdapter';
+import { normalizeStyle12, translateFicsCommand, type FicsNormalizedGameState } from '../services/online/fics/FicsGameTranslator';
 import { evaluateCustomEventDefinition, getCustomEventAudioContext, getCustomEventLogDetails } from '../events/CustomEventRuntime';
 
 interface ChatMessage {
@@ -125,6 +127,7 @@ interface GameContextType {
   resignationResult: ResignationResult | null;
   resignGame: (loser?: TimerColor) => void;
   botRuntimeStatus: BotRuntimeStatus;
+  ficsGame: FicsNormalizedGameState | null;
 }
 
 interface BotRuntimeStatus {
@@ -441,6 +444,8 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [timeoutResult, setTimeoutResult] = useState<TimeoutResult | null>(restoredStandardSnapshot?.result.timeoutResult ?? null);
   const [resignationResult, setResignationResult] = useState<ResignationResult | null>(restoredStandardSnapshot?.result.resignationResult ?? null);
   const [botRuntimeStatus, setBotRuntimeStatus] = useState<BotRuntimeStatus>({ state: 'idle', message: '' });
+  const [ficsGame, setFicsGame] = useState<FicsNormalizedGameState | null>(null);
+  const ficsGameRef = useRef<FicsNormalizedGameState | null>(null);
   const lastSnapshotWriteMs = useRef(0);
   const lastSnapshotHistoryLength = useRef(0);
   const lastGameEndEventKey = useRef('');
@@ -676,6 +681,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     let workerRequest: ReturnType<typeof createUciWorkerBestMoveRequest> | null = null;
     let thinkTimer: number | null = null;
 
+    if (ficsGame) {
+      setBotRuntimeStatus(status => status.state === 'thinking' ? { state: 'idle', message: '' } : status);
+      return () => {
+        cancelled = true;
+        workerRequest?.cancel();
+      };
+    }
+
     if (!timeoutResult && !resignationResult && !awaitingClockPress && vsComputer && gameState.turn === computerSide && !gameState.isCheckmate && !gameState.isDraw) {
       const startBotTurn = () => {
         if (cancelled) return;
@@ -782,7 +795,39 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (thinkTimer) window.clearTimeout(thinkTimer);
       workerRequest?.cancel();
     };
-  }, [timeoutResult, resignationResult, awaitingClockPress, vsComputer, gameState.turn, gameState.fen, computerSide, gameState.isCheckmate, gameState.isDraw, engine, settings.botSettings, settings.activeEngineId, settings.registeredBots, botMoveStartDelayMs]);
+  }, [timeoutResult, resignationResult, awaitingClockPress, vsComputer, gameState.turn, gameState.fen, computerSide, gameState.isCheckmate, gameState.isDraw, engine, settings.botSettings, settings.activeEngineId, settings.registeredBots, botMoveStartDelayMs, ficsGame]);
+
+  useEffect(() => {
+    const adapter = getFicsAdapter();
+    const unsubscribeStyle12 = adapter.onStyle12(style12 => {
+      try {
+        const normalized = normalizeStyle12(style12);
+        ficsGameRef.current = normalized;
+        setFicsGame(normalized);
+        engine.initialize(normalized.fen);
+        const nextState = engine.getGameState();
+        setGameState({ ...nextState });
+        setHistoryFens(prev => prev[prev.length - 1] === normalized.fen ? prev : [normalized.fen]);
+        setHistoryIndex(-1);
+        setPreviewLine(null);
+        setPendingClockPress(null);
+        setTimeoutResult(null);
+        setResignationResult(null);
+      } catch (error) {
+        console.warn('[FICS] Could not sync Style 12 state to main board:', error);
+      }
+    });
+    const unsubscribeLogin = adapter.onLoginStatus(status => {
+      if (status === 'disconnected' || status === 'login-failed' || status === 'error') {
+        ficsGameRef.current = null;
+        setFicsGame(null);
+      }
+    });
+    return () => {
+      unsubscribeStyle12();
+      unsubscribeLogin();
+    };
+  }, [engine]);
 
   const syncGame = (fen: string, isMove: boolean = false, lastMove?: any) => {
     engine.initialize(fen);
@@ -956,6 +1001,14 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const makeMove = (move: any): boolean => {
     if (timeoutResult || resignationResult) return false;
+    const activeFicsGame = ficsGameRef.current;
+    if (activeFicsGame) {
+      if (!activeFicsGame.canSendMoves) return false;
+      const command = translateFicsCommand('move', move);
+      if (!command) return false;
+      getFicsAdapter().sendMove(command);
+      return true;
+    }
     if (socket && roomId) {
       if (playerColor !== engine.getGameState().turn) return false;
       socket.send(JSON.stringify({ type: 'move', payload: { roomId, move } }));
@@ -1026,6 +1079,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const resetGame = () => {
+    if (ficsGameRef.current) return;
     if (socket && roomId) return; 
     if (!canStartGame()) return;
     clearGameSnapshot();
@@ -1074,7 +1128,7 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createRoom, joinRoom, leaveRoom, syncTheme, requestUndo, handleUndoResponse, sendChatMessage, startVsComputer, setAIDifficulty, setOpponentProfile, updateRoomSettings, acceptComplianceResolution, declineComplianceResolution, requestHostAssets, analysis,
       previewLine, setPreviewLine, analysisPerspective, setAnalysisPerspective,
       timerState, startTimer, stopTimer, resetTimer, applyMoveTimeUpdate, pendingClockPress, awaitingClockPress, pressClock, gameStartError, timeoutResult, resignationResult, resignGame,
-      botRuntimeStatus
+      botRuntimeStatus, ficsGame
     }}>
       {children}
     </GameContext.Provider>

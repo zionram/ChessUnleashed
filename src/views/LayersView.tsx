@@ -147,7 +147,7 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
   };
 
   return (
-    <div style={{ marginTop: '12px', padding: '8px', border: cardBorder, borderRadius: '6px', background: cardBg }}>
+    <div className="cu-layer-editor-card" style={{ marginTop: '12px', padding: '12px', border: cardBorder, borderRadius: '8px', background: cardBg }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
         <h5 style={{ margin: 0, fontSize: '0.85rem', color: controlText }}>{label}</h5>
         <button onClick={() => onUpdate({ xOffset: 0, yOffset: 0, scale: 100 })} style={buttonStyle}>Reset</button>
@@ -155,9 +155,9 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
 
       <ImageInput label="Texture" imageValue={config.image} inputId={inputId} onImageChange={(img) => onUpdate({ image: img })} onClear={() => onUpdate({ image: '' })} maxSize={maxSize} isGlass={isGlass} />
 
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginTop: '8px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: showColor ? 'minmax(120px, max-content) minmax(180px, 1fr)' : '1fr', gap: '14px', alignItems: 'center', marginTop: '10px' }}>
         {showColor && (
-          <div className="setting-item" style={{ flex: 1 }}>
+          <div className="setting-item cu-compact-setting-item" style={{ flex: 1, alignItems: 'flex-start' }}>
             <span style={{ fontSize: '0.75rem', color: controlText }}>Color</span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
               <input type="color" value={displayColor} onChange={(e) => onUpdate({ color: e.target.value })} style={{ width: '24px', height: '24px', padding: 0, background: 'transparent' }} />
@@ -165,7 +165,7 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
             </div>
           </div>
         )}
-        <div className="setting-item" style={{ flex: showColor ? 2 : 1 }}>
+        <div className="setting-item cu-compact-setting-item" style={{ flex: showColor ? 2 : 1 }}>
           <span style={{ fontSize: '0.75rem', color: controlText }}>Alpha</span>
           <input type="range" min="0" max="1" step="0.1" value={config.opacity} onChange={(e) => onUpdate({ opacity: parseFloat(e.target.value) })} style={{ flex: 1, width: '100%' }} />
         </div>
@@ -319,14 +319,14 @@ const LayersView: React.FC = () => {
 
   const sectionStyle: React.CSSProperties = {
     marginTop: '12px',
-    padding: '8px',
+    padding: '12px',
     border: isGlass ? '1px solid rgba(56, 189, 248, 0.24)' : '1px solid #eee',
     borderRadius: '6px',
     background: isGlass ? 'rgba(10, 20, 38, 0.88)' : '#fafafa'
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-layers-view">
       <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
         <button onClick={applyLayerChanges} disabled={!hasUnappliedChanges} style={primaryButtonStyle}>
           Apply Layers
@@ -347,6 +347,76 @@ const LayersView: React.FC = () => {
           <span style={{ fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Opacity</span>
         </div>
         <ImageInput label="Texture" imageValue={boardOverlay.image} inputId="overlay-img" onImageChange={(img) => updateLayer('boardOverlay', { image: img })} onClear={() => updateLayer('boardOverlay', { image: '' })} maxSize={BACKGROUND_MAX_SIZE} isGlass={isGlass} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+            Snap image to
+            <select
+              value={(boardOverlay as any).anchor || 'center'}
+              onChange={(e) => updateLayer('boardOverlay', { anchor: e.target.value, repeat: 'no-repeat' })}
+              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
+            >
+              <option value="center">Center</option>
+              <option value="top-left">Top Left</option>
+              <option value="top">Top</option>
+              <option value="top-right">Top Right</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="bottom-left">Bottom Left</option>
+              <option value="bottom">Bottom</option>
+              <option value="bottom-right">Bottom Right</option>
+            </select>
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+            Image fit
+            <select
+              value={(boardOverlay as any).size || 'cover'}
+              onChange={(e) => updateLayer('boardOverlay', { size: e.target.value, repeat: 'no-repeat', scale: 100 })}
+              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
+            >
+              <option value="cover">Cover board</option>
+              <option value="contain">Contain in board</option>
+              <option value="100% 100%">Stretch to board</option>
+              <option value="auto">Original size</option>
+            </select>
+          </label>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginTop: '8px' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+            Blend mode
+            <select
+              value={(boardOverlay as any).blendMode || 'normal'}
+              onChange={(e) => updateLayer('boardOverlay', { blendMode: e.target.value })}
+              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
+            >
+              <option value="normal">Normal</option>
+              <option value="multiply">Multiply</option>
+              <option value="screen">Screen</option>
+              <option value="overlay">Overlay</option>
+              <option value="soft-light">Soft Light</option>
+              <option value="hard-light">Hard Light</option>
+              <option value="darken">Darken</option>
+              <option value="lighten">Lighten</option>
+              <option value="color-dodge">Color Dodge</option>
+              <option value="color-burn">Color Burn</option>
+              <option value="difference">Difference</option>
+              <option value="luminosity">Luminosity</option>
+            </select>
+          </label>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            X offset
+            <input type="number" value={(boardOverlay as any).xOffset || 0} onChange={(e) => updateLayer('boardOverlay', { xOffset: parseInt(e.target.value, 10) || 0 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            Y offset
+            <input type="number" value={(boardOverlay as any).yOffset || 0} onChange={(e) => updateLayer('boardOverlay', { yOffset: parseInt(e.target.value, 10) || 0 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+          </label>
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            Scale %
+            <input type="number" min="1" value={(boardOverlay as any).scale || 100} onChange={(e) => updateLayer('boardOverlay', { scale: parseInt(e.target.value, 10) || 100 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+          </label>
+        </div>
         <div className="setting-item" style={{ gap: '10px', marginTop: '6px' }}>
           <label style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <input

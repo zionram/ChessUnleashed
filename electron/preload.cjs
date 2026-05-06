@@ -1,6 +1,4 @@
-import electron from 'electron';
-
-const { contextBridge, ipcRenderer } = electron;
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('chessUnleashedAssets', {
   savePackageAssets: (payload) => ipcRenderer.invoke('chess-assets:save-package-assets', payload)

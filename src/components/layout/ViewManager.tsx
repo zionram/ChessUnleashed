@@ -57,7 +57,7 @@ const PanelContent: React.FC<{ title: string; children: React.ReactNode }> = ({ 
     }
   }, [title]);
 
-  return <div ref={contentRef}>{children}</div>;
+  return <div ref={contentRef} className="cu-view-shell cu-themed-embedded-view cu-scroll-area">{children}</div>;
 };
 
 const ViewManager: React.FC = () => {
@@ -69,6 +69,7 @@ const ViewManager: React.FC = () => {
   const isMobile = window.innerWidth <= 768;
   const buttonRadius = { rounded: 6, square: 2, minimal: 0 }[settings.uiAppearance.buttonStyle];
   const isGlass = settings.uiAppearance.sidebarStyle === 'glass';
+  const accentColor = settings.uiAppearance.accentColor;
 
   const tabStripStyle: React.CSSProperties = {
     display: 'flex',
@@ -88,12 +89,12 @@ const ViewManager: React.FC = () => {
     padding: '5px 7px',
     borderRadius: '7px 7px 0 0',
     border: active
-      ? `1px solid ${settings.uiAppearance.accentColor}`
+      ? `1px solid ${accentColor}`
       : isGlass
         ? '1px solid rgba(148, 163, 184, 0.18)'
         : '1px solid #d0d7de',
     borderBottom: active
-      ? `2px solid ${settings.uiAppearance.accentColor}`
+      ? `2px solid ${accentColor}`
       : isGlass
         ? '1px solid rgba(148, 163, 184, 0.14)'
         : '1px solid #d0d7de',
@@ -103,16 +104,22 @@ const ViewManager: React.FC = () => {
     color: isGlass ? '#e5edf7' : '#1f2937',
     cursor: 'pointer',
     textAlign: 'left',
-    boxShadow: active && isGlass ? `0 0 0 1px rgba(56, 189, 248, 0.12), 0 0 14px rgba(56, 189, 248, 0.14)` : undefined,
+    boxShadow: active && isGlass ? '0 0 0 1px rgba(56, 189, 248, 0.12), 0 0 14px rgba(56, 189, 248, 0.14)' : undefined,
     overflow: 'hidden'
   });
 
-  const ToggleSwitch = ({ id, active }: { id: string, active: boolean }) => (
+  const buttonStyle: React.CSSProperties = {
+    padding: '2px 8px',
+    fontSize: '0.7rem',
+    borderRadius: buttonRadius
+  };
+
+  const ToggleSwitch = ({ id, active }: { id: string; active: boolean }) => (
     <div
       onClick={() => toggleView(id)}
       style={{
         width: '36px', height: '20px', borderRadius: '10px',
-        background: active ? settings.uiAppearance.accentColor : '#ccc',
+        background: active ? accentColor : '#ccc',
         position: 'relative', cursor: 'pointer', transition: 'background 0.3s'
       }}
     >
@@ -157,21 +164,25 @@ const ViewManager: React.FC = () => {
       });
     });
 
+  const panelIdsKey = panels.map(p => p.id).join('|');
+
   React.useEffect(() => {
     if (panels.length === 0) {
       setActiveTabId(null);
       return;
     }
-    if (!activeTabId || !panels.some(panel => panel.id === activeTabId)) {
-      setActiveTabId(panels[0].id);
-    }
-  }, [activeTabId, panels]);
+    setActiveTabId(current => {
+      if (current && panels.some(p => p.id === current)) return current;
+      return panels[0].id;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelIdsKey]);
 
   if (panels.length === 0) {
     return (
       <div className="view-manager view-manager-empty">
         <div className="panel-tab-strip" aria-label="Workspace panel tabs" style={tabStripStyle}>
-          <button className="panel-tab active" type="button" style={getTabStyle(true)}>Workspace</button>
+          <button className="panel-tab active" type="button" style={{ ...getTabStyle(true), cursor: 'default' }}>Workspace</button>
         </div>
         <div className="active-view-panel workspace-empty-panel">
           <h4>Workspace Panels</h4>
@@ -181,8 +192,8 @@ const ViewManager: React.FC = () => {
     );
   }
 
-  const activePanel = panels.find(panel => panel.id === activeTabId) ?? panels[0];
-  const ActiveComponent = activePanel.component;
+  const activePanel = panels.find(p => p.id === activeTabId) ?? panels[0];
+  const ActiveComponent = activePanel?.component ?? null;
 
   return (
     <div className="view-manager workspace-tab-manager">
@@ -191,8 +202,8 @@ const ViewManager: React.FC = () => {
           <button
             key={panel.id}
             type="button"
-            className={`panel-tab ${panel.id === activePanel.id ? 'active' : ''}`}
-            style={getTabStyle(panel.id === activePanel.id)}
+            className={`panel-tab ${activePanel && panel.id === activePanel.id ? 'active' : ''}`}
+            style={getTabStyle(!!activePanel && panel.id === activePanel.id)}
             onClick={() => setActiveTabId(panel.id)}
             title={`${getGroupLabel(panel.group)}: ${panel.name}`}
           >
@@ -231,30 +242,32 @@ const ViewManager: React.FC = () => {
         ))}
       </div>
 
-      <div className="active-view-panel workspace-tab-panel">
-        <div className="workspace-panel-titlebar">
-          <div>
-            <h4>{activePanel.name}</h4>
-            <span>{getGroupLabel(activePanel.group)}</span>
-          </div>
-          {!isMobile && (
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button onClick={activePanel.toggleMinimized} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>
-                {activePanel.isMinimized ? 'Restore' : 'Minimize'}
-              </button>
-              <button onClick={activePanel.close} style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: buttonRadius }}>
-                Close
-              </button>
+      {activePanel && ActiveComponent ? (
+        <div className="active-view-panel workspace-tab-panel">
+          <div className="workspace-panel-titlebar">
+            <div>
+              <h4>{activePanel.name}</h4>
+              <span>{getGroupLabel(activePanel.group)}</span>
             </div>
+            {!isMobile && (
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button onClick={activePanel.toggleMinimized} style={buttonStyle}>
+                  {activePanel.isMinimized ? 'Restore' : 'Minimize'}
+                </button>
+                <button onClick={activePanel.close} style={buttonStyle}>
+                  Close
+                </button>
+              </div>
+            )}
+            {isMobile && <ToggleSwitch id={activePanel.id} active />}
+          </div>
+          {!activePanel.isMinimized && (
+            <PanelContent title={activePanel.name}>
+              <ActiveComponent />
+            </PanelContent>
           )}
-          {isMobile && <ToggleSwitch id={activePanel.id} active />}
         </div>
-        {!activePanel.isMinimized && (
-          <PanelContent title={activePanel.name}>
-            <ActiveComponent />
-          </PanelContent>
-        )}
-      </div>
+      ) : null}
     </div>
   );
 };

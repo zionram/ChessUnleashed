@@ -2,15 +2,37 @@
 
 Status: Current summary, not a full commit log
 
-This file summarizes recent verified prompts so future AI/dev handoffs understand what changed.
-
-The current codebase remains the source of truth.
+This file summarizes recent verified prompts so future AI/dev handoffs understand what changed. The current codebase remains the source of truth.
 
 ## Documentation
 
 - DOCS-002_CODEX_AUDIT: Created current codebase intake.
 - DOCS-005_PROJECT_DOCUMENTATION_REFRESH: Refreshed project documentation after major system changes.
 - DOCS-006_FINAL_RELEASE_DOC_REFRESH: Refreshed release-candidate docs and added v1.0 release notes.
+
+## UI Shell / Floating Launcher / Workspace Cleanup
+
+Recent Chat #6 / Chat #7 verified UI state:
+
+- Left Tool Palette now floats over the background.
+- Left Tool Palette is draggable by its header.
+- Left Tool Palette is resizable left/right and up/down.
+- Collapsed left rail becomes a clean icon-only mode.
+- Selected launcher icons stay visible.
+- Redundant launcher side arrows were targeted for removal; future changes must not hide SVG internals.
+- Let’s Play overlay opens centered and above the background from both the New button and the left palette.
+- Let’s Play overlay dark theming has been restored.
+- Let’s Play overlay scrollbar matches the dark/glass style.
+- Right workspace redundant History/Layers/Squares quick buttons were removed.
+- Inner redundant Workspace button/tab was removed.
+- Chessboard glass shell was made draggable by grabbing the glass around the board.
+- Board can be double-clicked on the glass shell to reset position.
+- Board drag must not interfere with dragging pieces/squares.
+
+Current next task:
+
+- Environment launcher tabs should render actual controls inside the floating launcher window instead of showing “Open this workspace tool” cards.
+- “Dock” should become a small option inside the real tool interface, not the main action.
 
 ## Packaging / Electron / Package Manager
 
@@ -75,40 +97,3 @@ The current codebase remains the source of truth.
 - C.4.P-106_110_BATCH: Added Game Snapshot resume foundation.
 - C.4.P-167_170_BATCH: Updated package/category handling and clarified Save/Resume versus ExperiencePackage.
 - C.4.P-343_PACKAGE_MANAGER_DEBUG_FIX: Confirmed Package Manager excludes live game state by default.
-
-## Obsidian Workspace / Launcher Windows — 2026-05-03
-
-- C5.P-044_WORKSPACE_FLOATING_DOCKS: Added/verified workspace-container direction, right dock floating over workspace background, right dock activator, and glass dock styling. User clarified docks should float over the workspace/background layer, not necessarily cover the chessboard by default.
-- C5.P-045_LEFT_LAUNCHER_ATTEMPT: Initial attempt failed to produce true floating tabbed launcher windows. It reused right-dock or second-sidebar behavior.
-- C5.P-046_FIX_LEFT_LAUNCHER_ROUTING: Clarified that left launcher category windows must not route into the right dock. Still not sufficient because old launcher panel render path remained.
-- C5.P-047_FIX_FLOATING_TABBED_CATEGORY_WINDOW: Narrowed target to converting launcher submenu panel into a floating tabbed category window. Diagnosis continued.
-- C5.P-048_FIX_LAUNCHER_WINDOW_TABS: Correctly removed `DynamicMenu` from active launcher window content and rendered first-level children as tabs. Reported DONE: Launcher window tabs replace vertical DynamicMenu rows.
-
-Verified discoveries and direct fixes:
-
-- `launcher-sub-panel` in `src/App.tsx` was the old wrong second-sidebar surface.
-- `launcher-category-window` is the intended floating launcher surface.
-- `launcher-sub-panel` should not remain in active launcher JSX or CSS.
-- `DynamicMenu` should remain for the root left icon launcher only.
-- DynamicMenu border warning was fixed by using explicit `borderTop`, `borderRight`, `borderBottom`, and `borderLeft`.
-- Launcher category window was made draggable by title bar in a direct patch.
-- Initial draggable patch inserted duplicate launcher helpers in outer `function App()` and caused `ReferenceError: activeLauncherItem is not defined`.
-- Scope fix removed the duplicate helper block from outer `App()` and kept launcher state/effects inside `MainLayout`.
-- User verified the corrected draggable launcher patch worked.
-
-Current verified launcher state:
-
-- left root icon opens a detached floating category window
-- first-level children appear as tabs
-- nested children appear inside selected tab
-- leaf action/overlay items remain reachable
-- title bar drag works
-- right dock remains independent
-
-Remaining:
-
-- resize handle
-- position persistence decision
-- reusable FloatingWindow component decision
-- future dockable/detachable window system
-- future movable non-dockable board-stage object

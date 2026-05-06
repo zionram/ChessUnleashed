@@ -14,10 +14,14 @@ interface TimerViewProps {
 }
 
 const TimerView: React.FC<TimerViewProps> = ({ displayMode = 'panel' }) => {
-  const { timerState, pendingClockPress, pressClock } = useGame();
+  const { timerState, pendingClockPress, pressClock, ficsGame } = useGame();
   const { settings } = useSettings();
   const timerAppearance = settings.template.timerAppearance;
-  const showClockButton = displayMode !== 'panel' && settings.timeControl.manualClockPress && !!pendingClockPress;
+  const isFicsClockActive = !!ficsGame;
+  const displayWhiteSeconds = isFicsClockActive ? ficsGame.whiteClockSeconds : timerState.whiteTimeSeconds;
+  const displayBlackSeconds = isFicsClockActive ? ficsGame.blackClockSeconds : timerState.blackTimeSeconds;
+  const displayActiveColor = isFicsClockActive ? ficsGame.sideToMove : timerState.activeColor;
+  const showClockButton = !isFicsClockActive && displayMode !== 'panel' && settings.timeControl.manualClockPress && !!pendingClockPress;
 
   const clockStyle: React.CSSProperties = {
     fontFamily: timerAppearance.fontFamily,
@@ -35,15 +39,15 @@ const TimerView: React.FC<TimerViewProps> = ({ displayMode = 'panel' }) => {
   };
 
   const getTimeStyle = (color: 'w' | 'b'): React.CSSProperties => ({
-    color: timerState.activeColor === color ? timerAppearance.activeColor : timerAppearance.inactiveColor,
-    fontWeight: timerState.activeColor === color ? 700 : 500
+    color: displayActiveColor === color ? timerAppearance.activeColor : timerAppearance.inactiveColor,
+    fontWeight: displayActiveColor === color ? 700 : 500
   });
 
   return (
     <div className="view-container" style={displayMode === 'panel' ? undefined : { alignItems: 'center', width: '100%' }}>
       <div style={clockStyle}>
-        <span style={getTimeStyle('w')}>White {formatTime(timerState.whiteTimeSeconds)}</span>
-        <span style={getTimeStyle('b')}>Black {formatTime(timerState.blackTimeSeconds)}</span>
+        <span style={getTimeStyle('w')}>White {formatTime(displayWhiteSeconds)}</span>
+        <span style={getTimeStyle('b')}>Black {formatTime(displayBlackSeconds)}</span>
       </div>
       {showClockButton && (
         <button

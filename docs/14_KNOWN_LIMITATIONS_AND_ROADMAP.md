@@ -1,6 +1,6 @@
 # Known Limitations and Roadmap
 
-Status: Current release-candidate notes, updated with workspace-window roadmap
+Status: Current release-candidate notes
 
 These items should be represented honestly in handoffs, release notes, and tester instructions.
 
@@ -20,27 +20,24 @@ These items should be represented honestly in handoffs, release notes, and teste
 - Browser mode durable imported asset persistence may be session-only.
 - Settings Builder and Validation may need clarification before being presented as fully finished.
 
-## Workspace / Windowing Roadmap — 2026-05-03
+## UI Shell / Floating Launcher Roadmap
 
-Current verified:
+Current verified UI shell improvements:
 
-- Left launcher root icons open floating category windows.
-- Launcher category content uses tabs instead of vertical `DynamicMenu` rows.
-- Old `launcher-sub-panel` behavior was identified as wrong and removed from active launcher behavior.
-- Launcher category window can be dragged by its title bar.
+- The left Tool Palette floats over the background.
+- The Tool Palette is draggable and resizable.
+- Collapsed mode is a clean icon-only rail.
+- Selected launcher icons stay visible.
+- The Let’s Play overlay opens centered above the background and uses restored dark/glass styling.
+- Redundant right workspace quick buttons and the inner redundant Workspace button/tab were removed.
+- The chessboard glass shell can be dragged by grabbing the surrounding glass, with double-click reset.
 
-Still partial / future:
+Current limitation / next task:
 
-- Launcher window resize handle is not yet verified complete.
-- Launcher window position persistence is not decided.
-- Per-category remembered window positions/tabs are not decided.
-- Multiple simultaneous launcher windows are not implemented.
-- Reusable `FloatingWindow` extraction is future work.
-- Dockable/detachable tabs are future work.
-- The chessboard as a movable non-dockable board-stage object is future work.
-- Board-stage movement should be intentional, likely through design mode, right-click “Move Board,” modifier drag, or a hidden handle.
-
-Do not claim a full window manager exists yet.
+- Environment launcher tabs still show “Open” cards for tools like Pieces.
+- Desired behavior: launcher tabs should render the actual tool controls directly inside the floating launcher window.
+- “Dock” should be a small secondary option inside the tool interface, not the main action.
+- This should be implemented with existing real tool state/actions only. Do not add fake tabs, fake save states, fake history, fake activity, fake board info, or fake help.
 
 ## Tactical Events
 
@@ -68,9 +65,7 @@ Future animation work may include:
 
 ## Package Roadmap
 
-Current packages are reusable setup/config/assets packages.
-
-Runtime game snapshots are separate.
+Current packages are reusable setup/config/assets packages. Runtime game snapshots are separate.
 
 Future work may add explicit optional save-slot exports, cloud sync, or manual snapshot management, but those must not be mixed into normal ExperiencePackage exports by default.
 

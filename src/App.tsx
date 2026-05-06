@@ -1,11 +1,11 @@
-import { useState, useEffect, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import { SettingsProvider, useSettings } from './context/SettingsContext';
 import { GameProvider, useGame } from './context/GameContext';
 import { AudioProvider } from './context/AudioContext';
 import ChessBoard from './components/board/ChessBoard';
 import DynamicMenu from './components/menu/DynamicMenu';
 import ViewManager from './components/layout/ViewManager';
-import { registerView } from './registry/ViewRegistry';
+import { registerView, getRegisteredViews } from './registry/ViewRegistry';
 import HistoryView from './views/HistoryView';
 import StatsView from './views/StatsView';
 import WelcomeView from './views/WelcomeView';
@@ -30,10 +30,13 @@ import AnimationSettingsView from './views/AnimationSettingsView';
 import AnimationBuilderView from './views/AnimationBuilderView';
 import AboutSupportView from './views/AboutSupportView';
 import ProfileView from './views/ProfileView';
+import FicsOnlineView from './views/FicsOnlineView';
+import FicsConsoleView from './views/FicsConsoleView';
 import RuleBuilderView from './views/RuleBuilderView';
 import CustomGameRuntimeView from './views/CustomGameRuntimeView';
 import LetsPlaySetupView from './views/LetsPlaySetupView';
 import ChatContainer from './components/layout/ChatContainer';
+import FloatingWindow from './components/layout/FloatingWindow';
 import AudioController from './components/layout/AudioController';
 import GameEndOverlay from './components/layout/GameEndOverlay';
 import Overlay from './components/layout/Overlay';
@@ -82,15 +85,106 @@ registerView({ id: 'platform-appearance', name: 'Platform UI', component: Platfo
 registerView({ id: 'animation-settings', name: 'Animation', component: AnimationSettingsView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'animation-builder', name: 'Animation Builder', component: AnimationBuilderView, defaultEnabled: false, position: 'center' });
 registerView({ id: 'about-support', name: 'About / Support', component: AboutSupportView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'fics-online', name: 'FICS Online', component: FicsOnlineView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'fics-console', name: 'FICS Console', component: FicsConsoleView, defaultEnabled: false, position: 'right' });
+
+type LauncherWindowEntry = {
+  item: MenuItem;
+  zIndex: number;
+  nestedTabs: Record<string, string>;
+  tabId: string | null;
+  insertionIndex: number;
+  initialX?: number;
+  initialY?: number;
+  initialWidth?: number;
+  initialHeight?: number;
+};
+
+type LauncherWindowBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+type DockedPanel = {
+  id: string;
+  item: MenuItem;
+  nestedTabs: Record<string, string>;
+  tabId: string | null;
+  isMinimized: boolean;
+};
+
+type TabDragState = {
+  sourceWindowId: string;
+  tabItem: MenuItem;
+  startX: number;
+  startY: number;
+  detached: boolean;
+  parentItemId?: string;
+};
+
+type LauncherDockTarget = {
+  windowId: string;
+  parentItemId?: string;
+  element: HTMLDivElement;
+};
+
+type TabDragPreviewState = {
+  icon?: ReactNode;
+  label: string;
+  x: number;
+  y: number;
+} | null;
+
+const WORKSPACE_VIEW_ID_OVERRIDES: Record<string, string | null> = {
+  'toggle-piece-editor': 'theme-editor',
+  'toggle-computer': 'computer-opponent',
+  'toggle-wheels': null,
+  'reset-system': null,
+  'upload-rules': null,
+  'set-mode-standard': null
+};
+
+const getWorkspaceViewId = (actionId: string): string | null => {
+  if (actionId in WORKSPACE_VIEW_ID_OVERRIDES) return WORKSPACE_VIEW_ID_OVERRIDES[actionId];
+  const match = actionId.match(/^toggle-(.+)$/);
+  return match ? match[1] : null;
+};
+
+const canDockToWorkspace = (item: MenuItem): boolean => {
+  if (item.children?.length) {
+    return item.children.some(c => !!getWorkspaceViewId(c.actionId ?? ''));
+  }
+  return !!getWorkspaceViewId(item.actionId ?? '');
+};
+
+const FICS_LAUNCHER_ITEM: MenuItem = {
+  id: 'fics-hub',
+  label: 'FICS',
+  icon: '♞',
+  children: [
+    { id: 'fics-online', label: 'Online', icon: '🌐', actionId: 'toggle-fics-online' },
+    { id: 'fics-console', label: 'Console', icon: '⌨', actionId: 'toggle-fics-console' }
+  ]
+};
 
 function MainLayout() {
   const { settings, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
-  const { gameState, multiplayer, timeoutResult, resignationResult, resetGame, resignGame } = useGame();
+  const { gameState, multiplayer, timeoutResult, resignationResult, resetGame, resignGame, ficsGame } = useGame();
   const { localProfile } = settings;
 
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [leftPanelPosition, setLeftPanelPosition] = useState({ x: 12, y: 12 });
+  const isDraggingLeftPanel = useRef(false);
+  const leftPanelDragOffset = useRef({ x: 0, y: 0 });
+  const [leftPanelHeight, setLeftPanelHeight] = useState(() => Math.max(360, Math.min(720, window.innerHeight - 120)));
+  const isResizingLeftPanel = useRef(false);
+  const isResizingLeftPanelHeight = useRef(false);
+  const leftPanelResizeStart = useRef({ x: 0, width: 150 });
+  const leftPanelHeightResizeStart = useRef({ y: 0, height: 520 });
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
   const [newGameOverlayOpen, setNewGameOverlayOpen] = useState(false);
@@ -100,15 +194,27 @@ function MainLayout() {
     return snapshot?.gameType === 'custom' ? snapshot.selectedCustomRulesetId : null;
   });
 
-  const [activeLauncherItem, setActiveLauncherItem] = useState<MenuItem | null>(null);
-  const [activeLauncherTabId, setActiveLauncherTabId] = useState<string | null>(null);
-  const [activeLauncherNestedTabs, setActiveLauncherNestedTabs] = useState<Record<string, string>>({});
   const [activeLauncherOverlay, setActiveLauncherOverlay] = useState<MenuItem | null>(null);
   const [launcherOverlayCloseRequest, setLauncherOverlayCloseRequest] = useState<(() => void) | null>(null);
-  const [launcherWindowPosition, setLauncherWindowPosition] = useState({ x: 360, y: 110 });
-  const isDraggingLauncherWindow = useRef(false);
-  const launcherWindowDragOffset = useRef({ x: 0, y: 0 });
+  const [openLauncherWindows, setOpenLauncherWindows] = useState<Map<string, LauncherWindowEntry>>(() => new Map());
+  const launcherTopZRef = useRef(2600);
+  const launcherWindowCountRef = useRef(0);
+  const launcherWindowBoundsRef = useRef<Map<string, LauncherWindowBounds>>(new Map());
+  const tabDragRef = useRef<TabDragState | null>(null);
+  const tabDetachSuppressClickRef = useRef(false);
+  const [tabDragPreview, setTabDragPreview] = useState<TabDragPreviewState>(null);
+  const tabRowRefs = useRef<Map<string, LauncherDockTarget>>(new Map());
+  const rightPanelRef = useRef<HTMLElement | null>(null);
+  const [dockedPanels, setDockedPanels] = useState<DockedPanel[]>([]);
   const [leftWidth, setLeftWidth] = useState(280);
+  const [collapsedLeftWidth, setCollapsedLeftWidth] = useState(72);
+  const collapsedLauncherItemCount = MENU_SCHEMA.length;
+  const collapsedLauncherColumns = Math.max(1, Math.floor(Math.max(72, collapsedLeftWidth - 16) / 64));
+  const collapsedLauncherRows = Math.ceil(collapsedLauncherItemCount / collapsedLauncherColumns);
+  const collapsedRequiredHeight = 34 + 20 + (collapsedLauncherRows * 74) + (Math.max(0, collapsedLauncherRows - 1) * 10);
+  const effectiveLeftPanelHeight = leftPanelCollapsed
+    ? Math.max(leftPanelHeight, collapsedRequiredHeight)
+    : leftPanelHeight;
   const [rightWidth, setRightWidth] = useState(320);
   const [dismissedGameEndOverlay, setDismissedGameEndOverlay] = useState(false);
   const isDraggingLeft = useRef(false);
@@ -120,10 +226,31 @@ function MainLayout() {
   const timerDragOffset = useRef({ x: 0, y: 0 });
   const [isTimerDragging, setIsTimerDragging] = useState(false);
   const [frameAnchor, setFrameAnchor] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  const [topbarTipIndex, setTopbarTipIndex] = useState(0);
+  const [workspaceScale, setWorkspaceScale] = useState(100);
+  const [workspaceActivityVisible, setWorkspaceActivityVisible] = useState(true);
+  const [workspaceMetaVisible, setWorkspaceMetaVisible] = useState(true);
+  const [workspaceActivityPosition, setWorkspaceActivityPosition] = useState({ x: 0, y: 0 });
+  const [workspaceMetaPosition, setWorkspaceMetaPosition] = useState({ x: 0, y: 0 });
+  const [workspaceHudHover, setWorkspaceHudHover] = useState<'activity' | 'meta' | null>(null);
+  const workspaceHudDragRef = useRef<{ panel: 'activity' | 'meta'; x: number; y: number; startX: number; startY: number } | null>(null);
+  const [boardDragPosition, setBoardDragPosition] = useState({ x: 0, y: 0 });
+  const isDraggingBoardShell = useRef(false);
+  const boardShellDragOffset = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     installGlobalErrorLogging();
   }, []);
+
+  useEffect(() => {
+    const tips = settings.uiAppearance.tipsMessages ?? [];
+    if (tips.length <= 1 || !settings.uiAppearance.showTipsBoard) return;
+    const seconds = Math.max(4, settings.uiAppearance.tipsRotationSeconds || 12);
+    const interval = window.setInterval(() => {
+      setTopbarTipIndex(current => (current + 1) % tips.length);
+    }, seconds * 1000);
+    return () => window.clearInterval(interval);
+  }, [settings.uiAppearance.showTipsBoard, settings.uiAppearance.tipsMessages, settings.uiAppearance.tipsRotationSeconds]);
 
   useEffect(() => {
     const startCustomGame = (event: Event) => {
@@ -150,14 +277,9 @@ function MainLayout() {
   }, [activeCustomRulesetId, settings.customRulesets]);
 
   useEffect(() => {
-    setActiveLauncherTabId(activeLauncherItem?.children?.[0]?.id ?? null);
-    setActiveLauncherNestedTabs({});
-  }, [activeLauncherItem?.id]);
-
-  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (window.innerWidth <= 768) return;
-      if (isDraggingLeft.current) setLeftWidth(Math.max(200, Math.min(500, e.clientX)));
+      if (isDraggingLeft.current) setLeftWidth(Math.max(120, Math.min(280, e.clientX - leftPanelPosition.x)));
       if (isDraggingRight.current) setRightWidth(Math.max(250, Math.min(600, window.innerWidth - e.clientX)));
     };
     const handleMouseUp = () => {
@@ -171,26 +293,53 @@ function MainLayout() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
+  }, [leftPanelPosition.x]);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      const drag = workspaceHudDragRef.current;
+      if (!drag) return;
+      const nextPosition = {
+        x: drag.startX + event.clientX - drag.x,
+        y: drag.startY + event.clientY - drag.y
+      };
+      if (drag.panel === 'activity') setWorkspaceActivityPosition(nextPosition);
+      else setWorkspaceMetaPosition(nextPosition);
+    };
+    const handleMouseUp = () => {
+      if (!workspaceHudDragRef.current) return;
+      workspaceHudDragRef.current = null;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
   }, []);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDraggingLauncherWindow.current) return;
+      if (!isDraggingLeftPanel.current) return;
 
-      const nextX = e.clientX - launcherWindowDragOffset.current.x;
-      const nextY = e.clientY - launcherWindowDragOffset.current.y;
-      const maxX = Math.max(0, window.innerWidth - 220);
-      const maxY = Math.max(0, window.innerHeight - 120);
+      const panelWidth = leftPanelCollapsed ? collapsedLeftWidth : leftWidth;
+      const panelHeight = leftPanelCollapsed ? Math.max(leftPanelHeight, collapsedRequiredHeight) : leftPanelHeight;
+      const nextX = e.clientX - leftPanelDragOffset.current.x;
+      const nextY = e.clientY - leftPanelDragOffset.current.y;
+      const maxX = Math.max(8, window.innerWidth - panelWidth - 8);
+      const maxY = Math.max(8, window.innerHeight - panelHeight - 8);
 
-      setLauncherWindowPosition({
+      setLeftPanelPosition({
         x: Math.max(8, Math.min(maxX, nextX)),
-        y: Math.max(48, Math.min(maxY, nextY))
+        y: Math.max(8, Math.min(maxY, nextY))
       });
     };
 
     const handleMouseUp = () => {
-      if (!isDraggingLauncherWindow.current) return;
-      isDraggingLauncherWindow.current = false;
+      if (!isDraggingLeftPanel.current) return;
+      isDraggingLeftPanel.current = false;
       document.body.style.cursor = 'default';
       document.body.style.userSelect = '';
     };
@@ -200,6 +349,97 @@ function MainLayout() {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [leftPanelCollapsed, leftPanelHeight, collapsedLeftWidth, leftWidth, collapsedRequiredHeight]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingLeftPanel.current) return;
+
+      const delta = e.clientX - leftPanelResizeStart.current.x;
+      const minWidth = leftPanelCollapsed ? 72 : 120;
+      const maxWidth = Math.min(leftPanelCollapsed ? 160 : 320, window.innerWidth - leftPanelPosition.x - 24);
+      const nextWidth = Math.max(minWidth, Math.min(maxWidth, leftPanelResizeStart.current.width + delta));
+      if (leftPanelCollapsed) setCollapsedLeftWidth(nextWidth);
+      else setLeftWidth(nextWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizingLeftPanel.current) return;
+      isResizingLeftPanel.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [leftPanelPosition.x, leftPanelCollapsed]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizingLeftPanelHeight.current) return;
+
+      const delta = e.clientY - leftPanelHeightResizeStart.current.y;
+      const maxHeight = Math.max(240, window.innerHeight - leftPanelPosition.y - 8);
+      const nextHeight = Math.max(240, Math.min(maxHeight, leftPanelHeightResizeStart.current.height + delta));
+      setLeftPanelHeight(nextHeight);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizingLeftPanelHeight.current) return;
+      isResizingLeftPanelHeight.current = false;
+      document.body.style.cursor = 'ns-resize';
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [leftPanelPosition.y]);
+
+  useEffect(() => {
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isDraggingBoardShell.current) return;
+
+      const bounds = centerPanelRef.current?.getBoundingClientRect();
+      const shell = boardWrapperRef.current?.getBoundingClientRect();
+      const fallbackWidth = 520;
+      const fallbackHeight = 520;
+      const shellWidth = shell?.width ?? fallbackWidth;
+      const shellHeight = shell?.height ?? fallbackHeight;
+      const maxX = bounds ? Math.max(0, (bounds.width - shellWidth) / 2 + 180) : 260;
+      const maxY = bounds ? Math.max(0, (bounds.height - shellHeight) / 2 + 160) : 220;
+
+      const nextX = event.clientX - boardShellDragOffset.current.x;
+      const nextY = event.clientY - boardShellDragOffset.current.y;
+
+      setBoardDragPosition({
+        x: Math.max(-maxX, Math.min(maxX, nextX)),
+        y: Math.max(-maxY, Math.min(maxY, nextY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      if (!isDraggingBoardShell.current) return;
+      isDraggingBoardShell.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.classList.remove('cu-tab-detach-dragging');
     };
   }, []);
 
@@ -302,6 +542,8 @@ function MainLayout() {
       case 'upload-rules': alert('Rule Uploading enabled! Please select your .json rule file.'); break;
       case 'set-mode-standard': setGameMode('standard'); break;
       case 'toggle-welcome': toggleView('welcome'); break;
+      case 'toggle-fics-online': toggleView('fics-online'); break;
+      case 'toggle-fics-console': toggleView('fics-console'); break;
     }
   };
 
@@ -318,6 +560,16 @@ function MainLayout() {
           : `${getPlayerName(gameState.turn)}'s Turn`;
   const activeCustomRuleset = settings.customRulesets.find(ruleset => ruleset.id === activeCustomRulesetId) ?? null;
   const displayStatus = activeCustomRuleset ? `Custom Game: ${activeCustomRuleset.name}` : status;
+  const topbarTips = settings.uiAppearance.tipsMessages ?? [];
+  const activeTip = settings.uiAppearance.showTipsBoard && topbarTips.length
+    ? topbarTips[topbarTipIndex % topbarTips.length]
+    : '';
+  const modeLabel = activeCustomRuleset ? activeCustomRuleset.name : settings.gameMode === 'standard' ? 'Standard Chess' : settings.gameMode;
+  const activeWorkspaceLabels = settings.activeViews.filter(viewId => !['welcome', 'chat'].includes(viewId));
+  const workspaceSummary = activeWorkspaceLabels.length
+    ? `${activeWorkspaceLabels.length} active tool${activeWorkspaceLabels.length === 1 ? '' : 's'}`
+    : 'No active tools';
+  const autosaveStatus = 'Local autosave active';
   const isTerminalGame = !!timeoutResult || !!resignationResult || gameState.isCheckmate || gameState.isDraw;
   const showGameEndOverlay = isTerminalGame && !dismissedGameEndOverlay;
   const handleNewGame = () => {
@@ -332,8 +584,11 @@ function MainLayout() {
   const isAnimationBuilderActive = settings.activeViews.includes('animation-builder');
   const isUnified = multiplayer.isConnected && multiplayer.enforceSharedExp;
   const timerPlacement = settings.timeControl.placement;
-  const showBoardTimer = settings.timeControl.enabled && timerPlacement !== 'right-panel';
+  const isFicsClockActive = !!ficsGame;
+  const effectiveTimerPlacement = isFicsClockActive && timerPlacement === 'right-panel' ? 'top' : timerPlacement;
+  const showBoardTimer = (settings.timeControl.enabled || isFicsClockActive) && effectiveTimerPlacement !== 'right-panel';
   const isDraggableTimer = showBoardTimer && settings.timeControl.behavior === 'draggable';
+  const timerStatusLabel = isFicsClockActive ? 'FICS' : settings.timeControl.enabled ? 'On' : 'Off';
   const draggableTimerPosition = settings.timeControl.draggablePosition ?? { x: 24, y: 24 };
   const densitySpacing = {
     compact: 10,
@@ -374,7 +629,7 @@ function MainLayout() {
       window.removeEventListener('resize', updateFrameAnchor);
       observer.disconnect();
     };
-  }, [leftPanelCollapsed, rightPanelCollapsed, leftWidth, rightWidth, showBoardTimer, timerPlacement, isSoundEditorActive, frameLayer.lockToBoard, frameLayer.frameSizeMode, frameLayer.fixedWidth, frameLayer.fixedHeight]);
+  }, [leftPanelCollapsed, rightPanelCollapsed, leftWidth, rightWidth, showBoardTimer, effectiveTimerPlacement, isSoundEditorActive, frameLayer.lockToBoard, frameLayer.frameSizeMode, frameLayer.fixedWidth, frameLayer.fixedHeight]);
 
   const getLayerImageStyles = (layer: any): CSSProperties => {
     const isCentered = layer.repeat === 'centered';
@@ -459,18 +714,276 @@ function MainLayout() {
   };
 
 
-  const openLauncherRoot = (item: MenuItem | null) => {
-    setActiveLauncherItem(item);
-    setActiveLauncherOverlay(null);
-    setLauncherOverlayCloseRequest(null);
+  const clampLauncherWindowBounds = (bounds: LauncherWindowBounds): LauncherWindowBounds => {
+    const width = Math.max(420, Math.min(bounds.width, Math.max(420, window.innerWidth - 24)));
+    const height = Math.max(260, Math.min(bounds.height, Math.max(260, window.innerHeight - 24)));
+    return {
+      width,
+      height,
+      x: Math.max(8, Math.min(Math.max(8, window.innerWidth - width - 8), bounds.x)),
+      y: Math.max(48, Math.min(Math.max(48, window.innerHeight - height - 8), bounds.y))
+    };
+  };
+
+  const rememberLauncherWindowBounds = (itemId: string, bounds: LauncherWindowBounds) => {
+    launcherWindowBoundsRef.current.set(itemId, clampLauncherWindowBounds(bounds));
+  };
+
+  const getLauncherSpawnBounds = (index: number): LauncherWindowBounds => {
+    const paletteWidth = leftPanelCollapsed ? collapsedLeftWidth : leftWidth;
+    const preferredX = leftPanelPosition.x + paletteWidth + 14;
+    const preferredY = leftPanelPosition.y + 42 + ((index % 5) * 24);
+    return clampLauncherWindowBounds({ x: preferredX, y: preferredY, width: 520, height: 420 });
   };
 
 
-  const getActiveChild = (item: MenuItem): MenuItem | null => {
-    if (!item.children?.length) return null;
-    const activeChildId = activeLauncherNestedTabs[item.id] ?? item.children[0].id;
-    return item.children.find(child => child.id === activeChildId) ?? item.children[0];
+  const openLauncherWindow = (item: MenuItem) => {
+    setOpenLauncherWindows(current => {
+      const next = new Map(current);
+      if (next.has(item.id)) {
+        next.delete(item.id);
+      } else {
+        launcherTopZRef.current += 1;
+        const insertionIndex = launcherWindowCountRef.current++;
+        const savedBounds = launcherWindowBoundsRef.current.get(item.id);
+        const bounds = savedBounds
+          ? clampLauncherWindowBounds(savedBounds)
+          : getLauncherSpawnBounds(insertionIndex);
+        rememberLauncherWindowBounds(item.id, bounds);
+        next.set(item.id, {
+          item,
+          zIndex: launcherTopZRef.current,
+          nestedTabs: {},
+          tabId: item.children?.[0]?.id ?? null,
+          insertionIndex,
+          initialX: bounds.x,
+          initialY: bounds.y,
+          initialWidth: bounds.width,
+          initialHeight: bounds.height
+        });
+      }
+      return next;
+    });
   };
+
+  const openFicsHubWindow = () => {
+    setOpenLauncherWindows(current => {
+      launcherTopZRef.current += 1;
+      const next = new Map(current);
+      const existing = next.get(FICS_LAUNCHER_ITEM.id);
+
+      if (existing) {
+        next.set(FICS_LAUNCHER_ITEM.id, {
+          ...existing,
+          zIndex: launcherTopZRef.current,
+          tabId: existing.tabId ?? FICS_LAUNCHER_ITEM.children?.[0]?.id ?? null
+        });
+        return next;
+      }
+
+      const insertionIndex = launcherWindowCountRef.current++;
+      const savedBounds = launcherWindowBoundsRef.current.get(FICS_LAUNCHER_ITEM.id);
+      const bounds = savedBounds
+        ? clampLauncherWindowBounds(savedBounds)
+        : getLauncherSpawnBounds(insertionIndex);
+      rememberLauncherWindowBounds(FICS_LAUNCHER_ITEM.id, bounds);
+
+      next.set(FICS_LAUNCHER_ITEM.id, {
+        item: FICS_LAUNCHER_ITEM,
+        zIndex: launcherTopZRef.current,
+        nestedTabs: {},
+        tabId: FICS_LAUNCHER_ITEM.children?.[0]?.id ?? null,
+        insertionIndex,
+        initialX: bounds.x,
+        initialY: bounds.y,
+        initialWidth: bounds.width,
+        initialHeight: bounds.height
+      });
+      return next;
+    });
+    setNewGameOverlayOpen(false);
+  };
+
+  useEffect(() => {
+    const handleOpenFics = () => openFicsHubWindow();
+    window.addEventListener('chess-unleashed-open-fics', handleOpenFics);
+    return () => window.removeEventListener('chess-unleashed-open-fics', handleOpenFics);
+  });
+
+  const closeLauncherWindow = (itemId: string) => {
+    setOpenLauncherWindows(current => {
+      const next = new Map(current);
+      next.delete(itemId);
+      return next;
+    });
+  };
+
+  const focusLauncherWindow = (itemId: string) => {
+    setOpenLauncherWindows(current => {
+      if (!current.has(itemId)) return current;
+      launcherTopZRef.current += 1;
+      const next = new Map(current);
+      next.set(itemId, { ...next.get(itemId)!, zIndex: launcherTopZRef.current });
+      return next;
+    });
+  };
+
+  const dockToWorkspace = (item: MenuItem, windowId: string) => {
+    const entry = openLauncherWindows.get(windowId);
+    setDockedPanels(current => {
+      if (current.some(p => p.id === windowId)) return current;
+      return [...current, {
+        id: windowId,
+        item,
+        nestedTabs: entry?.nestedTabs ?? {},
+        tabId: entry?.tabId ?? item.children?.[0]?.id ?? null,
+        isMinimized: false
+      }];
+    });
+    if (rightPanelCollapsed) setRightPanelCollapsed(false);
+    closeLauncherWindow(windowId);
+  };
+
+  const closeDockedPanel = (id: string) => {
+    setDockedPanels(current => current.filter(p => p.id !== id));
+  };
+
+  const toggleDockedPanelMinimized = (id: string) => {
+    setDockedPanels(current => current.map(p => p.id === id ? { ...p, isMinimized: !p.isMinimized } : p));
+  };
+
+  const handleWindowDragEnd = (windowId: string, mousePos: { x: number; y: number }) => {
+    // Priority 1: compatible launcher/nested tab rows
+    let target: LauncherDockTarget | null = null;
+    for (const dockTarget of tabRowRefs.current.values()) {
+      if (dockTarget.windowId === windowId) continue;
+      const rect = dockTarget.element.getBoundingClientRect();
+      if (mousePos.x >= rect.left && mousePos.x <= rect.right &&
+          mousePos.y >= rect.top && mousePos.y <= rect.bottom) {
+        target = dockTarget;
+        break;
+      }
+    }
+
+    if (target) {
+      setOpenLauncherWindows(current => {
+        const detachedEntry = current.get(windowId);
+        const targetEntry = current.get(target!.windowId);
+        if (!detachedEntry || !targetEntry) return current;
+
+        const next = new Map(current);
+        if (target!.parentItemId) {
+          const parentItem = targetEntry.item.children?.find(c => c.id === target!.parentItemId);
+          const isCompatibleNested = parentItem?.children?.some(c => c.id === detachedEntry.item.id) ?? false;
+          if (!isCompatibleNested) return current;
+          next.delete(windowId);
+          next.set(target!.windowId, {
+            ...targetEntry,
+            tabId: target!.parentItemId,
+            nestedTabs: { ...targetEntry.nestedTabs, [target!.parentItemId]: detachedEntry.item.id }
+          });
+          return next;
+        }
+
+        const isCompatible = targetEntry.item.children?.some(c => c.id === detachedEntry.item.id) ?? false;
+        if (!isCompatible) return current;
+        next.delete(windowId);
+        next.set(target!.windowId, { ...targetEntry, tabId: detachedEntry.item.id });
+        return next;
+      });
+      return;
+    }
+
+    // Priority 2: right workspace panel
+    if (rightPanelRef.current) {
+      const rect = rightPanelRef.current.getBoundingClientRect();
+      if (mousePos.x >= rect.left && mousePos.x <= rect.right &&
+          mousePos.y >= rect.top && mousePos.y <= rect.bottom) {
+        const entry = openLauncherWindows.get(windowId);
+        if (entry && canDockToWorkspace(entry.item)) {
+          dockToWorkspace(entry.item, windowId);
+        }
+      }
+    }
+  };
+
+  useEffect(() => {
+    const THRESHOLD = 8;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const drag = tabDragRef.current;
+      if (!drag) return;
+
+      if (drag.detached) {
+        setTabDragPreview({ icon: drag.tabItem.icon, label: drag.tabItem.label, x: e.clientX, y: e.clientY });
+        return;
+      }
+
+      if (Math.hypot(e.clientX - drag.startX, e.clientY - drag.startY) > THRESHOLD) {
+        tabDragRef.current = { ...drag, detached: true };
+        setTabDragPreview({ icon: drag.tabItem.icon, label: drag.tabItem.label, x: e.clientX, y: e.clientY });
+        document.body.style.cursor = 'grabbing';
+        document.body.style.userSelect = 'none';
+        document.body.classList.add('cu-tab-detach-dragging');
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      const drag = tabDragRef.current;
+      tabDragRef.current = null;
+      setTabDragPreview(null);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = '';
+      document.body.classList.remove('cu-tab-detach-dragging');
+      if (!drag || !drag.detached) return;
+      tabDetachSuppressClickRef.current = true;
+
+      const dropBounds = clampLauncherWindowBounds({ x: e.clientX - 260, y: e.clientY - 30, width: 520, height: 420 });
+
+      setOpenLauncherWindows(current => {
+        const next = new Map(current);
+        const sourceEntry = next.get(drag.sourceWindowId);
+
+        if (!next.has(drag.tabItem.id)) {
+          launcherTopZRef.current += 1;
+          const insertionIndex = launcherWindowCountRef.current++;
+          const savedBounds = launcherWindowBoundsRef.current.get(drag.tabItem.id);
+          const bounds = savedBounds ? clampLauncherWindowBounds(savedBounds) : dropBounds;
+          rememberLauncherWindowBounds(drag.tabItem.id, bounds);
+          next.set(drag.tabItem.id, {
+            item: drag.tabItem,
+            zIndex: launcherTopZRef.current,
+            nestedTabs: {},
+            tabId: drag.tabItem.children?.[0]?.id ?? null,
+            insertionIndex,
+            initialX: bounds.x,
+            initialY: bounds.y,
+            initialWidth: bounds.width,
+            initialHeight: bounds.height
+          });
+        }
+
+        if (sourceEntry) {
+          const sourceChildren = sourceEntry.item.children ?? [];
+          if (sourceChildren.length <= 1) {
+            next.delete(drag.sourceWindowId);
+          } else if (sourceEntry.tabId === drag.tabItem.id) {
+            const remaining = sourceChildren.filter(c => c.id !== drag.tabItem.id);
+            next.set(drag.sourceWindowId, { ...sourceEntry, tabId: remaining[0]?.id ?? null });
+          }
+        }
+
+        return next;
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const getLauncherTabButtonStyle = (active: boolean): CSSProperties => ({
     padding: '7px 10px',
@@ -517,69 +1030,42 @@ function MainLayout() {
     textAlign: 'left'
   });
 
-  const renderLauncherItemContent = (item: MenuItem): React.ReactNode => {
-    if (item.children?.length) {
-      const activeChild = getActiveChild(item);
+  // Shared leaf-content renderer for both floating windows and docked panels
+  const renderLeafItemContent = (menuItem: MenuItem, onClose: () => void): ReactNode => {
+    if (menuItem.type === 'overlay' && menuItem.component) {
+      const OverlayComp = menuItem.component;
       return (
-        <div className="launcher-nested-tab-panel">
-          <div className="launcher-nested-tab-row" role="tablist" aria-label={`${item.label} tabs`}>
-            {item.children.map(child => (
-              <button
-                key={child.id}
-                type="button"
-                role="tab"
-                aria-selected={activeChild?.id === child.id}
-                className={`launcher-nested-tab ${activeChild?.id === child.id ? 'active' : ''}`}
-                onClick={() => setActiveLauncherNestedTabs(current => ({ ...current, [item.id]: child.id }))}
-                title={child.label}
-                style={getLauncherTabButtonStyle(activeChild?.id === child.id)}
-              >
-                {child.icon}
-                <span>{child.label}</span>
-              </button>
-            ))}
+        <div className="cu-view-shell cu-themed-embedded-view">
+          <OverlayComp registerCloseAttempt={(_fn: () => void) => {}} closeOverlay={onClose} />
+        </div>
+      );
+    }
+    if (menuItem.actionId) {
+      const viewId = getWorkspaceViewId(menuItem.actionId);
+      if (viewId) {
+        const vc = getRegisteredViews().find(v => v.id === viewId);
+        if (vc) { const VC = vc.component; return (
+          <div className="cu-view-shell cu-themed-embedded-view">
+            <VC />
           </div>
-          <div className="launcher-nested-tab-content">
-            {activeChild && renderLauncherItemContent(activeChild)}
+        ); }
+      }
+      return (
+        <div style={{ padding: '12px' }}>
+          <div className="launcher-action-card">
+            <button type="button" onClick={() => handleMenuAction(menuItem.actionId!)} style={getLauncherActionButtonStyle()}>
+              <span>{menuItem.icon} {menuItem.label}</span><span>Open</span>
+            </button>
           </div>
         </div>
       );
     }
-
-    if (item.type === 'overlay' && item.component) {
-      return (
-        <div className="launcher-action-card">
-          <p>{item.label} opens as a workspace dialog.</p>
-          <button type="button" onClick={() => setActiveLauncherOverlay(item)} style={getLauncherActionButtonStyle()}>
-            <span>Open {item.overlayTitle || item.label}</span>
-            <span>↗</span>
-          </button>
-        </div>
-      );
-    }
-
-    if (item.actionId) {
-      return (
-        <div className="launcher-action-card">
-          <p>Open or toggle this workspace tool.</p>
-          <button type="button" onClick={() => handleMenuAction(item.actionId!)} style={getLauncherActionButtonStyle()}>
-            <span>{item.icon} {item.label}</span>
-            <span>Open</span>
-          </button>
-        </div>
-      );
-    }
-
     return (
-      <div className="launcher-action-card">
-        <p>No action is registered for this item yet.</p>
+      <div style={{ padding: '12px' }}>
+        <div className="launcher-action-card"><p>No action is registered for this item yet.</p></div>
       </div>
     );
   };
-
-  const activeLauncherTab = activeLauncherItem?.children?.find(child => child.id === activeLauncherTabId)
-    ?? activeLauncherItem?.children?.[0]
-    ?? null;
 
   return (
     <div
@@ -597,13 +1083,24 @@ function MainLayout() {
     >
       <header className="app-header" style={{ backgroundColor: settings.uiAppearance.toolbarBackgroundColor }}>
         <div className="topbar-left">
-          <div className="topbar-actions" aria-label="File actions">
-            <button type="button" onClick={() => setNewGameOverlayOpen(true)}>New</button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)}>Open</button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)}>Save</button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)}>Export</button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)}>Share</button>
+          <div className="app-brand" aria-label="Chess Unleashed">
+            <span className="app-brand-icon">♔</span>
+            <span className="app-brand-name">Chess Unleashed</span>
           </div>
+          <div className="topbar-actions" aria-label="File actions">
+            <button type="button" onClick={() => setNewGameOverlayOpen(true)} title="Start a new game"><span>▤</span><span>New</span></button>
+            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Open Package Manager"><span>▰</span><span>Open</span></button>
+            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Save/export package"><span>▣</span><span>Save</span></button>
+            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Export package"><span>⇩</span><span>Export</span></button>
+            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Share package"><span>⌘</span><span>Share</span></button>
+          </div>
+        </div>
+        <div className="topbar-center" aria-label="Current game status">
+          <span className="topbar-label">MODE</span>
+          <span className="topbar-mode-pill" title={modeLabel}>{modeLabel}</span>
+          <span className="topbar-divider" />
+          <span className="topbar-label">SAVE</span>
+          <span className="topbar-status-pill" title="Settings are persisted to local storage">{autosaveStatus}</span>
         </div>
         <div className="topbar-right">
           {multiplayer.isConnected && (
@@ -614,7 +1111,22 @@ function MainLayout() {
               {isUnified ? '✓ Unified' : '⚠ Independent'}
             </div>
           )}
-          <div className="game-status-pill">{displayStatus}</div>
+          {activeTip && (
+            <div className="topbar-tip" title={activeTip}>
+              <span>💡</span><span>{activeTip}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            className="topbar-icon-btn"
+            title="Open About / Support"
+            onClick={() => {
+              if (!settings.activeViews.includes('about-support')) toggleView('about-support');
+            }}
+          >
+            ?
+          </button>
+          <div className="game-status-pill" title={displayStatus}>{displayStatus}</div>
           {!activeCustomRuleset && !isTerminalGame && (
             <button
               onClick={() => resignGame(multiplayer.playerColor || gameState.turn)}
@@ -694,7 +1206,10 @@ function MainLayout() {
         onClose={() => setNewGameOverlayOpen(false)}
         title="Let's Play!"
       >
-        <LetsPlaySetupView closeOverlay={() => setNewGameOverlayOpen(false)} />
+        <LetsPlaySetupView
+          closeOverlay={() => setNewGameOverlayOpen(false)}
+          onOpenFicsWindow={openFicsHubWindow}
+        />
       </Overlay>
 
       <Overlay
@@ -761,7 +1276,7 @@ function MainLayout() {
             ) : isAnimationBuilderActive ? (
               <AnimationBuilderView />
             ) : (
-              <div ref={timerDragBounds} data-layer="outer-wrapper" className="workspace-board-area" style={{ position: 'relative', padding: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '100%', boxSizing: 'border-box' }}>
+              <div ref={timerDragBounds} data-layer="outer-wrapper" className="workspace-board-area" style={{ position: 'relative', padding: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '100%', boxSizing: 'border-box' }}>
                 {/* TODO: future timer behavior modes can add jumping or event-driven placement without changing TimerView. */}
                 {isDraggableTimer && (
                   <div
@@ -787,17 +1302,46 @@ function MainLayout() {
                     <TimerView displayMode="center" />
                   </div>
                 )}
-                {showBoardTimer && !isDraggableTimer && timerPlacement === 'top' && (
+                {showBoardTimer && !isDraggableTimer && effectiveTimerPlacement === 'top' && (
                   <TimerView displayMode="center" />
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto minmax(0, 1fr)', alignItems: 'center', columnGap: '12px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
                   <div style={{ display: 'flex', justifyContent: 'flex-end', minWidth: 0 }}>
-                    {showBoardTimer && !isDraggableTimer && timerPlacement === 'left' && (
+                    {showBoardTimer && !isDraggableTimer && effectiveTimerPlacement === 'left' && (
                       <TimerView displayMode="side" />
                     )}
                   </div>
-				 <div ref={boardWrapperRef} data-layer="board-wrapper" className="workspace-board-shell" style={{ position: 'relative', zIndex: 2, padding: '20px' }}>
-                    <div style={{ position: 'relative', zIndex: 2 }}>
+				 <div
+                    ref={boardWrapperRef}
+                    data-layer="board-wrapper"
+                    className="workspace-board-shell workspace-board-shell-draggable"
+                    title="Drag the glass frame to move the board"
+                    onMouseDown={(event) => {
+                      if (event.button !== 0) return;
+                      if ((event.target as HTMLElement).closest('[data-board-content="true"]')) return;
+                      isDraggingBoardShell.current = true;
+                      boardShellDragOffset.current = {
+                        x: event.clientX - boardDragPosition.x,
+                        y: event.clientY - boardDragPosition.y
+                      };
+                      document.body.style.cursor = 'grabbing';
+                      document.body.style.userSelect = 'none';
+                    }}
+                    onDoubleClick={(event) => {
+                      if ((event.target as HTMLElement).closest('[data-board-content="true"]')) return;
+                      setBoardDragPosition({ x: 0, y: 0 });
+                    }}
+                    style={{
+                      position: 'relative',
+                      zIndex: 2,
+                      padding: '20px',
+                      transform: `translate(${boardDragPosition.x}px, ${boardDragPosition.y}px) scale(${workspaceScale / 100})`,
+                      transformOrigin: 'center center',
+                      cursor: 'grab',
+                      touchAction: 'none'
+                    }}
+                  >
+                    <div data-board-content="true" style={{ position: 'relative', zIndex: 2, cursor: 'default' }}>
                       {activeCustomRuleset ? (
                         <CustomGameRuntimeView
                           ruleset={activeCustomRuleset}
@@ -815,7 +1359,7 @@ function MainLayout() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-start', minWidth: 0 }}>
-                    {showBoardTimer && !isDraggableTimer && timerPlacement === 'right' && (
+                    {showBoardTimer && !isDraggableTimer && effectiveTimerPlacement === 'right' && (
                       <TimerView displayMode="side" />
                     )}
                   </div>
@@ -827,155 +1371,374 @@ function MainLayout() {
           {settings.activeViews.includes('chat') && (
             <ChatContainer requiredPosition="bottom" />
           )}
+
+          {workspaceActivityVisible ? (
+            <div
+              className="workspace-bottom-strip workspace-hud-panel workspace-activity-hud mobile-hidden"
+              aria-label="Workspace activity status"
+              onMouseEnter={() => setWorkspaceHudHover('activity')}
+              onMouseLeave={() => setWorkspaceHudHover(current => current === 'activity' ? null : current)}
+              onMouseDown={(event) => {
+                if (event.button !== 0) return;
+                if ((event.target as HTMLElement).closest('button')) return;
+                workspaceHudDragRef.current = {
+                  panel: 'activity',
+                  x: event.clientX,
+                  y: event.clientY,
+                  startX: workspaceActivityPosition.x,
+                  startY: workspaceActivityPosition.y
+                };
+                document.body.style.cursor = 'move';
+                document.body.style.userSelect = 'none';
+              }}
+              style={{
+                position: 'absolute',
+                left: 18,
+                bottom: 12,
+                zIndex: 8,
+                pointerEvents: 'auto',
+                transform: `translate(${workspaceActivityPosition.x}px, ${workspaceActivityPosition.y}px)`,
+                cursor: 'move'
+              }}
+            >
+              <div className="recent-activity-card">
+                <span>Recent Activity</span>
+                <strong>{displayStatus}</strong>
+                <span>{workspaceSummary}</span>
+                <button
+                  type="button"
+                  onClick={() => setWorkspaceActivityVisible(false)}
+                  title="Hide activity status"
+                  style={{ opacity: workspaceHudHover === 'activity' ? 1 : 0, pointerEvents: workspaceHudHover === 'activity' ? 'auto' : 'none', transition: 'opacity 120ms ease' }}
+                >×</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="workspace-status-restore mobile-hidden"
+              onClick={() => setWorkspaceActivityVisible(true)}
+              title="Show activity status"
+              style={{
+                position: 'absolute',
+                left: 18,
+                bottom: 12,
+                zIndex: 8,
+                pointerEvents: 'auto'
+              }}
+            >
+              Activity
+            </button>
+          )}
+
+          {workspaceMetaVisible ? (
+            <div
+              className="workspace-bottom-strip workspace-hud-panel workspace-meta-hud mobile-hidden"
+              aria-label="Workspace board controls"
+              onMouseEnter={() => setWorkspaceHudHover('meta')}
+              onMouseLeave={() => setWorkspaceHudHover(current => current === 'meta' ? null : current)}
+              onMouseDown={(event) => {
+                if (event.button !== 0) return;
+                if ((event.target as HTMLElement).closest('button')) return;
+                workspaceHudDragRef.current = {
+                  panel: 'meta',
+                  x: event.clientX,
+                  y: event.clientY,
+                  startX: workspaceMetaPosition.x,
+                  startY: workspaceMetaPosition.y
+                };
+                document.body.style.cursor = 'move';
+                document.body.style.userSelect = 'none';
+              }}
+              style={{
+                position: 'absolute',
+                right: 18,
+                bottom: 12,
+                zIndex: 8,
+                pointerEvents: 'auto',
+                transform: `translate(${workspaceMetaPosition.x}px, ${workspaceMetaPosition.y}px)`,
+                cursor: 'move'
+              }}
+            >
+              <div className="workspace-bottom-meta">
+                <span>Board: {activeCustomRuleset ? 'Custom' : 'Standard'}</span>
+                <span>Timer: {timerStatusLabel}</span>
+                <span>Scale: {workspaceScale}%</span>
+                <button type="button" onClick={() => setWorkspaceScale(value => Math.max(75, value - 5))} title="Zoom board out">−</button>
+                <button type="button" onClick={() => setWorkspaceScale(100)} title="Reset board zoom">100</button>
+                <button type="button" onClick={() => setWorkspaceScale(value => Math.min(125, value + 5))} title="Zoom board in">+</button>
+                <button
+                  type="button"
+                  onClick={() => setWorkspaceMetaVisible(false)}
+                  title="Hide board controls"
+                  style={{ opacity: workspaceHudHover === 'meta' ? 1 : 0, pointerEvents: workspaceHudHover === 'meta' ? 'auto' : 'none', transition: 'opacity 120ms ease' }}
+                >×</button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="workspace-status-restore mobile-hidden"
+              onClick={() => setWorkspaceMetaVisible(true)}
+              title="Show board controls"
+              style={{
+                position: 'absolute',
+                right: 18,
+                bottom: 12,
+                zIndex: 8,
+                pointerEvents: 'auto'
+              }}
+            >
+              Controls
+            </button>
+          )}
         </main>
         </div>
 
         {/* Floating left dock */}
         <aside
-          className="left-panel left-panel-float mobile-hidden"
+          className={`left-panel left-panel-float left-panel-floating-rail ${leftPanelCollapsed ? 'left-panel-collapsed' : ''} mobile-hidden`}
           style={{
             ...getSidePanelStyles(),
             position: 'absolute',
-            left: 0,
-            top: 0,
-            height: '100%',
-            width: `${leftPanelCollapsed ? 52 : leftWidth}px`,
+            left: leftPanelPosition.x,
+            top: leftPanelPosition.y,
+            height: effectiveLeftPanelHeight,
+            width: `${leftPanelCollapsed ? collapsedLeftWidth : leftWidth}px`,
             zIndex: 200,
-            transition: 'width 0.22s ease',
+            transition: 'width 0.22s ease, transform 0.22s ease, opacity 0.22s ease',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden'
           }}
         >
           <div
-            className="panel-header"
+            className="panel-header left-panel-floating-header"
+            onMouseDown={(event) => {
+              if (event.button !== 0) return;
+              if ((event.target as HTMLElement).closest('button')) return;
+              isDraggingLeftPanel.current = true;
+              leftPanelDragOffset.current = {
+                x: event.clientX - leftPanelPosition.x,
+                y: event.clientY - leftPanelPosition.y
+              };
+              document.body.style.cursor = 'move';
+              document.body.style.userSelect = 'none';
+            }}
+            title="Drag tool palette"
             style={{
               borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               gap: '8px',
-              flexShrink: 0
+              flexShrink: 0,
+              cursor: 'move',
+              userSelect: 'none'
             }}
           >
             {!leftPanelCollapsed && <span>Tool Palette</span>}
             <button
+              className="left-panel-collapse-button"
               onClick={() => setLeftPanelCollapsed(current => !current)}
               title={leftPanelCollapsed ? 'Expand launcher' : 'Collapse launcher'}
-              style={{ padding: '2px 8px', fontSize: '0.7rem', borderRadius: getButtonRadius(), marginLeft: 'auto' }}
+              style={{ borderRadius: getButtonRadius(), marginLeft: 'auto' }}
             >
               {leftPanelCollapsed ? '›' : '‹'}
             </button>
           </div>
-          {leftPanelCollapsed ? (
-            <button
-              onClick={() => setLeftPanelCollapsed(false)}
-              title="Expand launcher"
-              style={{ margin: '8px 4px', padding: '8px 4px', fontSize: '0.65rem', borderRadius: getButtonRadius() }}
+          <DynamicMenu
+            items={MENU_SCHEMA}
+            onAction={handleMenuAction}
+            onRootItemSelect={openLauncherWindow}
+            activeRootItemIds={[...openLauncherWindows.keys()]}
+          />
+          {!leftPanelCollapsed && (
+            <div
+              className="welcome-sidebar-container"
+              style={getWelcomeContainerStyles()}
             >
-              ›
-            </button>
-          ) : (
-            <>
-              <DynamicMenu
-                items={MENU_SCHEMA}
-                onAction={handleMenuAction}
-                onRootItemSelect={openLauncherRoot}
-                activeRootItemId={activeLauncherItem?.id ?? null}
-              />
-              <div
-                className="welcome-sidebar-container"
-                style={getWelcomeContainerStyles()}
-              >
-                <WelcomeView />
-              </div>
-            </>
+              <WelcomeView />
+            </div>
           )}
+          <div
+            className="left-panel-resize-handle"
+            title="Resize tool palette width"
+            onMouseDown={(event) => {
+              if (event.button !== 0) return;
+              event.preventDefault();
+              event.stopPropagation();
+              isResizingLeftPanel.current = true;
+              leftPanelResizeStart.current = {
+                x: event.clientX,
+                width: leftPanelCollapsed ? collapsedLeftWidth : leftWidth
+              };
+              document.body.style.cursor = 'ew-resize';
+              document.body.style.userSelect = 'none';
+            }}
+          />
+          <div
+            className="left-panel-resize-handle-y"
+            title="Resize tool palette height"
+            onMouseDown={(event) => {
+              if (event.button !== 0) return;
+              event.preventDefault();
+              event.stopPropagation();
+              isResizingLeftPanelHeight.current = true;
+              leftPanelHeightResizeStart.current = { y: event.clientY, height: leftPanelHeight };
+              document.body.style.cursor = 'ns-resize';
+              document.body.style.userSelect = 'none';
+            }}
+          />
         </aside>
 
-        {activeLauncherItem && (
-          <div
-            className="launcher-category-window"
-            style={{
-              ...getSidePanelStyles(),
-              position: 'fixed',
-              left: launcherWindowPosition.x,
-              top: launcherWindowPosition.y,
-              width: 'min(620px, calc(100vw - 180px))',
-              minWidth: 420,
-              maxHeight: 'min(68vh, 560px)',
-              zIndex: 2600,
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden',
-              borderRadius: 14
-            }}
-          >
-            <div
-              className="launcher-window-titlebar"
-              onMouseDown={(event) => {
-                if ((event.target as HTMLElement).closest('button')) return;
-                isDraggingLauncherWindow.current = true;
-                launcherWindowDragOffset.current = {
-                  x: event.clientX - launcherWindowPosition.x,
-                  y: event.clientY - launcherWindowPosition.y
-                };
-                document.body.style.cursor = 'move';
-                document.body.style.userSelect = 'none';
-              }}
-              title="Drag window"
-              style={{
-                borderTop: `3px solid ${settings.uiAppearance.accentColor}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: '10px',
-                flexShrink: 0,
-                cursor: 'move',
-                userSelect: 'none'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                <span>{activeLauncherItem.icon}</span>
-                <strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeLauncherItem.label}</strong>
-              </div>
-              <button
-                onClick={() => setActiveLauncherItem(null)}
-                title="Close window"
-                style={{ padding: '3px 9px', fontSize: '0.75rem', borderRadius: getButtonRadius() }}
-              >
-                ✕
-              </button>
-            </div>
+        {[...openLauncherWindows.values()].map((entry) => {
+          const { item, zIndex, nestedTabs, tabId, insertionIndex, initialX, initialY, initialWidth, initialHeight } = entry;
+          const activeTab = item.children?.find(c => c.id === tabId) ?? item.children?.[0] ?? null;
 
-            {activeLauncherItem.children?.length ? (
-              <>
-                <div className="launcher-window-tab-row" role="tablist" aria-label={`${activeLauncherItem.label} tabs`}>
-                  {activeLauncherItem.children.map(child => (
-                    <button
-                      key={child.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeLauncherTab?.id === child.id}
-                      className={`launcher-window-tab ${activeLauncherTab?.id === child.id ? 'active' : ''}`}
-                      onClick={() => setActiveLauncherTabId(child.id)}
-                      title={child.label}
-                      style={getLauncherTabButtonStyle(activeLauncherTab?.id === child.id)}
-                    >
-                      {child.icon}
-                      <span>{child.label}</span>
-                    </button>
-                  ))}
+          const setNestedTab = (parentId: string, childId: string) => {
+            setOpenLauncherWindows(current => {
+              const e = current.get(item.id);
+              if (!e) return current;
+              const next = new Map(current);
+              next.set(item.id, { ...e, nestedTabs: { ...e.nestedTabs, [parentId]: childId } });
+              return next;
+            });
+          };
+
+          const setTabId = (newTabId: string) => {
+            setOpenLauncherWindows(current => {
+              const e = current.get(item.id);
+              if (!e) return current;
+              const next = new Map(current);
+              next.set(item.id, { ...e, tabId: newTabId });
+              return next;
+            });
+          };
+
+          const getActiveChildFor = (menuItem: MenuItem): MenuItem | null => {
+            if (!menuItem.children?.length) return null;
+            const id = nestedTabs[menuItem.id] ?? menuItem.children[0].id;
+            return menuItem.children.find(c => c.id === id) ?? menuItem.children[0];
+          };
+
+          const renderContent = (menuItem: MenuItem): ReactNode => {
+            if (menuItem.children?.length) {
+              const activeChild = getActiveChildFor(menuItem);
+              return (
+                <div className="launcher-nested-tab-panel">
+                  <div
+                    className="launcher-nested-tab-row"
+                    role="tablist"
+                    aria-label={`${menuItem.label} tabs`}
+                    data-launcher-dock-target={`${item.id}::${menuItem.id}`}
+                    ref={(el) => {
+                      const dockId = `${item.id}::${menuItem.id}`;
+                      if (el) tabRowRefs.current.set(dockId, { windowId: item.id, parentItemId: menuItem.id, element: el });
+                      else tabRowRefs.current.delete(dockId);
+                    }}
+                  >
+                    {menuItem.children.map(child => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeChild?.id === child.id}
+                        className={`launcher-nested-tab ${activeChild?.id === child.id ? 'active' : ''}`}
+                        onMouseDown={(e) => {
+                          if (e.button !== 0) return;
+                          tabDragRef.current = { sourceWindowId: item.id, tabItem: child, parentItemId: menuItem.id, startX: e.clientX, startY: e.clientY, detached: false };
+                        }}
+                        onClick={() => {
+                          if (tabDetachSuppressClickRef.current) { tabDetachSuppressClickRef.current = false; return; }
+                          setNestedTab(menuItem.id, child.id);
+                        }}
+                        title={`${child.label} — drag to detach`}
+                        style={{ ...getLauncherTabButtonStyle(activeChild?.id === child.id), cursor: 'grab' }}
+                      >
+                        {child.icon}
+                        <span>{child.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="launcher-nested-tab-content cu-scroll-area">
+                    {activeChild && renderContent(activeChild)}
+                  </div>
                 </div>
-                <div className="launcher-window-content">
-                  {activeLauncherTab && renderLauncherItemContent(activeLauncherTab)}
+              );
+            }
+
+            return renderLeafItemContent(menuItem, () => closeLauncherWindow(item.id));
+          };
+
+          return (
+            <FloatingWindow
+              key={item.id}
+              title={<><span>{item.icon}</span><strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</strong></>}
+              onClose={() => closeLauncherWindow(item.id)}
+              initialPosition={{ x: initialX ?? getLauncherSpawnBounds(insertionIndex).x, y: initialY ?? getLauncherSpawnBounds(insertionIndex).y }}
+              initialSize={{ width: initialWidth ?? 520, height: initialHeight ?? 420 }}
+              zIndex={zIndex}
+              onFocusRequest={() => focusLauncherWindow(item.id)}
+              onBoundsChange={(bounds) => rememberLauncherWindowBounds(item.id, bounds)}
+              onDragEnd={(pos) => handleWindowDragEnd(item.id, pos)}
+              onDock={canDockToWorkspace(item) ? () => dockToWorkspace(item, item.id) : undefined}
+            >
+              {item.children?.length ? (
+                <>
+                  <div
+                    className="launcher-window-tab-row"
+                    role="tablist"
+                    aria-label={`${item.label} tabs`}
+                    data-launcher-dock-target={item.id}
+                    ref={(el) => { if (el) tabRowRefs.current.set(item.id, { windowId: item.id, element: el }); else tabRowRefs.current.delete(item.id); }}
+                  >
+                    {item.children.map(child => (
+                      <button
+                        key={child.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={activeTab?.id === child.id}
+                        className={`launcher-window-tab ${activeTab?.id === child.id ? 'active' : ''}`}
+                        onMouseDown={(e) => {
+                          if (e.button !== 0) return;
+                          tabDragRef.current = { sourceWindowId: item.id, tabItem: child, startX: e.clientX, startY: e.clientY, detached: false };
+                        }}
+                        onClick={() => {
+                          if (tabDetachSuppressClickRef.current) { tabDetachSuppressClickRef.current = false; return; }
+                          setTabId(child.id);
+                        }}
+                        title={`${child.label} — drag to detach`}
+                        style={{ ...getLauncherTabButtonStyle(activeTab?.id === child.id), cursor: 'grab' }}
+                      >
+                        {child.icon}
+                        <span>{child.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <div className="launcher-window-content cu-scroll-area">
+                    {activeTab && renderContent(activeTab)}
+                  </div>
+                </>
+              ) : (
+                <div className="launcher-window-content cu-scroll-area">
+                  {renderContent(item)}
                 </div>
-              </>
-            ) : (
-              <div className="launcher-window-content">
-                {renderLauncherItemContent(activeLauncherItem)}
-              </div>
-            )}
+              )}
+            </FloatingWindow>
+          );
+        })}
+
+        {tabDragPreview && (
+          <div
+            className="launcher-tab-drag-preview"
+            style={{ left: tabDragPreview.x + 14, top: tabDragPreview.y + 14 }}
+            aria-hidden="true"
+          >
+            <div className="launcher-tab-drag-preview-shell">
+              <span>{tabDragPreview.icon}</span>
+              <strong>{tabDragPreview.label}</strong>
+            </div>
           </div>
         )}
 
@@ -1005,6 +1768,7 @@ function MainLayout() {
         )}
 
         <aside
+          ref={(el) => { rightPanelRef.current = el; }}
           className={`right-panel right-panel-float ${rightPanelOpen ? 'open' : ''}`}
           style={{
             ...getSidePanelStyles(),
@@ -1048,7 +1812,95 @@ function MainLayout() {
               ›
             </button>
           </div>
-          <div style={{ padding: `${densitySpacing}px`, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          <div className="workspace-panel-body" style={{ padding: `${densitySpacing}px`, flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            {dockedPanels.length > 0 && (
+              <div className="docked-panels-stack">
+                {dockedPanels.map(panel => {
+                  const { item, nestedTabs, tabId, isMinimized } = panel;
+                  const activeTab = item.children?.find(c => c.id === tabId) ?? item.children?.[0] ?? null;
+
+                  const renderPanelSection = (menuItem: MenuItem): ReactNode => {
+                    if (menuItem.children?.length) {
+                      const activeChild = menuItem.children.find(
+                        c => c.id === (nestedTabs[menuItem.id] ?? menuItem.children![0]?.id)
+                      ) ?? menuItem.children[0];
+                      return (
+                        <div className="launcher-nested-tab-panel">
+                          <div className="launcher-nested-tab-row">
+                            {menuItem.children.map(child => (
+                              <button
+                                key={child.id}
+                                type="button"
+                                className={`launcher-nested-tab ${activeChild?.id === child.id ? 'active' : ''}`}
+                                style={getLauncherTabButtonStyle(activeChild?.id === child.id)}
+                                onClick={() => setDockedPanels(cur => cur.map(p =>
+                                  p.id === panel.id ? { ...p, nestedTabs: { ...p.nestedTabs, [menuItem.id]: child.id } } : p
+                                ))}
+                              >
+                                {child.icon}<span>{child.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                          <div className="launcher-nested-tab-content cu-scroll-area">
+                            {activeChild && renderPanelSection(activeChild)}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return renderLeafItemContent(menuItem, () => closeDockedPanel(panel.id));
+                  };
+
+                  return (
+                    <div key={panel.id} className="docked-panel">
+                      <div className="docked-panel-header" style={{ borderTop: `3px solid ${settings.uiAppearance.accentColor}` }}>
+                        <span style={{ opacity: 0.72, flexShrink: 0 }}>{item.icon}</span>
+                        <strong style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{item.label}</strong>
+                        <button
+                          type="button"
+                          onClick={() => toggleDockedPanelMinimized(panel.id)}
+                          title={isMinimized ? 'Restore' : 'Minimize'}
+                          style={{ padding: '2px 6px', fontSize: '0.7rem', borderRadius: getButtonRadius(), flexShrink: 0 }}
+                        >
+                          {isMinimized ? '▶' : '▼'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => closeDockedPanel(panel.id)}
+                          title="Close panel"
+                          style={{ padding: '2px 8px', fontSize: '0.75rem', borderRadius: getButtonRadius(), flexShrink: 0 }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      {!isMinimized && item.children?.length && (
+                        <div className="launcher-window-tab-row docked-panel-tab-row">
+                          {item.children.map(child => (
+                            <button
+                              key={child.id}
+                              type="button"
+                              className={`launcher-window-tab ${activeTab?.id === child.id ? 'active' : ''}`}
+                              style={getLauncherTabButtonStyle(activeTab?.id === child.id)}
+                              onClick={() => setDockedPanels(cur => cur.map(p =>
+                                p.id === panel.id ? { ...p, tabId: child.id } : p
+                              ))}
+                            >
+                              {child.icon}<span>{child.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {!isMinimized && (
+                        <div className="docked-panel-body cu-scroll-area">
+                          {item.children?.length
+                            ? (activeTab ? renderPanelSection(activeTab) : null)
+                            : renderPanelSection(item)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <ViewManager />
           </div>
         </aside>

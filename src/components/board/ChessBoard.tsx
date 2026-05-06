@@ -357,6 +357,25 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
   }, [currentBoardMap, pressureMap, activePathSources, selectedSquare, legalMoves, settings.template, settings.isThemeEditorMode, orientation, movingPiece?.to]);
 
   const { boardOverlay } = settings.template;
+  const overlayAnchor = ((boardOverlay as any).anchor || 'center') as string;
+  const overlayBlendMode = ((boardOverlay as any).blendMode || 'normal') as React.CSSProperties['mixBlendMode'];
+  const overlaySize = (boardOverlay as any).size || 'cover';
+  const overlayXOffset = (boardOverlay as any).xOffset || 0;
+  const overlayYOffset = (boardOverlay as any).yOffset || 0;
+  const overlayScale = ((boardOverlay as any).scale || 100) / 100;
+  const overlayPositionMap: Record<string, string> = {
+    center: 'center center',
+    'top-left': 'left top',
+    top: 'center top',
+    'top-right': 'right top',
+    left: 'left center',
+    right: 'right center',
+    'bottom-left': 'left bottom',
+    bottom: 'center bottom',
+    'bottom-right': 'right bottom'
+  };
+  const overlayPosition = overlayPositionMap[overlayAnchor] || 'center center';
+  const overlayBackgroundSize = overlaySize === '100% 100%' ? '100% 100%' : overlaySize;
 
   const getTriggeredAnimationName = (preset: string) => `event-animation-${preset}`;
   const renderTriggeredAnimation = () => {
@@ -506,10 +525,15 @@ const ChessBoard: React.FC<ChessBoardProps> = ({ orientation = 'w', controlMode 
               position: 'absolute',
               inset: 0,
               backgroundImage: `url(${boardOverlay.image})`,
-              backgroundSize: 'cover',
+              backgroundSize: overlayBackgroundSize,
+              backgroundPosition: overlayPosition,
+              backgroundRepeat: (boardOverlay as any).repeat || 'no-repeat',
               opacity: boardOverlay.opacity,
+              mixBlendMode: overlayBlendMode,
+              transform: `translate(${overlayXOffset}px, ${overlayYOffset}px) scale(${overlayScale})`,
+              transformOrigin: overlayPosition,
               pointerEvents: 'none',
-              zIndex: 4
+              zIndex: overlayBlendMode === 'normal' ? 0 : 4
             }}
           />
         )}

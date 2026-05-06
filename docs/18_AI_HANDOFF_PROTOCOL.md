@@ -1,6 +1,6 @@
 # AI Handoff Protocol
 
-Status: Active instructions for future AI/dev work, updated with launcher-window caution
+Status: Active instructions for future AI/dev work, updated for Chat 7 workflow
 
 Chess Unleashed is a functioning release-candidate project. Treat it as existing software with working systems, not a greenfield rebuild.
 
@@ -21,43 +21,13 @@ Chess Unleashed is a functioning release-candidate project. Treat it as existing
 - Do not inspect unrelated files unless needed to solve the task.
 - Do not use browser/window prompts when an in-app panel/modal is expected.
 - Do not add duplicate panel titles.
+- Do not add fake UI/functionality; if it looks functional, wire it to real state/action.
 - Do not mix Game Snapshot runtime state into ExperiencePackage exports by default.
 - Do not store media binaries as giant JSON/base64/localStorage strings.
 - Preserve Standard Chess behavior unless the task explicitly targets it.
 - Preserve Stockfish/worker bot support when touching bots.
 - Preserve Package Manager real-file zip behavior when touching packages.
 - Preserve Sound Rules and Animation Rules when touching Event Builder.
-
-## Launcher / Workspace Handoff Rules — 2026-05-03
-
-When working on Obsidian Workspace / launcher windows:
-
-- Search for `launcher-sub-panel` before editing. It was the old wrong sidebar panel.
-- Do not restore `launcher-sub-panel`.
-- Use `launcher-category-window` as the launcher category surface.
-- Use `DynamicMenu` for the root icon launcher only.
-- Do not use `DynamicMenu` recursively for launcher window content.
-- Do not route left launcher category windows into the right dock.
-- Do not treat `ViewManager` as the owner of left launcher windows.
-- Keep launcher drag/resize state inside `MainLayout`.
-- Do not put `activeLauncherItem` references or launcher helpers inside outer `function App()`.
-- If the app crashes with `ReferenceError: activeLauncherItem is not defined`, inspect for launcher code accidentally inserted into the provider-only `App()` wrapper.
-
-Expected outer `App()` shape:
-
-```tsx
-function App() {
-  return (
-    <AudioProvider>
-      <SettingsProvider>
-        <GameProvider>
-          <MainLayout />
-        </GameProvider>
-      </SettingsProvider>
-    </AudioProvider>
-  );
-}
-```
 
 ## Current Release-Candidate Watch Areas
 
@@ -66,11 +36,13 @@ function App() {
 - Electron splash and packaged app loading must not regress.
 - Local/player movement animation and bot delay timing must not regress.
 - Check/in-check sound rules must pause/resume background music correctly.
-- Event Builder, Sound Editor, and Animation Builder are complex center-panel tools.
+- Event Builder, Sound Editor, and Animation Builder are complex center/floating tools.
 - Piece Set and Layer edits must merge into the same theme draft without overwriting each other.
 - Frame sizing/lock and welcome sidebar color controls should work in packaged Electron, not only browser mode.
-- Launcher category windows should remain independent from right dock workspace tabs.
-- Board overlay color layer should remain optional/invisible unless enabled.
+- Left floating rail drag/resize/collapse behavior must not regress.
+- Selected launcher icons must stay visible; do not hide SVG internals while hiding arrow triangles.
+- Let’s Play overlay must open centered/on top from both New and the left launcher.
+- Board glass dragging must not interfere with piece/square dragging.
 
 ## Build Expectations
 
@@ -88,6 +60,16 @@ npm.cmd run dist:portable
 
 Docs-only changes do not require a build unless docs become part of the build.
 
+## User Workflow Preferences
+
+- If a change is fewer than 4 files, ask/list the specific files needed.
+- If a change is more than 4 files, give a PowerShell zip command to collect them.
+- If the assistant just created the latest iteration of a file and the user did not say it changed, do not ask for it again.
+- When returning replacement files, provide target path and exact build/test action.
+- Keep responses brief and step-focused.
+- Do not explain line-by-line changes unless asked.
+- If a sandbox zip link fails, retry with individual file links when possible.
+
 ## Handoff Format
 
 When handing work to another AI/dev, include:
@@ -100,17 +82,3 @@ When handing work to another AI/dev, include:
 - known limitations or follow-up
 
 If uncertain, say Needs verification instead of guessing.
-
-## Useful Launcher Verification Commands
-
-```powershell
-Select-String -Path .\src\**\*.tsx,.\src\**\*.css -Pattern "launcher-sub-panel"
-```
-
-```powershell
-Select-String -Path .\src\App.tsx,.\src\App.css -Pattern "launcher-category-window","launcher-window-titlebar","launcherWindowPosition"
-```
-
-```powershell
-Select-String -Path .\src\App.tsx -Pattern "function App","MainLayout","activeLauncherItem"
-```

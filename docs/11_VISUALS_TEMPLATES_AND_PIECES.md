@@ -1,6 +1,6 @@
 # Visuals Templates And Pieces
 
-Status: Current, with board-overlay color-layer notes
+Status: Current
 
 The visuals/template system owns game appearance only. It must not own gameplay rules or runtime snapshots.
 
@@ -24,10 +24,7 @@ Current behavior:
 - preview staged draft
 - apply finalized piece set
 
-Important rule:
-
-- Apply to Draft updates draft/board preview but does not leave Arrange or clear the assignment preview.
-- Finalize is the only action that moves to the final step.
+Important rule: Apply to Draft updates draft/board preview but does not leave Arrange or clear the assignment preview. Finalize is the only action that moves to the final step.
 
 ## Visual Areas
 
@@ -42,63 +39,37 @@ Environment → Look includes:
 - Animation
 - Platform UI
 
+## Current Floating Visual-Control Direction
+
+The visual/tool UI should move toward the current mockup direction:
+
+- floating glass panels
+- compact icon rail
+- dark/glass theme
+- controls inside floating windows
+- less fixed side-panel clutter
+- real functionality only
+
+Current known gap:
+
+- Environment → Look → Pieces currently behaves like an “Open this workspace tool” card in the launcher tab.
+- Desired behavior is for the actual Pieces controls to render directly inside the floating launcher window.
+- This pattern should be reused for Board, Animation, Platform UI, Sound, Packages, and similar visual/config tools where existing real controls can be embedded.
+- “Dock” should become a small secondary option inside the tool interface, not the primary card/action.
+
+Do not fake this UI. If controls appear in the floating launcher, they must connect to the existing settings, template draft, package, or view action they represent.
+
 ## Platform UI
 
-Platform appearance settings include UI color/appearance controls.
-
-Welcome/tips panel color should be controlled through existing UI appearance patterns, not hardcoded.
-
-## Board Overlay Color Layer — 2026-05-03
-
-A board-overlay color layer was added as an optional tinting aid.
-
-Expected behavior:
-
-- The color layer must be off/invisible by default.
-- It must render only when explicitly enabled and opacity is greater than zero.
-- It must tint only the board area/squares, not the workspace background or an outer board shell.
-- It must not create an orange/brown frame around the board.
-- It must not break board overlay image rendering.
-- It must not interfere with highlights, pieces, coordinates, or animations.
-
-Expected render order:
-
-1. board squares/base
-2. optional board overlay color tint
-3. optional board overlay image
-4. highlights / pieces / coordinates / animations
-
-Implementation rule:
-
-```tsx
-boardOverlay.colorEnabled === true
-&& boardOverlay.color
-&& (boardOverlay.colorOpacity ?? 0) > 0
-```
-
-Related build note:
-
-After removing the thick border that used `boardColors.dark`, `boardColors` may become unused in `ChessBoard.tsx`.
-
-Use:
-
-```tsx
-const { boardOverlay } = settings.template;
-```
-
-instead of:
-
-```tsx
-const { boardColors, boardOverlay } = settings.template;
-```
+Platform appearance settings include UI color/appearance controls. Welcome/tips panel color should be controlled through existing UI appearance patterns, not hardcoded.
 
 ## Related Files
 
 - `src/views/ThemeEditorView.tsx`
-- `src/views/LayersView.tsx`
-- `src/components/board/ChessBoard.tsx`
-- `src/templates/defaultTemplate.ts`
-- `src/templates/darkTemplate.ts`
-- `src/context/SettingsContext.tsx`
 - `src/views/PlatformAppearanceView.tsx`
+- `src/context/SettingsContext.tsx`
 - `src/config/menuSchema.ts`
+- `src/components/menu/DynamicMenu.tsx`
+- `src/components/layout/FloatingWindow.tsx`
+- `src/components/layout/Overlay.tsx`
+- `src/views/SettingsPanelShellView.tsx`

@@ -149,9 +149,53 @@ const getPlaybackSummary = (rule: AudioRule) => {
 
 const controlStyle: React.CSSProperties = {
   padding: '8px',
-  border: '1px solid #d0d7de',
+  border: '1px solid rgba(148, 163, 184, 0.22)',
   borderRadius: 6,
-  fontSize: '0.8rem'
+  fontSize: '0.8rem',
+  background: 'rgba(15, 23, 42, 0.72)',
+  color: '#dbeafe'
+};
+
+const editorSurfaceStyle: React.CSSProperties = {
+  background: 'rgba(7, 17, 31, 0.96)',
+  color: '#d8e2ef'
+};
+
+const editorPanelStyle: React.CSSProperties = {
+  border: '1px solid rgba(148, 163, 184, 0.16)',
+  borderRadius: 8,
+  background: 'rgba(10, 20, 38, 0.78)',
+  color: '#cbd5e1'
+};
+
+const editorHeaderStyle: React.CSSProperties = {
+  background: 'rgba(15, 23, 42, 0.88)',
+  color: '#e2e8f0'
+};
+
+const editorButtonStyle: React.CSSProperties = {
+  padding: '8px 10px',
+  borderRadius: 6,
+  border: '1px solid rgba(148, 163, 184, 0.22)',
+  background: 'rgba(15, 23, 42, 0.72)',
+  color: '#dbeafe',
+  cursor: 'pointer',
+  fontWeight: 700
+};
+
+const editorPrimaryButtonStyle: React.CSSProperties = {
+  ...editorButtonStyle,
+  border: '1px solid rgba(56, 189, 248, 0.42)',
+  background: 'rgba(14, 47, 72, 0.82)',
+  color: '#e0f2fe',
+  fontWeight: 800
+};
+
+const editorDangerButtonStyle: React.CSSProperties = {
+  ...editorButtonStyle,
+  border: '1px solid rgba(248, 113, 113, 0.35)',
+  background: 'rgba(127, 29, 29, 0.34)',
+  color: '#fecaca'
 };
 
 const SoundEditorView: React.FC = () => {
@@ -288,25 +332,25 @@ const SoundEditorView: React.FC = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', padding: 14, boxSizing: 'border-box', gap: 12 }}>
+    <div className="cu-sound-editor-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', ...editorSurfaceStyle, padding: 18, boxSizing: 'border-box', gap: 12, overflow: 'hidden' }}>
       <input ref={fileInputRef} type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.mid,.midi" multiple onChange={handleFileUpload} style={{ display: 'none' }} />
-      {uploadMessage && <div style={{ fontSize: '0.72rem', color: '#9a3412', marginBottom: 8 }}>{uploadMessage}</div>}
+      {uploadMessage && <div style={{ fontSize: '0.72rem', color: '#fbbf24', marginBottom: 8 }}>{uploadMessage}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <button type="button" onClick={openNewRule} style={{ padding: '10px', borderRadius: 8, border: '1px solid #2c3e50', background: '#2c3e50', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
+        <button type="button" onClick={openNewRule} style={{ ...editorPrimaryButtonStyle, padding: '10px', borderRadius: 8 }}>
           Add Sound Rule
         </button>
-        <button type="button" onClick={() => fileInputRef.current?.click()} style={{ padding: '10px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', color: '#2c3e50', cursor: 'pointer', fontWeight: 800 }}>
+        <button type="button" onClick={() => fileInputRef.current?.click()} style={{ ...editorButtonStyle, padding: '10px', borderRadius: 8, fontWeight: 800 }}>
           Add Sound Files
         </button>
       </div>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f8fafc' }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) minmax(220px, 1fr)', gap: 12, padding: 14, ...editorPanelStyle }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
           Master volume
           <input type="range" min="0" max="1" step="0.05" value={masterVolume} onChange={(e) => setMasterVolume(parseFloat(e.target.value))} />
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
           Sound effects
           <input type="range" min="0" max="1" step="0.05" value={sfxVolume} onChange={(e) => setSfxVolume(parseFloat(e.target.value))} />
         </label>
@@ -321,9 +365,9 @@ const SoundEditorView: React.FC = () => {
             style={{
               padding: '7px 10px',
               borderRadius: 999,
-              border: '1px solid #d0d7de',
-              background: selectedCategory === category ? '#2c3e50' : '#fff',
-              color: selectedCategory === category ? '#fff' : '#2c3e50',
+              border: selectedCategory === category ? '1px solid rgba(56, 189, 248, 0.48)' : '1px solid rgba(148, 163, 184, 0.18)',
+              background: selectedCategory === category ? 'rgba(14, 47, 72, 0.82)' : 'rgba(15, 23, 42, 0.66)',
+              color: selectedCategory === category ? '#e0f2fe' : '#cbd5e1',
               fontSize: '0.72rem',
               cursor: 'pointer'
             }}
@@ -333,41 +377,41 @@ const SoundEditorView: React.FC = () => {
         ))}
       </div>
 
-      <section style={{ border: '1px solid #d0d7de', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.9fr 1fr 70px', gap: 8, padding: '8px 10px', background: '#f1f5f9', color: '#334155', fontSize: '0.68rem', fontWeight: 900, textTransform: 'uppercase' }}>
+      <section className="cu-sound-rules-table" style={{ ...editorPanelStyle, overflow: 'hidden' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1.15fr) minmax(110px, 0.75fr) minmax(100px, 0.65fr) minmax(150px, 1fr) auto', gap: 6, padding: '8px 10px', ...editorHeaderStyle, fontSize: '0.68rem', fontWeight: 900, textTransform: 'uppercase' }}>
           <span>Event / Rule</span>
           <span>Sound</span>
           <span>Category</span>
           <span>Playback</span>
           <span>Edit</span>
         </div>
-        <div style={{ maxHeight: 280, overflow: 'auto' }}>
+        <div style={{ maxHeight: 280, overflowY: 'auto', overflowX: 'hidden' }}>
           {visibleRules.map(rule => {
             const category = normalizeCategory(rule.category || inferCategory(rule.event));
             return (
-              <div key={rule.id} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.9fr 1fr 70px', gap: 8, alignItems: 'center', padding: '9px 10px', borderTop: '1px solid #eef2f7', fontSize: '0.76rem' }}>
-                <span style={{ color: '#2c3e50', fontWeight: 700 }}>{getRuleSummary(rule)}</span>
-                <span style={{ color: '#475569' }}>{getSoundName(library, rule.soundId)}</span>
-                <span style={{ color: '#475569' }}>{category}</span>
-                <span style={{ color: '#475569' }}>{getPlaybackSummary(rule)}</span>
+              <div key={rule.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(150px, 1.15fr) minmax(110px, 0.75fr) minmax(100px, 0.65fr) minmax(150px, 1fr) auto', gap: 6, alignItems: 'center', padding: '8px 10px', borderTop: '1px solid rgba(148, 163, 184, 0.12)', fontSize: '0.76rem' }}>
+                <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{getRuleSummary(rule)}</span>
+                <span style={{ color: '#b8c7d8' }}>{getSoundName(library, rule.soundId)}</span>
+                <span style={{ color: '#b8c7d8' }}>{category}</span>
+                <span style={{ color: '#b8c7d8' }}>{getPlaybackSummary(rule)}</span>
                 <span style={{ display: 'flex', gap: 5 }}>
-                  <button type="button" onClick={() => openEditRule(rule)} style={{ padding: '5px 7px', border: '1px solid #d0d7de', borderRadius: 5, background: '#fff', cursor: 'pointer' }}>Edit</button>
-                  <button type="button" onClick={() => removeRule(rule.id)} style={{ padding: '5px 7px', border: '1px solid #fecaca', borderRadius: 5, background: '#fef2f2', color: '#b42318', cursor: 'pointer' }}>Delete</button>
+                  <button type="button" onClick={() => openEditRule(rule)} style={{ ...editorButtonStyle, padding: '5px 7px', borderRadius: 5 }}>Edit</button>
+                  <button type="button" onClick={() => removeRule(rule.id)} style={{ ...editorDangerButtonStyle, padding: '5px 7px', borderRadius: 5 }}>Delete</button>
                 </span>
               </div>
             );
           })}
           {!visibleRules.length && (
-            <div style={{ padding: 14, color: '#64748b', fontSize: '0.8rem' }}>No sound rules in this category yet.</div>
+            <div style={{ padding: 14, color: '#94a3b8', fontSize: '0.8rem' }}>No sound rules in this category yet.</div>
           )}
         </div>
       </section>
 
-      <section style={{ border: '1px solid #d0d7de', borderRadius: 8, background: '#fff', overflow: 'hidden' }}>
+      <section style={{ ...editorPanelStyle, overflow: 'hidden' }}>
         <button
           type="button"
           onClick={() => setLibraryOpen(!libraryOpen)}
-          style={{ width: '100%', padding: '10px 12px', border: 0, background: '#f8fafc', color: '#2c3e50', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}
+          style={{ width: '100%', padding: '10px 12px', border: 0, ...editorHeaderStyle, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', fontWeight: 800 }}
         >
           <span>Sound Library</span>
           <span>{library.length} files {libraryOpen ? 'Hide' : 'Show'}</span>
@@ -375,12 +419,12 @@ const SoundEditorView: React.FC = () => {
         {libraryOpen && (
           <div style={{ maxHeight: 240, overflow: 'auto' }}>
             {library.map(sound => (
-              <div key={sound.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 8, alignItems: 'center', padding: 9, borderTop: '1px solid #eef2f7' }}>
+              <div key={sound.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 8, alignItems: 'center', padding: 9, borderTop: '1px solid rgba(148, 163, 184, 0.12)' }}>
                 <input value={sound.name} onChange={(e) => renameSound(sound.id, e.target.value)} style={controlStyle} />
-                <button type="button" onClick={() => playLibrarySound(sound.id)} disabled={sound.fileType === 'midi'} style={{ padding: '7px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: sound.fileType === 'midi' ? 'not-allowed' : 'pointer' }}>
+                <button type="button" onClick={() => playLibrarySound(sound.id)} disabled={sound.fileType === 'midi'} style={{ ...editorButtonStyle, padding: '7px 9px', cursor: sound.fileType === 'midi' ? 'not-allowed' : 'pointer' }}>
                   {sound.fileType === 'midi' ? 'MIDI pending' : 'Play'}
                 </button>
-                <button type="button" onClick={() => removeSound(sound.id)} style={{ padding: '7px 9px', borderRadius: 6, border: '1px solid #fecaca', background: '#fef2f2', color: '#b42318', cursor: 'pointer' }}>
+                <button type="button" onClick={() => removeSound(sound.id)} style={{ ...editorDangerButtonStyle, padding: '7px 9px' }}>
                   Remove
                 </button>
               </div>
@@ -390,22 +434,22 @@ const SoundEditorView: React.FC = () => {
       </section>
 
       {ruleEditorOpen && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(15, 23, 42, 0.35)', display: 'grid', placeItems: 'center', padding: 16 }}>
-          <div style={{ width: 'min(720px, 96vw)', maxHeight: '90vh', overflow: 'auto', background: '#fff', borderRadius: 10, boxShadow: '0 18px 60px rgba(15,23,42,0.28)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(2, 6, 23, 0.62)', display: 'grid', placeItems: 'center', padding: 16 }}>
+          <div style={{ width: 'min(720px, 96vw)', maxHeight: '90vh', overflow: 'auto', background: 'rgba(7, 17, 31, 0.98)', color: '#d8e2ef', border: '1px solid rgba(56, 189, 248, 0.22)', borderRadius: 10, boxShadow: '0 24px 80px rgba(0,0,0,0.62)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
               <div>
-                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#2c3e50' }}>{editingRuleId ? 'Edit Sound Rule' : 'Add Sound Rule'}</div>
-                <div style={{ fontSize: '0.76rem', color: '#64748b' }}>Choose the event, target, sound file, and playback behavior.</div>
+                <div style={{ fontSize: '1rem', fontWeight: 900, color: '#e2e8f0' }}>{editingRuleId ? 'Edit Sound Rule' : 'Add Sound Rule'}</div>
+                <div style={{ fontSize: '0.76rem', color: '#94a3b8' }}>Choose the event, target, sound file, and playback behavior.</div>
               </div>
-              <button type="button" onClick={() => setRuleEditorOpen(false)} style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Cancel</button>
+              <button type="button" onClick={() => setRuleEditorOpen(false)} style={{ ...editorButtonStyle, padding: '7px 10px' }}>Cancel</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                 Sound Rule Name
                 <input value={ruleDraft.name ?? ''} onChange={(e) => setRuleDraft({ ...ruleDraft, name: e.target.value })} placeholder="Example: Pawn capture sound" style={controlStyle} />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                 Sound Category
                 <select
                   value={normalizeCategory(ruleDraft.category)}
@@ -420,7 +464,7 @@ const SoundEditorView: React.FC = () => {
                   {categories.filter(category => !FILTERS.includes(category)).map(category => <option key={category} value={category}>{category}</option>)}
                 </select>
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                 Sound File
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto auto', gap: 6 }}>
                   <select value={ruleDraft.soundId} onChange={(e) => setRuleDraft({ ...ruleDraft, soundId: e.target.value })} style={controlStyle}>
@@ -430,20 +474,20 @@ const SoundEditorView: React.FC = () => {
                     type="button"
                     onClick={() => playLibrarySound(ruleDraft.soundId)}
                     disabled={!ruleDraft.soundId || selectedSound?.fileType === 'midi'}
-                    style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: ruleDraft.soundId && selectedSound?.fileType !== 'midi' ? 'pointer' : 'not-allowed', fontWeight: 700 }}
+                    style={{ ...editorButtonStyle, cursor: ruleDraft.soundId && selectedSound?.fileType !== 'midi' ? 'pointer' : 'not-allowed' }}
                   >
                     Preview
                   </button>
                   <button
                     type="button"
                     onClick={stopPreview}
-                    style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontWeight: 700 }}
+                    style={editorButtonStyle}
                   >
                     Stop
                   </button>
                 </div>
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                 Trigger / Event
                 <select value={ruleDraft.event} onChange={(e) => setRuleDraft({ ...ruleDraft, event: e.target.value })} style={controlStyle}>
                   {eventOptions.map(event => <option key={event.id} value={event.id}>{event.label}</option>)}
@@ -451,13 +495,13 @@ const SoundEditorView: React.FC = () => {
               </label>
               {(normalizeCategory(ruleDraft.category) === 'Piece Moves' || normalizeCategory(ruleDraft.category) === 'Captures') && (
                 <>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                     Apply To
                     <select value={ruleDraft.piece} onChange={(e) => setRuleDraft({ ...ruleDraft, piece: e.target.value })} style={controlStyle}>
                       {PIECES.map(piece => <option key={piece} value={piece}>{pieceNames[piece] ?? piece}</option>)}
                     </select>
                   </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8' }}>
                     Side
                     <select value={ruleDraft.side} onChange={(e) => setRuleDraft({ ...ruleDraft, side: e.target.value })} style={controlStyle}>
                       {SIDES.map(side => <option key={side} value={side}>{side === 'any' ? 'Any side' : side === 'w' ? 'White' : 'Black'}</option>)}
@@ -466,15 +510,15 @@ const SoundEditorView: React.FC = () => {
                 </>
               )}
               {(normalizeCategory(ruleDraft.category) === 'UI Events' || normalizeCategory(ruleDraft.category) === 'Custom Events') && (
-                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569', gridColumn: '1 / -1' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#b8c7d8', gridColumn: '1 / -1' }}>
                   Apply To / Event ID
                   <input value={ruleDraft.target ?? ''} onChange={(e) => setRuleDraft({ ...ruleDraft, target: e.target.value })} placeholder="panel id, button id, or future custom event id" style={controlStyle} />
                 </label>
               )}
             </div>
 
-            <section style={{ padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f8fafc' }}>
-              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#2c3e50', marginBottom: 8 }}>Playback Behavior</div>
+            <section style={{ padding: 10, ...editorPanelStyle }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 900, color: '#e2e8f0', marginBottom: 8 }}>Playback Behavior</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
                   ['allowOverlap', 'Allow overlap with other sound effects'],
@@ -486,7 +530,7 @@ const SoundEditorView: React.FC = () => {
                   ['loopWhileEventTrue', 'Loop while event remains true'],
                   ['stopWhenEventEnds', 'Stop when event condition ends']
                 ].map(([key, label]) => (
-                  <label key={key} style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: '0.76rem', color: '#475569' }}>
+                  <label key={key} style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: '0.76rem', color: '#b8c7d8' }}>
                     <input
                       type="checkbox"
                       checked={!!ruleDraft.playback?.[key as keyof NonNullable<AudioRule['playback']>]}
@@ -497,13 +541,13 @@ const SoundEditorView: React.FC = () => {
                 ))}
               </div>
               {(ruleDraft.playback?.loopWhileEventTrue || ruleDraft.playback?.stopWhenEventEnds) && ruleDraft.event !== 'check' && (
-                <div style={{ marginTop: 8, fontSize: '0.68rem', color: '#9a3412' }}>
+                <div style={{ marginTop: 8, fontSize: '0.68rem', color: '#fbbf24' }}>
                   Stateful stop is currently supported for Check / in-check events. Other event states are saved for future support.
                 </div>
               )}
             </section>
 
-            <section style={{ padding: 10, border: '1px dashed #cbd5e1', borderRadius: 8, color: '#64748b', fontSize: '0.76rem' }}>
+            <section style={{ padding: 10, border: '1px dashed rgba(148, 163, 184, 0.24)', borderRadius: 8, color: '#94a3b8', fontSize: '0.76rem', background: 'rgba(15, 23, 42, 0.50)' }}>
               {normalizeCategory(ruleDraft.category) === 'Dynamic Sounds' && 'Dynamic sound groups are saved as rules now. Random/group playback logic is prepared for a future pass.'}
               {normalizeCategory(ruleDraft.category) === 'Music' && 'Music rules are prepared for event music and background music handoff. Full routing will use the Audio Controller.'}
               {normalizeCategory(ruleDraft.category) === 'Custom Events' && (
@@ -515,8 +559,8 @@ const SoundEditorView: React.FC = () => {
             </section>
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-              <button type="button" onClick={() => setRuleEditorOpen(false)} style={{ padding: '9px 12px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontWeight: 700 }}>Cancel</button>
-              <button type="button" onClick={saveRule} disabled={!ruleDraft.soundId} style={{ padding: '9px 12px', borderRadius: 6, border: '1px solid #2c3e50', background: ruleDraft.soundId ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: ruleDraft.soundId ? 'pointer' : 'not-allowed', fontWeight: 800 }}>
+              <button type="button" onClick={() => setRuleEditorOpen(false)} style={{ ...editorButtonStyle, padding: '9px 12px' }}>Cancel</button>
+              <button type="button" onClick={saveRule} disabled={!ruleDraft.soundId} style={{ ...editorPrimaryButtonStyle, padding: '9px 12px', opacity: ruleDraft.soundId ? 1 : 0.55, cursor: ruleDraft.soundId ? 'pointer' : 'not-allowed' }}>
                 Save Rule
               </button>
             </div>
@@ -524,10 +568,10 @@ const SoundEditorView: React.FC = () => {
         </div>
       )}
 
-      <section style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 'auto' }}>
+      <section style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 'auto', paddingTop: 6 }}>
         <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New custom category" style={{ ...controlStyle, flex: 1 }} />
-        <button type="button" onClick={addCustomCategory} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Add Category</button>
-        <button type="button" onClick={() => toggleView('sound-editor')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Close</button>
+        <button type="button" onClick={addCustomCategory} style={editorButtonStyle}>Add Category</button>
+        <button type="button" onClick={() => toggleView('sound-editor')} style={editorButtonStyle}>Close</button>
       </section>
     </div>
   );

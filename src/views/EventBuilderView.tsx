@@ -368,7 +368,7 @@ const EventBuilderView: React.FC = () => {
   );
 
   return (
-    <div className="view-container" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', background: 'rgba(255, 255, 255, 0.96)', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: 10, boxShadow: '0 14px 40px rgba(15, 23, 42, 0.18)', padding: 14, boxSizing: 'border-box', color: '#1f2937', overflow: 'auto' }}>
+    <div className="view-container cu-themed-embedded-view cu-event-builder-view" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', background: 'rgba(255, 255, 255, 0.96)', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: 10, boxShadow: '0 14px 40px rgba(15, 23, 42, 0.18)', padding: 14, boxSizing: 'border-box', color: '#1f2937', overflow: 'auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           <button type="button" onClick={() => setActiveLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>

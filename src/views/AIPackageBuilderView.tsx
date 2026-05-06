@@ -977,7 +977,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
+    <div className="cu-themed-embedded-view cu-ai-package-builder-view" style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>

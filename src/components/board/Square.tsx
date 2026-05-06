@@ -40,8 +40,14 @@ const Square: React.FC<SquareProps> = ({
   }
 
   const { boardColors, pathStyle, badgeColors, boardOverlay } = settings.template;
-  
-  const baseOpacity = boardOverlay.image ? Math.max(0, Math.min(1, 1 - boardOverlay.opacity)) : 1;
+  const overlayBlendMode = ((boardOverlay as any).blendMode || 'normal') as string;
+  const overlayActsAsBoardBase = !!boardOverlay.image && overlayBlendMode === 'normal';
+
+  const baseOpacity = overlayActsAsBoardBase
+    ? 0
+    : boardOverlay.image
+      ? Math.max(0, Math.min(1, 1 - boardOverlay.opacity))
+      : 1;
   const highlightOpacity = 0.6;
   
   const bgColor = isSelected 

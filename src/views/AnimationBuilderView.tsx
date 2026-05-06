@@ -140,16 +140,35 @@ const AnimationBuilderView: React.FC = () => {
   const layerButtonStyle = (target: BuilderLayer): React.CSSProperties => ({
     padding: '7px 8px',
     borderRadius: 6,
-    border: layer === target ? '1px solid #2c3e50' : '1px solid #d0d7de',
-    background: layer === target ? '#2c3e50' : '#fff',
-    color: layer === target ? '#fff' : '#334155',
+    border: layer === target ? '1px solid rgba(56, 189, 248, 0.55)' : '1px solid rgba(148, 163, 184, 0.22)',
+    background: layer === target ? 'rgba(14, 116, 144, 0.42)' : 'rgba(15, 23, 42, 0.72)',
+    color: layer === target ? '#e0f2fe' : '#cbd5e1',
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: '0.75rem'
   });
 
-  const fieldStyle: React.CSSProperties = { width: '100%', marginTop: 4, padding: 7, boxSizing: 'border-box', border: '1px solid #d0d7de', borderRadius: 6 };
-  const rowButtonStyle: React.CSSProperties = { padding: '5px 8px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700 };
+  const fieldStyle: React.CSSProperties = {
+    width: '100%',
+    marginTop: 4,
+    padding: 7,
+    boxSizing: 'border-box',
+    border: '1px solid rgba(148, 163, 184, 0.24)',
+    borderRadius: 6,
+    background: 'rgba(8, 18, 34, 0.86)',
+    color: '#dbeafe'
+  };
+
+  const rowButtonStyle: React.CSSProperties = {
+    padding: '5px 8px',
+    borderRadius: 6,
+    border: '1px solid rgba(148, 163, 184, 0.24)',
+    background: 'rgba(15, 23, 42, 0.72)',
+    color: '#dbeafe',
+    cursor: 'pointer',
+    fontSize: '0.7rem',
+    fontWeight: 700
+  };
   const previewAnimation = (animationId: string) => {
     setPreviewId(animationId);
     setPreviewNonce(current => current + 1);
@@ -210,17 +229,17 @@ const AnimationBuilderView: React.FC = () => {
 
   const renderSystemFields = () => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ padding: 8, borderRadius: 6, background: '#eef2ff', color: '#3730a3', fontSize: '0.72rem' }}>
+      <div style={{ padding: 8, borderRadius: 6, background: 'rgba(56, 189, 248, 0.12)', color: '#93c5fd', fontSize: '0.72rem' }}>
         Animation definitions are reusable settings. Runtime playback state is not saved in packages.
       </div>
       <div style={{ fontSize: '0.75rem' }}><strong>Animation ID:</strong> {draft.id}</div>
       <div style={{ fontSize: '0.75rem' }}><strong>Status:</strong> {validationIssues.length ? 'Invalid' : statusLabel(draft)}</div>
       {validationIssues.length > 0 && (
-        <ul style={{ margin: 0, paddingLeft: 18, color: '#991b1b', fontSize: '0.72rem' }}>
+        <ul style={{ margin: 0, paddingLeft: 18, color: '#fecaca', fontSize: '0.72rem' }}>
           {validationIssues.map(issue => <li key={issue}>{issue}</li>)}
         </ul>
       )}
-      <pre style={{ maxHeight: 180, overflow: 'auto', padding: 8, background: '#0f172a', color: '#e2e8f0', borderRadius: 6, fontSize: '0.68rem' }}>{JSON.stringify(draft, null, 2)}</pre>
+      <pre style={{ maxHeight: 180, overflow: 'auto', padding: 8, background: '#020817', color: '#e2e8f0', borderRadius: 6, fontSize: '0.68rem' }}>{JSON.stringify(draft, null, 2)}</pre>
       <button type="button" onClick={() => navigator.clipboard?.writeText(JSON.stringify(draft, null, 2))} style={rowButtonStyle}>
         Copy JSON
       </button>
@@ -228,29 +247,29 @@ const AnimationBuilderView: React.FC = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#fff', padding: 14, boxSizing: 'border-box', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#071120', color: '#dbeafe', padding: 14, boxSizing: 'border-box', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 8, alignItems: 'center' }}>
-        <button type="button" onClick={openNew} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: '#2c3e50', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
+        <button type="button" onClick={openNew} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: 'rgba(14, 116, 144, 0.42)', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
           Add Animation
         </button>
-        <button type="button" onClick={() => previewDefinition && duplicateAnimation(previewDefinition)} disabled={!previewDefinition} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', color: '#2c3e50', cursor: previewDefinition ? 'pointer' : 'not-allowed', fontWeight: 800 }}>
+        <button type="button" onClick={() => previewDefinition && duplicateAnimation(previewDefinition)} disabled={!previewDefinition} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.24)', background: 'rgba(15, 23, 42, 0.62)', color: '#e2e8f0', cursor: previewDefinition ? 'pointer' : 'not-allowed', fontWeight: 800 }}>
           Duplicate Selected
         </button>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {filterOptions.map(option => (
-            <button key={option} type="button" onClick={() => setFilter(option)} style={{ padding: '7px 9px', borderRadius: 999, border: filter === option ? '1px solid #2c3e50' : '1px solid #d0d7de', background: filter === option ? '#2c3e50' : '#fff', color: filter === option ? '#fff' : '#334155', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 }}>
+            <button key={option} type="button" onClick={() => setFilter(option)} style={{ padding: '7px 9px', borderRadius: 999, border: filter === option ? '1px solid rgba(56, 189, 248, 0.62)' : '1px solid rgba(148, 163, 184, 0.24)', background: filter === option ? 'rgba(14, 116, 144, 0.42)' : 'rgba(15, 23, 42, 0.72)', color: filter === option ? '#e0f2fe' : '#cbd5e1', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800 }}>
               {option}
             </button>
           ))}
         </div>
-        <button type="button" onClick={() => toggleView('animation-builder')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>
+        <button type="button" onClick={() => toggleView('animation-builder')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid rgba(148, 163, 184, 0.24)', background: 'rgba(8, 18, 34, 0.88)', color: '#dbeafe', cursor: 'pointer' }}>
           Close
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 12, minHeight: 0, flex: 1 }}>
-        <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, padding: '8px 10px', background: '#f8fafc', borderBottom: '1px solid #e5e7eb', fontSize: '0.72rem', color: '#475569', fontWeight: 900 }}>
+        <section style={{ border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: 8, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, padding: '8px 10px', background: 'rgba(15, 23, 42, 0.62)', borderBottom: '1px solid rgba(148, 163, 184, 0.18)', fontSize: '0.72rem', color: '#9fb3c8', fontWeight: 900 }}>
             <span>Animation</span>
             <span>Category / Type</span>
             <span>Target</span>
@@ -260,14 +279,14 @@ const AnimationBuilderView: React.FC = () => {
           </div>
           <div style={{ overflowY: 'auto', minHeight: 0 }}>
             {visibleDefinitions.map(animation => (
-              <div key={animation.id} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, alignItems: 'center', padding: '9px 10px', borderBottom: '1px solid #f1f5f9', fontSize: '0.76rem' }}>
+              <div key={animation.id} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 0.75fr 0.75fr auto auto', gap: 8, alignItems: 'center', padding: '9px 10px', borderBottom: '1px solid rgba(148, 163, 184, 0.12)', fontSize: '0.76rem' }}>
                 <div>
-                  <div style={{ fontWeight: 900, color: '#2c3e50' }}>{animation.name}</div>
-                  <div style={{ color: '#64748b', fontSize: '0.66rem' }}>{animation.description}</div>
+                  <div style={{ fontWeight: 900, color: '#e2e8f0' }}>{animation.name}</div>
+                  <div style={{ color: '#7f96ae', fontSize: '0.66rem' }}>{animation.description}</div>
                 </div>
                 <span>{animation.category} / {animation.preset}</span>
                 <span>{targetOptions.find(option => option.value === animation.targetType)?.label ?? animation.targetType}</span>
-                <span style={{ color: animation.builtin ? '#475569' : animation.enabled ? '#166534' : '#92400e', fontWeight: 800 }}>{statusLabel(animation)}</span>
+                <span style={{ color: animation.builtin ? '#94a3b8' : animation.enabled ? '#86efac' : '#fbbf24', fontWeight: 800 }}>{statusLabel(animation)}</span>
                 <button type="button" onClick={() => previewAnimation(animation.id)} style={rowButtonStyle}>Preview</button>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {animation.builtin ? (
@@ -275,20 +294,20 @@ const AnimationBuilderView: React.FC = () => {
                   ) : (
                     <>
                       <button type="button" onClick={() => openEdit(animation)} style={rowButtonStyle}>Edit</button>
-                      <button type="button" onClick={() => deleteAnimationDefinition(animation.id)} style={{ ...rowButtonStyle, borderColor: '#fecaca', background: '#fef2f2', color: '#991b1b' }}>Delete</button>
+                      <button type="button" onClick={() => deleteAnimationDefinition(animation.id)} style={{ ...rowButtonStyle, borderColor: 'rgba(248, 113, 113, 0.42)', background: 'rgba(127, 29, 29, 0.28)', color: '#fecaca' }}>Delete</button>
                     </>
                   )}
                 </div>
               </div>
             ))}
-            {!visibleDefinitions.length && <div style={{ padding: 16, color: '#64748b', fontSize: '0.8rem' }}>No animations match this filter.</div>}
+            {!visibleDefinitions.length && <div style={{ padding: 16, color: '#7f96ae', fontSize: '0.8rem' }}>No animations match this filter.</div>}
           </div>
         </section>
 
         <section style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 0 }}>
           <AnimationPreviewCard key={`${previewDefinition?.id ?? 'none'}-${previewNonce}`} definition={previewDefinition} />
           {previewDefinition && (
-            <div style={{ padding: 10, borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', fontSize: '0.72rem', color: '#475569' }}>
+            <div style={{ padding: 10, borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(8, 18, 34, 0.88)', fontSize: '0.72rem', color: '#9fb3c8' }}>
               <div><strong>Callable:</strong> {previewDefinition.enabled ? 'Yes' : 'Disabled'}</div>
               <div><strong>Default:</strong> {settings.pieceAnimations.defaultAnimationId === previewDefinition.id ? 'Current movement default' : 'Not default'}</div>
               <div><strong>Protected:</strong> {previewDefinition.builtin ? 'Built-in preset' : 'Editable custom animation'}</div>
@@ -298,13 +317,13 @@ const AnimationBuilderView: React.FC = () => {
       </div>
 
       {editorOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.42)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
-          <div style={{ width: 'min(860px, 96vw)', maxHeight: '92vh', overflowY: 'auto', background: '#fff', borderRadius: 10, boxShadow: '0 18px 45px rgba(15, 23, 42, 0.28)', padding: 14, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 14 }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(2, 6, 23, 0.58)', zIndex: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}>
+          <div style={{ width: 'min(860px, 96vw)', maxHeight: '92vh', overflowY: 'auto', background: 'rgba(8, 18, 34, 0.88)', borderRadius: 10, boxShadow: '0 18px 45px rgba(2, 6, 23, 0.58)', padding: 14, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: 14 }}>
             <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#2c3e50' }}>{editingId ? editingBuiltin ? 'Built-In Animation' : 'Edit Animation' : 'Add Animation'}</div>
-                  <div style={{ fontSize: '0.76rem', color: '#64748b' }}>{editingBuiltin ? 'Duplicate built-ins before editing.' : 'Create reusable animations for movement and events.'}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: '#e2e8f0' }}>{editingId ? editingBuiltin ? 'Built-In Animation' : 'Edit Animation' : 'Add Animation'}</div>
+                  <div style={{ fontSize: '0.76rem', color: '#7f96ae' }}>{editingBuiltin ? 'Duplicate built-ins before editing.' : 'Create reusable animations for movement and events.'}</div>
                 </div>
                 <button type="button" onClick={() => setEditorOpen(false)} style={rowButtonStyle}>Cancel</button>
               </div>
@@ -316,7 +335,7 @@ const AnimationBuilderView: React.FC = () => {
               </div>
 
               {editingBuiltin && (
-                <div style={{ padding: 8, borderRadius: 6, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569', fontSize: '0.72rem' }}>
+                <div style={{ padding: 8, borderRadius: 6, background: 'rgba(15, 23, 42, 0.62)', border: '1px solid rgba(148, 163, 184, 0.18)', color: '#9fb3c8', fontSize: '0.72rem' }}>
                   Built-in animations are protected. Use Duplicate to create an editable custom copy.
                 </div>
               )}
@@ -327,14 +346,14 @@ const AnimationBuilderView: React.FC = () => {
 
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                 {editingBuiltin && <button type="button" onClick={() => duplicateAnimation(draft)} style={rowButtonStyle}>Duplicate Built-In</button>}
-                <button type="button" onClick={applyAsDefault} disabled={validationIssues.length > 0} style={{ ...rowButtonStyle, borderColor: '#16a34a', background: '#f0fdf4', color: '#166534', cursor: validationIssues.length === 0 ? 'pointer' : 'not-allowed' }}>Use as Default</button>
+                <button type="button" onClick={applyAsDefault} disabled={validationIssues.length > 0} style={{ ...rowButtonStyle, borderColor: 'rgba(74, 222, 128, 0.35)', background: 'rgba(20, 83, 45, 0.35)', color: '#bbf7d0', cursor: validationIssues.length === 0 ? 'pointer' : 'not-allowed' }}>Use as Default</button>
                 <button type="button" onClick={saveDraft} disabled={editingBuiltin || validationIssues.length > 0} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #2c3e50', background: !editingBuiltin && validationIssues.length === 0 ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: !editingBuiltin && validationIssues.length === 0 ? 'pointer' : 'not-allowed', fontWeight: 800 }}>Save Animation</button>
               </div>
             </section>
 
             <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <AnimationPreviewCard definition={draft} />
-              <div style={{ padding: 10, border: '1px solid #e2e8f0', borderRadius: 8, color: '#475569', fontSize: '0.72rem' }}>
+              <div style={{ padding: 10, border: '1px solid rgba(148, 163, 184, 0.18)', borderRadius: 8, color: '#9fb3c8', fontSize: '0.72rem' }}>
                 {validationIssues.length ? validationIssues.join(' ') : 'Animation definition looks ready.'}
               </div>
             </section>

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSettings } from '../../context/SettingsContext';
 
 interface OverlayProps {
@@ -77,20 +78,24 @@ const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, onCloseAttempt, titl
 
   if (!isOpen) return null;
 
-  return (
-    <div 
+  const isGlass = settings.uiAppearance.sidebarStyle === 'glass';
+
+  return createPortal(
+    <div
       className="overlay-backdrop"
+      data-sidebar-style={settings.uiAppearance.sidebarStyle}
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: `rgba(0, 0, 0, ${settings.uiAppearance.overlayBackdropOpacity / 100})`,
+        inset: 0,
+        backgroundColor: isGlass
+          ? `rgba(0, 0, 0, ${Math.max(settings.uiAppearance.overlayBackdropOpacity / 100, 0.62)})`
+          : `rgba(0, 0, 0, ${settings.uiAppearance.overlayBackdropOpacity / 100})`,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 1000,
+        zIndex: 6000,
+        padding: '18px',
+        boxSizing: 'border-box'
       }}
       onClick={onCloseAttempt ? undefined : handleClose}
     >
@@ -98,56 +103,75 @@ const Overlay: React.FC<OverlayProps> = ({ isOpen, onClose, onCloseAttempt, titl
         ref={modalRef}
         className="overlay-content"
         style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backgroundColor: isGlass ? 'rgba(7, 17, 31, 0.94)' : 'rgba(255, 255, 255, 0.85)',
+          color: isGlass ? '#dbeafe' : '#2c3e50',
           backdropFilter: `blur(${settings.uiAppearance.overlayContentBlur}px)`,
           padding: '25px',
           borderRadius: '12px',
-          width: 'min(90vw, 450px)',
-          maxHeight: '90vh',
+          width: 'min(92vw, 840px)',
+          maxHeight: 'min(90vh, 820px)',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
+          boxShadow: isGlass
+            ? '0 24px 80px rgba(0, 0, 0, 0.62), inset 0 0 0 1px rgba(255, 255, 255, 0.03)'
+            : '0 8px 32px rgba(0, 0, 0, 0.1)',
+          border: isGlass ? '1px solid rgba(56, 189, 248, 0.22)' : '1px solid rgba(255, 255, 255, 0.3)',
           overflow: 'hidden',
           transform: `translate(${pos.x}px, ${pos.y}px)`,
           transition: isDragging ? 'none' : 'transform 0.1s ease-out'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div 
+        <div
           onMouseDown={onMouseDown}
-          style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: '15px', 
-            borderBottom: '1px solid #ccc', 
-            paddingBottom: '10px', 
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '15px',
+            borderBottom: isGlass ? '1px solid rgba(148, 163, 184, 0.16)' : '1px solid #ccc',
+            paddingBottom: '10px',
             flexShrink: 0,
             cursor: 'move',
             userSelect: 'none'
           }}
         >
-          <h3 style={{ margin: 0, color: '#2c3e50', pointerEvents: 'none' }}>{title}</h3>
-          <button 
+          <h3 style={{ margin: 0, color: isGlass ? '#e2e8f0' : '#2c3e50', pointerEvents: 'none' }}>{title}</h3>
+          <button
             onClick={handleClose}
             onMouseDown={(e) => e.stopPropagation()}
             style={{
-              background: 'none',
-              border: 'none',
-              fontSize: '1.5rem',
+              background: isGlass ? 'rgba(15, 23, 42, 0.72)' : 'none',
+              border: isGlass ? '1px solid rgba(148, 163, 184, 0.20)' : 'none',
+              borderRadius: 6,
+              width: 32,
+              height: 30,
+              display: 'inline-grid',
+              placeItems: 'center',
+              fontSize: '1.35rem',
+              lineHeight: 1,
               cursor: 'pointer',
-              color: '#666'
+              color: isGlass ? '#dbeafe' : '#666'
             }}
           >
             ×
           </button>
         </div>
-        <div ref={bodyRef} style={{ overflowY: 'auto', flex: 1, paddingRight: '5px' }}>
+        <div
+          ref={bodyRef}
+          className="overlay-body"
+          style={{
+            overflowY: 'auto',
+            flex: 1,
+            paddingRight: '5px',
+            color: isGlass ? '#cbd5e1' : undefined
+          }}
+        >
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

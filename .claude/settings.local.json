@@ -13,7 +13,11 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(npx tsc *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(npm run *)",
+      "Bash(Get-Content \"C:\\\\gprojects\\\\chessUnleashed\\\\src\\\\App.css\")",
+      "Bash(Measure-Object -Line)",
+      "Bash(Select-Object -ExpandProperty Lines)"
     ]
   }
 }

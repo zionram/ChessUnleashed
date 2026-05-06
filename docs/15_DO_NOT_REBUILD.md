@@ -1,6 +1,6 @@
 # Do Not Rebuild
 
-Status: Active project rule, updated with workspace-window cautions
+Status: Active project rule, updated with Chat 7 workflow constraints
 
 Chess Unleashed is existing functioning software. Future work should be small, scoped, and compatible with current ownership boundaries.
 
@@ -16,7 +16,8 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Documentation-only changes do not require a build unless docs are part of the build.
 - Use in-app panels/modals instead of browser/window prompts.
 - Do not add duplicate panel titles.
-- Use center-panel tools for complex workflows.
+- Use center/floating-panel tools for complex workflows.
+- Do not add fake UI/functionality. If it looks functional, it must be wired to real state/action.
 
 ## Ownership Boundaries
 
@@ -35,18 +36,6 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Animation Rules connect events to animations.
 - Sound Rules connect events to sounds.
 
-## Workspace / Launcher Window Rules — 2026-05-03
-
-- Do not restore `launcher-sub-panel`.
-- Do not create a duplicate left launcher system.
-- Do not route left launcher category windows into the right dock.
-- Do not use `DynamicMenu` recursively inside `launcher-category-window`.
-- Do not create a global window manager until explicitly requested.
-- Do not add drag/resize logic outside the component scope that owns the state.
-- `activeLauncherItem` belongs inside `MainLayout`, not the outer provider-only `App()` wrapper.
-- Keep `DynamicMenu` limited to the root icon launcher unless explicitly changing the old recursive menu behavior elsewhere.
-- Launcher category windows should be floating, tabbed, and independent from the right dock.
-
 ## Systems Not To Replace
 
 - Standard Chess/chess runtime.
@@ -59,30 +48,16 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Event Builder and CustomEventRuntime architecture.
 - Animation Builder and movement animation path.
 - Theme/Piece template data model.
-- Right dock / `ViewManager` architecture unless explicitly scoped.
-- Existing Overlay architecture unless explicitly scoped.
+- FloatingWindow and Overlay infrastructure unless the task explicitly targets window shell behavior.
+
+## Chat 7 UI Safety Rule
+
+When hiding launcher arrows or selected states, do not hide SVG internals or `aria-hidden` nodes inside icons. Selected icons must remain visible.
 
 ## Package Rule
 
-Do not mix runtime Game Snapshot state into ExperiencePackage exports by default.
-
-Packages are reusable; snapshots are games in progress.
+Do not mix runtime Game Snapshot state into ExperiencePackage exports by default. Packages are reusable; snapshots are games in progress.
 
 ## Media Rule
 
-Do not put GIF/PNG/MP3/WAV/MIDI binary data into JSON/localStorage as giant base64 strings.
-
-Use package assets, durable asset storage, or file references through the existing helpers.
-
-## Vite / React Warning Rule
-
-Do not edit `node_modules/.vite/deps` or `react-dom_client.js`.
-
-If React reports a style warning, fix the source component style object.
-
-If cache is stale, clear Vite cache instead:
-
-```bat
-rmdir /s /q node_modules\.vite
-npm.cmd run dev
-```
+Do not put GIF/PNG/MP3/WAV/MIDI binary data into JSON/localStorage as giant base64 strings. Use package assets, durable asset storage, or file references through the existing helpers.

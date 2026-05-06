@@ -7,11 +7,11 @@ interface DynamicMenuProps {
   items: MenuItem[];
   onAction?: (actionId: string) => void;
   depth?: number;
-  onRootItemSelect?: (item: MenuItem | null) => void;
-  activeRootItemId?: string | null;
+  onRootItemSelect?: (item: MenuItem) => void;
+  activeRootItemIds?: readonly string[];
 }
 
-const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, onRootItemSelect, activeRootItemId = null }) => {
+const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, onRootItemSelect, activeRootItemIds }) => {
   const [activeSubMenu, setActiveSubMenu] = useState<string | null>(null);
   const [activeOverlay, setActiveOverlay] = useState<MenuItem | null>(null);
   const [onCloseRequest, setOnCloseRequest] = useState<(() => void) | null>(null);
@@ -27,12 +27,10 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
 
   const handleItemClick = (item: MenuItem) => {
     if (item.type === 'submenu') {
-      const isCurrentlyActive = isRootToolGrid && onRootItemSelect
-        ? activeRootItemId === item.id
-        : activeSubMenu === item.id;
-      setActiveSubMenu(isCurrentlyActive ? null : item.id);
       if (isRootToolGrid && onRootItemSelect) {
-        onRootItemSelect(isCurrentlyActive ? null : item);
+        onRootItemSelect(item);
+      } else {
+        setActiveSubMenu(activeSubMenu === item.id ? null : item.id);
       }
     } else if (item.type === 'overlay') {
       setActiveOverlay(item);
@@ -54,7 +52,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
       }}
     >
       {items.map(item => {
-        const isActive = isRootToolGrid && activeRootItemId ? activeRootItemId === item.id : activeSubMenu === item.id;
+        const isActive = isRootToolGrid && activeRootItemIds ? activeRootItemIds.includes(item.id) : activeSubMenu === item.id;
         const showIconTile = isRootToolGrid;
         const fallbackIcon = item.label?.trim()?.charAt(0)?.toUpperCase() ?? '•';
 
@@ -65,7 +63,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
             style={{ display: showIconTile ? 'contents' : undefined }}
           >
             <div
-              className={`menu-item ${showIconTile ? 'menu-icon-grid-button' : ''}`}
+              className={`menu-item ${showIconTile ? 'menu-icon-grid-button' : ''} ${isActive ? 'is-active' : ''}`}
               onClick={() => handleItemClick(item)}
               title={item.label}
               aria-label={item.label}
@@ -118,7 +116,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
                 }}
               >
                 <span
-                  className="menu-icon-box"
+                  className={`menu-icon-box ${isActive ? 'is-active' : ''}`}
                   style={{
                     color: isActive ? accentColor : menuMutedTextColor,
                     borderColor: isActive ? `${accentColor}88` : (isGlass ? 'rgba(148, 163, 184, 0.18)' : 'transparent'),
@@ -133,7 +131,7 @@ const DynamicMenu: React.FC<DynamicMenuProps> = ({ items, onAction, depth = 0, o
                   {item.icon || fallbackIcon}
                 </span>
                 <span
-                  className="menu-label"
+                  className={`menu-label ${isActive ? 'is-active' : ''}`}
                   style={{
                     fontWeight: item.type === 'submenu' ? 650 : 500,
                     overflow: 'hidden',

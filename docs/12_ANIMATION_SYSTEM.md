@@ -1,6 +1,6 @@
 # Animation System
 
-Status: Current foundation with event-triggered overlays
+Status: Current foundation with event-triggered overlays and Chat 7 floating UI polish
 
 Chess Unleashed has two animation concepts:
 
@@ -25,11 +25,7 @@ The UI should show the current effective default clearly. Snap/no animation is t
 
 ## Standard Chess Movement Animation
 
-Standard Chess piece movement animation applies to both local/player moves and opponent/bot moves when enabled and within scope. Local moves use the same visual staging path as bot/opponent moves.
-
-Bot/opponent turn response is delayed until the player's configured movement animation finishes, unless animation is disabled or Snap/no animation is selected.
-
-Captures and promotions should continue to use legal game state and should not break animation.
+Standard Chess piece movement animation applies to both local/player moves and opponent/bot moves when enabled and within scope. Local moves use the same visual staging path as bot/opponent moves. Bot/opponent turn response is delayed until the player's configured movement animation finishes, unless animation is disabled or Snap/no animation is selected. Captures and promotions should continue to use legal game state and should not break animation.
 
 ## Priority
 
@@ -44,7 +40,7 @@ Event-triggered animations are visual overlays and should not mutate game state 
 
 ## Animation Builder
 
-Animation Builder is under Advanced -> Gaming and opens as a center-panel workflow similar to Sound Editor.
+Animation Builder is under Advanced -> Gaming and opens as a center/floating workflow similar to Sound Editor.
 
 It manages reusable Animation Definitions:
 
@@ -56,9 +52,17 @@ It manages reusable Animation Definitions:
 
 Built-ins are protected from destructive edits. Users can duplicate built-ins into custom definitions.
 
+## Chat 7 UI Notes
+
+- Animation Builder was converted toward dark/glass styling.
+- `AnimationPreviewCard` was darkened to avoid a light preview card inside the dark floating builder.
+- Future Environment → Look → Animation launcher tab should show real animation controls inside the floating launcher, not only an Open card.
+
 ## Event Animation Rules
 
-Animation Rules connect events to named animations. Initial target options include:
+Animation Rules connect events to named animations.
+
+Initial target options include:
 
 - moved piece
 - captured piece

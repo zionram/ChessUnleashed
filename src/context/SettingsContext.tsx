@@ -686,32 +686,135 @@ const loadPersistedSettings = (): SettingsState => {
     if (!stored) return createDefaultSettings();
     const parsed = JSON.parse(stored) as PersistedSettingsPayload;
     if (parsed.version !== SETTINGS_STORAGE_VERSION || !parsed.settings) return createDefaultSettings();
-    return mergePersistedSettings(parsed.settings);
+    return mergePersistedSettings(stripBlobUrls(parsed.settings));
   } catch (error) {
     console.warn('Failed to load persisted Chess Unleashed settings:', error);
     return createDefaultSettings();
   }
 };
 
-const toPersistedSettings = (settings: SettingsState): Partial<SettingsState> => ({
-  ...settings,
-  themeDraft: null,
-  isThemeEditorMode: false,
-  activeViews: settings.activeViews.filter(viewId => viewId !== 'theme-editor')
+// Recursively strip blob: URLs only — used on load since blob: are always stale after reload
+const stripBlobUrls = <T,>(value: T): T => {
+  if (typeof value === 'string') return (value.startsWith('blob:') ? '' : value) as T;
+  if (Array.isArray(value)) return value.map(stripBlobUrls) as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as object)) {
+      out[key] = stripBlobUrls((value as Record<string, unknown>)[key]);
+    }
+    return out as T;
+  }
+  return value;
+};
+
+// Recursively strip blob: URLs and (when stripAllData or above threshold) data: URLs — used on save
+const MAX_PERSIST_URL_BYTES = 200_000;
+
+const stripAssetUrls = <T,>(value: T, stripAllData: boolean): T => {
+  if (typeof value === 'string') {
+    if (value.startsWith('blob:')) return '' as T;
+    if (!value.startsWith('data:')) return value;
+    if (stripAllData || value.length > MAX_PERSIST_URL_BYTES) return '' as T;
+    return value;
+  }
+  if (Array.isArray(value)) return value.map(v => stripAssetUrls(v, stripAllData)) as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as object)) {
+      out[key] = stripAssetUrls((value as Record<string, unknown>)[key], stripAllData);
+    }
+    return out as T;
+  }
+  return value;
+};
+
+// Overwrite the three applied template layer fields with blob-stripped versions from live state,
+// so these are always persisted regardless of size (they're the primary user-facing applied images)
+const withAppliedLayerImages = (base: Partial<SettingsState>, live: SettingsState): Partial<SettingsState> => ({
+  ...base,
+  template: {
+    ...(base.template as Template),
+    background: stripBlobUrls(live.template.background),
+    boardOverlay: stripBlobUrls(live.template.boardOverlay),
+    frameLayer: stripBlobUrls(live.template.frameLayer)
+  }
 });
+
+let persistFallbackWarned = false;
+
+// Normal: strip blob: everywhere + strip large data: from nonessential fields;
+// always restore the three applied layer images from live state
+const toPersistedSettings = (settings: SettingsState): Partial<SettingsState> =>
+  withAppliedLayerImages(
+    stripAssetUrls({
+      ...settings,
+      themeDraft: null,
+      isThemeEditorMode: false,
+      activeViews: settings.activeViews.filter(id => id !== 'theme-editor'),
+      importedAssets: []
+    }, false),
+    settings
+  );
+
+// Compact: strip ALL data: from nonessential fields, still restore applied layer images
+const toCompactPersistedSettings = (settings: SettingsState): Partial<SettingsState> =>
+  withAppliedLayerImages(
+    stripAssetUrls({
+      ...settings,
+      themeDraft: null,
+      isThemeEditorMode: false,
+      activeViews: settings.activeViews.filter(id => id !== 'theme-editor'),
+      importedAssets: [],
+      customEvents: [],
+      animationRules: []
+    }, true),
+    settings
+  );
+
+// Emergency: strip ALL data: everywhere including applied layer images, clear all nonessential arrays
+const toEmergencyPersistedSettings = (settings: SettingsState): Partial<SettingsState> =>
+  stripAssetUrls({
+    ...settings,
+    themeDraft: null,
+    isThemeEditorMode: false,
+    activeViews: settings.activeViews.filter(id => id !== 'theme-editor'),
+    importedAssets: [],
+    customEvents: [],
+    customRulesets: [],
+    animationRules: []
+  }, true);
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<SettingsState>(loadPersistedSettings);
 
   useEffect(() => {
-    try {
-      const payload: PersistedSettingsPayload = {
+    const persist = (settingsPayload: Partial<SettingsState>) => {
+      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
         version: SETTINGS_STORAGE_VERSION,
-        settings: toPersistedSettings(settings)
-      };
-      window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(payload));
-    } catch (error) {
-      console.warn('Failed to persist Chess Unleashed settings:', error);
+        settings: settingsPayload
+      }));
+    };
+
+    try {
+      persist(toPersistedSettings(settings));
+    } catch {
+      try {
+        persist(toCompactPersistedSettings(settings));
+        if (!persistFallbackWarned) {
+          persistFallbackWarned = true;
+          console.warn('[Chess Unleashed] Settings payload was large; non-essential asset data excluded from save.');
+        }
+      } catch {
+        try {
+          persist(toEmergencyPersistedSettings(settings));
+          if (!persistFallbackWarned) {
+            persistFallbackWarned = true;
+            console.warn('[Chess Unleashed] Settings saved in emergency mode; applied images may not persist after reload.');
+          }
+        } catch (err) {
+          console.warn('[Chess Unleashed] Failed to persist settings after all fallbacks:', err);
+        }
+      }
     }
   }, [settings]);
 

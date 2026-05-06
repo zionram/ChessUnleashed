@@ -1,6 +1,6 @@
 # Menu And UI Structure
 
-Status: Current, with Obsidian Workspace launcher-window update
+Status: Current
 
 The current menu structure is defined in `src/config/menuSchema.ts`. Views are registered and positioned in `src/App.tsx`.
 
@@ -24,8 +24,8 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
   - Platform UI
 - Sound
   - Audio Settings
-  - Load / Save Sets
-- opens the Package/Appearance workflow depending on current view wiring.
+- Load / Save Sets
+  - Opens the Package/Appearance workflow depending on current view wiring.
 
 ## Tools
 
@@ -60,34 +60,51 @@ Verified in `src/App.tsx`:
 - Custom Game runtime renders in the center when an active custom ruleset is started.
 - Registered views include profile, bots, multiplayer, rule builder, event builder, event log, troubleshooter, audio, platform appearance, animation settings, and animation builder.
 
-## Obsidian Workspace Launcher Update — 2026-05-03
+## Floating Launcher / Tool Palette
 
-The left menu is moving from a nested sidebar menu model toward a floating launcher-window model.
+Current verified UI direction:
 
-Current direction:
+- The left Tool Palette floats over the background instead of behaving like a fixed side panel.
+- The Tool Palette is draggable by its header.
+- The Tool Palette is resizable horizontally and vertically.
+- Collapsed mode becomes a clean icon-only rail.
+- Selected launcher icons must remain visible.
+- Redundant launcher side arrows should not return. When removing them, do not accidentally hide SVG internals.
+- The launcher should behave like a floating control surface, not a static navigation list.
 
-- The left side should behave as a compact icon launcher / tool palette.
-- Clicking a root launcher item, such as Environment, Tools, or Advanced, should open a floating category window.
-- The floating category window should render first-level children as horizontal tabs.
-- Nested children should appear inside the selected tab as grouped cards, nested tabs, or compact buttons.
-- The right dock / `ViewManager` is separate and must not be reused as the destination for left launcher category windows.
-- The chessboard should remain centered and usable; floating windows may overlay the workspace background but should not be designed to cover the board by default.
+## Let’s Play Overlay
 
-Important implementation distinction:
+Current verified behavior:
 
-- `DynamicMenu` remains acceptable for the root left icon launcher.
-- `DynamicMenu` should not be used recursively for the content inside `launcher-category-window`.
-- `launcher-category-window` is the intended floating launcher surface.
-- `launcher-sub-panel` was the old wrong second-sidebar implementation and should not be restored.
+- The Let’s Play overlay opens centered and above the background from both the New button and the left palette.
+- The Let’s Play overlay uses the restored dark/glass theme.
+- The Let’s Play overlay scrollbar matches the dark/glass UI style.
 
-Current verified launcher behavior:
+## Workspace Cleanup
 
-- Root left launcher icons open floating category windows.
-- First-level children render as horizontal tabs.
-- Nested children render inside the selected tab.
-- Leaf action items remain reachable.
-- Overlay items open with the existing `Overlay` pattern.
-- The launcher window can be dragged by its title bar.
+Current verified cleanup:
+
+- Redundant right workspace quick buttons for History, Layers, and Squares were removed.
+- The inner redundant Workspace button/tab was removed.
+
+## Board Glass Shell Movement
+
+Current verified behavior:
+
+- The chessboard glass shell is draggable by grabbing the glass around the board.
+- Double-clicking the board glass shell resets the board position.
+- Board dragging must not interfere with dragging pieces or squares.
+
+## Floating Tool Control Panel Direction
+
+Current next task / known UI gap:
+
+- Environment launcher tabs currently show “Open” cards for tools like Pieces.
+- Desired behavior: Environment → Look → Pieces should render the actual Pieces controls inside the floating launcher window.
+- The same pattern should apply to Board, Animation, Platform UI, Sound, Packages, and similar tool areas.
+- “Dock” should be a small secondary option inside the tool interface, not the main action.
+- The tab should not just say “Open this workspace tool.”
+- Do not add fake controls. If the interface looks functional, it must be wired to real state or real existing actions.
 
 ## Rules For Future UI Work
 
@@ -95,6 +112,5 @@ Current verified launcher behavior:
 - Use links/buttons from related settings pages instead of duplicate menu items.
 - Keep complex workflows out of cramped side panels when they require table/edit/preview layouts.
 - Preserve existing action IDs unless the task explicitly requires a migration.
-- Do not route left launcher category windows into the right dock.
-- Do not restore `launcher-sub-panel`.
-- Keep launcher-window changes scoped to `src/App.tsx`, `src/App.css`, `src/components/menu/DynamicMenu.tsx`, and `src/config/menuSchema.ts` unless verification proves another file is involved.
+- Prefer floating glass panels, compact icon rails, dark/glass styling, and real controls in floating windows.
+- Reduce fixed side-panel clutter where a floating tool panel can use the existing architecture cleanly.

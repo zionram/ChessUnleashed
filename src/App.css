@@ -88,11 +88,35 @@
   border: 1px solid #456789;
 }
 
+.workspace-container {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .layout-grid {
   display: grid;
   flex: 1;
   overflow: hidden;
   min-height: 0;
+}
+
+.right-panel-float {
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+.right-panel-activator {
+  font: inherit;
+  font-size: 0.68rem;
+}
+
+@media (max-width: 768px) {
+  .right-panel-activator {
+    display: none !important;
+  }
 }
 
 .resizer {
@@ -129,13 +153,41 @@
 }
 
 .center-panel {
-  background-color: #ecf0f1;
+  background-color: transparent;
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
   overflow-y: auto;
   display: grid;
   grid-template-rows: 1fr auto;
+}
+
+.left-panel-float {
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.16);
+}
+
+.launcher-sub-panel {
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  border-left: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 4px 0 18px rgba(0, 0, 0, 0.13);
+}
+
+.right-panel-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 10;
+  background: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.right-panel-resizer:hover {
+  background: rgba(148, 163, 184, 0.22);
 }
 
 .center-chat-bar {
@@ -305,7 +357,7 @@
   .mobile-hidden {
     display: none !important;
   }
-  
+
   .layout-grid {
     display: block;
     flex: 1;
@@ -330,8 +382,20 @@
     background: white;
   }
 
-  .right-panel.open {
-    right: 0;
+  .right-panel-float {
+    position: fixed !important;
+    transform: none !important;
+    right: -100% !important;
+    top: 0 !important;
+    height: 100% !important;
+    width: 85% !important;
+    transition: right 0.3s ease !important;
+  }
+
+  .right-panel.open,
+  .right-panel-float.open {
+    right: 0 !important;
+    transform: none !important;
   }
 
   .mobile-bottom-nav {
@@ -530,9 +594,17 @@
 }
 
 .App[data-sidebar-style="glass"] .center-panel {
-  background:
-    linear-gradient(180deg, rgba(2, 6, 23, 0.46), rgba(2, 6, 23, 0.86)),
-    radial-gradient(circle at 50% 40%, rgba(56, 189, 248, 0.08), transparent 46%);
+  background: transparent;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-float {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08), 4px 0 24px rgba(0, 0, 0, 0.48);
+  border-right: 1px solid rgba(56, 189, 248, 0.16) !important;
+}
+
+
+.App[data-sidebar-style="glass"] .right-panel-resizer:hover {
+  background: rgba(56, 189, 248, 0.18);
 }
 
 .App[data-sidebar-style="glass"] .workspace-board-area {
@@ -552,6 +624,11 @@
   color: #d8e2ef;
   backdrop-filter: blur(12px);
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.App[data-sidebar-style="glass"] .right-panel-float {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08), -8px 0 32px rgba(0, 0, 0, 0.5);
+  border-left: 1px solid rgba(56, 189, 248, 0.16) !important;
 }
 
 .App[data-sidebar-style="glass"] .left-panel {
@@ -734,12 +811,1922 @@
   font-size: 0.8rem;
 }
 
-/* === Launcher window drag affordance === */
-.launcher-window-titlebar {
-  cursor: move;
-  user-select: none;
+/* === Obsidian range slider polish === */
+.App[data-sidebar-style="glass"] input[type="range"] {
+  accent-color: var(--cu-accent, #38bdf8);
+  height: 18px;
+  background: transparent !important;
 }
 
-.launcher-window-titlebar button {
+.App[data-sidebar-style="glass"] input[type="range"]::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(56, 189, 248, 0.34),
+    rgba(100, 116, 139, 0.24)
+  );
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  background: var(--cu-accent, #38bdf8);
+  border: 1px solid rgba(203, 213, 225, 0.34);
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.10),
+    0 0 8px rgba(56, 189, 248, 0.20);
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]:hover::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    rgba(56, 189, 248, 0.46),
+    rgba(100, 116, 139, 0.28)
+  );
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]:hover::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px rgba(56, 189, 248, 0.13),
+    0 0 12px rgba(56, 189, 248, 0.28);
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.24);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.40);
+}
+
+.App[data-sidebar-style="glass"] input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--cu-accent, #38bdf8);
+  border: 1px solid rgba(203, 213, 225, 0.34);
+  box-shadow:
+    0 0 0 2px rgba(56, 189, 248, 0.10),
+    0 0 8px rgba(56, 189, 248, 0.20);
+}
+
+/* === Obsidian softer text / panel hierarchy === */
+.App[data-sidebar-style="glass"] {
+  color: #cbd5e1;
+}
+
+.App[data-sidebar-style="glass"] .view-container,
+.App[data-sidebar-style="glass"] .active-view-panel {
+  color: #cbd5e1;
+}
+
+.App[data-sidebar-style="glass"] .view-container h1,
+.App[data-sidebar-style="glass"] .view-container h2,
+.App[data-sidebar-style="glass"] .view-container h3,
+.App[data-sidebar-style="glass"] .view-container h4,
+.App[data-sidebar-style="glass"] .active-view-panel h1,
+.App[data-sidebar-style="glass"] .active-view-panel h2,
+.App[data-sidebar-style="glass"] .active-view-panel h3,
+.App[data-sidebar-style="glass"] .active-view-panel h4,
+.App[data-sidebar-style="glass"] .workspace-panel-titlebar h4 {
+  color: #e2e8f0 !important;
+}
+
+.App[data-sidebar-style="glass"] .view-container p,
+.App[data-sidebar-style="glass"] .view-container span,
+.App[data-sidebar-style="glass"] .view-container label,
+.App[data-sidebar-style="glass"] .workspace-panel-titlebar span,
+.App[data-sidebar-style="glass"] .header-guest-label {
+  color: #94a3b8;
+}
+
+.App[data-sidebar-style="glass"] .active-view-panel,
+.App[data-sidebar-style="glass"] .view-container section {
+  background: rgba(7, 17, 31, 0.72);
+  border-color: rgba(148, 163, 184, 0.14);
+}
+
+.App[data-sidebar-style="glass"] .view-container button,
+.App[data-sidebar-style="glass"] .view-container select,
+.App[data-sidebar-style="glass"] .view-container input:not([type="color"]):not([type="range"]):not([type="checkbox"]) {
+  background: rgba(15, 23, 42, 0.66) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+.App[data-sidebar-style="glass"] .view-container button:hover,
+.App[data-sidebar-style="glass"] .view-container select:hover {
+  background: rgba(20, 30, 48, 0.74) !important;
+  border-color: rgba(148, 163, 184, 0.28) !important;
+}
+
+.App[data-sidebar-style="glass"] .view-container button:disabled {
+  opacity: 0.55;
+  color: #64748b !important;
+}
+
+.App[data-sidebar-style="glass"] .view-container input[type="color"] {
+  background: rgba(15, 23, 42, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 4px;
+}
+
+/* === Obsidian scrollbar polish: softer, wider, squared === */
+.App[data-sidebar-style="glass"] .left-panel,
+.App[data-sidebar-style="glass"] .right-panel,
+.App[data-sidebar-style="glass"] .center-panel,
+.App[data-sidebar-style="glass"] .view-container,
+.App[data-sidebar-style="glass"] .active-view-panel,
+.App[data-sidebar-style="glass"] .panel-tab-strip,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(100, 116, 139, 0.76) rgba(8, 17, 34, 0.70);
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar {
+  width: 13px;
+  height: 13px;
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-track {
+  background: rgba(8, 17, 34, 0.70);
+  border-radius: 3px;
+  border: 1px solid rgba(148, 163, 184, 0.10);
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.76);
+  border-radius: 3px;
+  border: 2px solid rgba(8, 17, 34, 0.70);
+  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.08);
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.86);
+}
+
+/* === Obsidian overlay / Let's Play panel polish === */
+.App[data-sidebar-style="glass"] .overlay-content,
+.App[data-sidebar-style="glass"] .overlay-panel,
+.App[data-sidebar-style="glass"] .modal-content,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet {
+  background: rgba(7, 17, 31, 0.94) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.62),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(14px);
+}
+
+.App[data-sidebar-style="glass"] .overlay-content h1,
+.App[data-sidebar-style="glass"] .overlay-content h2,
+.App[data-sidebar-style="glass"] .overlay-content h3,
+.App[data-sidebar-style="glass"] .overlay-content h4,
+.App[data-sidebar-style="glass"] .overlay-panel h1,
+.App[data-sidebar-style="glass"] .overlay-panel h2,
+.App[data-sidebar-style="glass"] .overlay-panel h3,
+.App[data-sidebar-style="glass"] .overlay-panel h4,
+.App[data-sidebar-style="glass"] .modal-content h1,
+.App[data-sidebar-style="glass"] .modal-content h2,
+.App[data-sidebar-style="glass"] .modal-content h3,
+.App[data-sidebar-style="glass"] .modal-content h4 {
+  color: #e2e8f0 !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content section,
+.App[data-sidebar-style="glass"] .overlay-panel section,
+.App[data-sidebar-style="glass"] .modal-content section,
+.App[data-sidebar-style="glass"] .overlay-content .card,
+.App[data-sidebar-style="glass"] .overlay-panel .card,
+.App[data-sidebar-style="glass"] .modal-content .card {
+  background: rgba(10, 20, 38, 0.80) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  border-radius: 10px !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content button,
+.App[data-sidebar-style="glass"] .overlay-panel button,
+.App[data-sidebar-style="glass"] .modal-content button {
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.20) !important;
+  border-radius: var(--cu-btn-radius, 4px) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02);
+}
+
+.App[data-sidebar-style="glass"] .overlay-content button:hover,
+.App[data-sidebar-style="glass"] .overlay-panel button:hover,
+.App[data-sidebar-style="glass"] .modal-content button:hover {
+  border-color: rgba(56, 189, 248, 0.42) !important;
+  background: rgba(14, 47, 72, 0.72) !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content p,
+.App[data-sidebar-style="glass"] .overlay-content span,
+.App[data-sidebar-style="glass"] .overlay-content label,
+.App[data-sidebar-style="glass"] .overlay-content div,
+.App[data-sidebar-style="glass"] .overlay-panel p,
+.App[data-sidebar-style="glass"] .overlay-panel span,
+.App[data-sidebar-style="glass"] .overlay-panel label,
+.App[data-sidebar-style="glass"] .overlay-panel div,
+.App[data-sidebar-style="glass"] .modal-content p,
+.App[data-sidebar-style="glass"] .modal-content span,
+.App[data-sidebar-style="glass"] .modal-content label,
+.App[data-sidebar-style="glass"] .modal-content div {
+  color: inherit;
+}
+
+/* === Obsidian inline-style override deep darkening === */
+.App[data-sidebar-style="glass"] .overlay-content [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="background:rgb(255, 255, 255)"] {
+  background: rgba(10, 20, 38, 0.82) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  box-shadow: none !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="border:1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="border: 1px solid rgb(208, 215, 222)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="border:1px solid rgb(208, 215, 222)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="border:1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="border: 1px solid rgb(208, 215, 222)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="border:1px solid rgb(208, 215, 222)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="border:1px solid rgb(229, 231, 235)"] {
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="color: rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .overlay-content [style*="color:rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color: rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="color:rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="color:rgb(102, 102, 102)"] {
+  color: #cbd5e1 !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .overlay-panel [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet [style*="padding: 10px; border-radius: 8px; border: 1px solid rgb(229, 231, 235)"] {
+  background: rgba(10, 20, 38, 0.76) !important;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content button[style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-content button[style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-content button[style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-content button[style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-panel button[style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-panel button[style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .overlay-panel button[style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .overlay-panel button[style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet button[style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .mobile-menu-sheet button[style*="background:rgb(248, 250, 252)"] {
+  background: rgba(15, 23, 42, 0.74) !important;
+  color: #d7e2ee !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+/* Slightly darker / quieter text in overlays */
+.App[data-sidebar-style="glass"] .overlay-content,
+.App[data-sidebar-style="glass"] .overlay-panel,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet {
+  color: #c4d1df !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content p,
+.App[data-sidebar-style="glass"] .overlay-content span,
+.App[data-sidebar-style="glass"] .overlay-content label,
+.App[data-sidebar-style="glass"] .overlay-content li,
+.App[data-sidebar-style="glass"] .overlay-panel p,
+.App[data-sidebar-style="glass"] .overlay-panel span,
+.App[data-sidebar-style="glass"] .overlay-panel label,
+.App[data-sidebar-style="glass"] .overlay-panel li,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet p,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet span,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet label,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet li {
+  color: #b1bfd0 !important;
+}
+
+.App[data-sidebar-style="glass"] .overlay-content h1,
+.App[data-sidebar-style="glass"] .overlay-content h2,
+.App[data-sidebar-style="glass"] .overlay-content h3,
+.App[data-sidebar-style="glass"] .overlay-content h4,
+.App[data-sidebar-style="glass"] .overlay-panel h1,
+.App[data-sidebar-style="glass"] .overlay-panel h2,
+.App[data-sidebar-style="glass"] .overlay-panel h3,
+.App[data-sidebar-style="glass"] .overlay-panel h4,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet h1,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet h2,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet h3,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet h4 {
+  color: #dde7f3 !important;
+}
+
+/* Scrollbars closer to the mockup: larger, squarer, softer */
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-track {
+  background: rgba(11, 18, 30, 0.82);
+  border-radius: 2px;
+  border: 1px solid rgba(100, 116, 139, 0.14);
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb {
+  background: rgba(106, 118, 134, 0.72);
+  border-radius: 2px;
+  border: 2px solid rgba(11, 18, 30, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.05);
+}
+
+.App[data-sidebar-style="glass"] .left-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .right-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .center-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .view-container::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .active-view-panel::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .panel-tab-strip::-webkit-scrollbar-thumb:hover,
+.App[data-sidebar-style="glass"] .mobile-menu-sheet::-webkit-scrollbar-thumb:hover {
+  background: rgba(130, 145, 165, 0.82);
+}
+
+/* === Obsidian inline-style override extended workspace-panel darkening === */
+.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .view-container [style*="background:rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="background:rgb(255, 255, 255)"] {
+  background: rgba(10, 20, 38, 0.82) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  box-shadow: none !important;
+}
+
+.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="border:1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .view-container [style*="border:1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border: 1px solid rgb(229, 231, 235)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="border:1px solid rgb(229, 231, 235)"] {
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="color: rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="color:rgb(31, 41, 55)"],
+.App[data-sidebar-style="view-container"] [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color: rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .view-container [style*="color:rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color: rgb(31, 41, 55)"],
+.App[data-sidebar-style="glass"] .active-view-panel [style*="color:rgb(31, 41, 55)"] {
+  color: #b8c7d8 !important;
+}
+
+/* Common boxed cards inside workspace panels */
+.App[data-sidebar-style="glass"] .right-panel [style*="padding: 10px; background: rgb(248, 250, 252); border-radius: 8px; border: 1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="padding: 10px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .right-panel [style*="padding: 12px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .view-container [style*="padding: 10px; background: rgb(248, 250, 252); border-radius: 8px; border: 1px solid rgb(226, 232, 240)"],
+.App[data-sidebar-style="glass"] .view-container [style*="padding: 10px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"],
+.App[data-sidebar-style="glass"] .view-container [style*="padding: 12px; background: rgb(248, 249, 250); border-radius: 8px; border: 1px solid rgb(222, 226, 230)"] {
+  background: rgba(11, 22, 40, 0.80) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  color: #cbd5e1 !important;
+}
+
+/* Buttons that are still default-light */
+.App[data-sidebar-style="glass"] .right-panel button[style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .right-panel button[style*="background:rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .right-panel button[style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .right-panel button[style*="background:rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .view-container button[style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .view-container button[style*="background:rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .view-container button[style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .view-container button[style*="background:rgb(248, 250, 252)"] {
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #d6e2ef !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+/* Specific history controls/list pattern */
+.App[data-sidebar-style="glass"] .history-controls,
+.App[data-sidebar-style="glass"] .history-list {
+  background: rgba(11, 22, 40, 0.80) !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+  color: #b8c7d8 !important;
+}
+
+.App[data-sidebar-style="glass"] .history-list button,
+.App[data-sidebar-style="glass"] .history-controls button {
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #d6e2ef !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+
+/* === Floating launcher category window correction === */
+.launcher-category-window {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 14px !important;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.launcher-window-titlebar {
+  padding: 9px 11px;
+  background: rgba(248, 250, 252, 0.94);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.launcher-window-tab-row,
+.launcher-nested-tab-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px;
+  padding: 8px 10px 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.launcher-window-tab,
+.launcher-nested-tab {
+  width: auto !important;
+  flex: 0 1 auto !important;
+}
+
+.launcher-window-content,
+.launcher-nested-tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.launcher-nested-tab-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.launcher-action-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  background: rgba(248, 250, 252, 0.88);
+}
+
+.launcher-action-card p {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.App[data-sidebar-style="glass"] .launcher-category-window {
+  background: rgba(7, 17, 31, 0.90) !important;
+  color: #d8e2ef;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  box-shadow:
+    0 26px 90px rgba(0, 0, 0, 0.58),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(16px);
+}
+
+.App[data-sidebar-style="glass"] .launcher-window-titlebar {
+  background: rgba(2, 6, 23, 0.62);
+  border-bottom-color: rgba(148, 163, 184, 0.16);
+  color: #e5edf7;
+}
+
+.App[data-sidebar-style="glass"] .launcher-window-titlebar button,
+.App[data-sidebar-style="glass"] .launcher-category-window button {
+  background: rgba(15, 23, 42, 0.76);
+  color: #dbeafe;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.App[data-sidebar-style="glass"] .launcher-category-window button:hover {
+  border-color: rgba(56, 189, 248, 0.48);
+  background: rgba(14, 47, 72, 0.70);
+}
+
+.App[data-sidebar-style="glass"] .launcher-action-card {
+  background: rgba(10, 20, 38, 0.76);
+  border-color: rgba(148, 163, 184, 0.16);
+}
+
+.App[data-sidebar-style="glass"] .launcher-action-card p {
+  color: #94a3b8;
+}
+
+/* === Mockup convergence pass: app shell, launcher, right dock, board/status === */
+.App[data-sidebar-style="glass"] .app-header {
+  min-height: 56px;
+  padding: 0 10px;
+  gap: 14px;
+  background: rgba(5, 12, 22, 0.92) !important;
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  border-bottom-color: rgba(56, 189, 248, 0.22);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.42), inset 0 -1px 0 rgba(255, 255, 255, 0.025);
+  backdrop-filter: blur(16px);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 180px;
+  color: #e5edf7;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.app-brand-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #f7d794;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.16);
+}
+
+.app-brand-name { white-space: nowrap; }
+
+.topbar-left {
+  min-width: 0;
+  flex: 1 1 30%;
+}
+
+.topbar-actions {
+  gap: 10px;
+}
+
+.topbar-actions button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+}
+
+.topbar-actions button span:first-child {
+  color: #9fb3c8;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+
+
+
+
+
+
+
+
+
+.topbar-right {
+  flex: 1 1 30%;
+  gap: 10px;
+}
+
+
+
+
+
+.App[data-sidebar-style="glass"] .game-status-pill {
+  padding: 6px 15px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.App[data-sidebar-style="glass"] .header-profile-badge {
+  min-height: 36px;
+  padding: 4px 10px;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-float {
+  background: rgba(5, 13, 25, 0.82) !important;
+  border-right-color: rgba(56, 189, 248, 0.14) !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel .panel-header {
+  min-height: 36px;
+  padding: 7px 10px;
+}
+
+.App[data-sidebar-style="glass"] .left-panel .panel-header span {
+  font-size: 0.72rem;
+}
+
+.App[data-sidebar-style="glass"] .left-panel > .dynamic-menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px 8px;
+  align-content: start;
+}
+
+.App[data-sidebar-style="glass"] .left-panel > .dynamic-menu .menu-item {
+  min-height: 54px !important;
+  padding: 7px 4px !important;
+  border-radius: 8px !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  text-align: center !important;
+  font-size: 0.62rem !important;
+  background: rgba(10, 18, 32, 0.58) !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel > .dynamic-menu .menu-icon-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  margin: 0 auto;
+}
+
+.App[data-sidebar-style="glass"] .left-panel > .dynamic-menu .menu-item span:not(.menu-icon-box) {
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.App[data-sidebar-style="glass"] .welcome-sidebar-container {
+  display: none !important;
+}
+
+.App[data-sidebar-style="glass"] .right-panel-float {
+  background: rgba(5, 13, 25, 0.84) !important;
+  border-left-color: rgba(56, 189, 248, 0.14) !important;
+}
+
+
+
+
+
+
+
+
+
+
+
+.App[data-sidebar-style="glass"] .workspace-board-shell {
+  padding: 14px !important;
+  border-radius: 18px;
+  background: rgba(2, 8, 23, 0.28);
+  border-color: rgba(148, 163, 184, 0.16);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.50), 0 0 0 1px rgba(56, 189, 248, 0.07);
+}
+
+.App[data-sidebar-style="glass"] .center-panel {
+  padding-left: 150px;
+  padding-right: 320px;
+  box-sizing: border-box;
+}
+
+.launcher-category-window {
+  border-radius: 10px !important;
+}
+
+.launcher-window-titlebar {
+  min-height: 34px;
+  padding: 7px 10px !important;
+}
+
+.App[data-sidebar-style="glass"] .launcher-category-window {
+  background: rgba(7, 17, 31, 0.88) !important;
+  box-shadow: 0 20px 64px rgba(0, 0, 0, 0.54), inset 0 0 0 1px rgba(255,255,255,0.025) !important;
+}
+
+.App[data-sidebar-style="glass"] .launcher-window-tab-row,
+.App[data-sidebar-style="glass"] .launcher-nested-tab-row {
+  gap: 5px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/* === Real mockup function pass: status, tips, workspace tabs, scale controls === */
+.App[data-sidebar-style="glass"] .app-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 56px;
+  gap: 12px;
+  padding: 8px 10px;
+  overflow: visible;
+}
+
+.App[data-sidebar-style="glass"] .topbar-left,
+.App[data-sidebar-style="glass"] .topbar-right,
+.App[data-sidebar-style="glass"] .topbar-center {
+  min-width: 0;
+}
+
+.App[data-sidebar-style="glass"] .topbar-left {
+  flex: 1 1 480px;
+}
+
+.App[data-sidebar-style="glass"] .topbar-right {
+  flex: 1 1 420px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.App[data-sidebar-style="glass"] .topbar-actions {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.App[data-sidebar-style="glass"] .topbar-actions button {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 11px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.App[data-sidebar-style="glass"] .topbar-center {
+  flex: 0 1 430px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #8fa3ba;
+}
+
+.topbar-label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #7f8da3;
+}
+
+.topbar-mode-pill,
+.topbar-status-pill {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 5px 12px;
+  font-size: 0.72rem;
+  font-weight: 900;
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  background: rgba(29, 78, 216, 0.24);
+  color: #cfeaff;
+  box-shadow: inset 0 0 16px rgba(56, 189, 248, 0.10);
+}
+
+.topbar-status-pill {
+  background: rgba(20, 83, 45, 0.20);
+  border-color: rgba(74, 222, 128, 0.20);
+  color: #8ce6b1;
+}
+
+.topbar-divider {
+  height: 26px;
+  width: 1px;
+  background: rgba(148, 163, 184, 0.20);
+}
+
+.topbar-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 300px;
+  min-width: 0;
+  color: #9fb0c4;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.topbar-tip span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px !important;
+  padding: 0 !important;
+  display: inline-grid;
+  place-items: center;
+}
+
+.App[data-sidebar-style="glass"] .game-status-pill {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-panel-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px 10px 0;
+  flex-shrink: 0;
+}
+
+.workspace-panel-tab {
+  appearance: none;
+  min-height: 46px;
+  text-align: left;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(10, 18, 32, 0.58);
+  color: #96a8bd;
+  padding: 7px 8px;
   cursor: pointer;
+}
+
+.workspace-panel-tab span {
+  display: block;
+  font-size: 0.56rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7f8da3;
+}
+
+.workspace-panel-tab strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.74rem;
+  color: #cbd5e1;
+}
+
+.workspace-panel-tab.active {
+  border-color: rgba(56, 189, 248, 0.64);
+  background: rgba(14, 47, 72, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(56, 189, 248, 0.12);
+}
+
+.workspace-bottom-strip {
+  position: absolute;
+  left: 170px;
+  right: 340px;
+  bottom: 10px;
+  min-height: 48px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 10px;
+  z-index: 7;
+  pointer-events: none;
+}
+
+.recent-activity-card,
+.workspace-bottom-meta {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 13px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  background: rgba(5, 13, 25, 0.72);
+  color: #95a7bd;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.30);
+  backdrop-filter: blur(10px);
+  font-size: 0.7rem;
+}
+
+.recent-activity-card {
+  min-width: 320px;
+  justify-content: flex-start;
+}
+
+.recent-activity-card strong {
+  color: #dbeafe;
+  font-size: 0.76rem;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-bottom-meta span {
+  white-space: nowrap;
+}
+
+.workspace-bottom-meta button {
+  appearance: none;
+  min-width: 26px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.20);
+  background: rgba(15, 23, 42, 0.72);
+  color: #dbeafe;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.workspace-bottom-meta button:hover {
+  border-color: rgba(56, 189, 248, 0.44);
+  background: rgba(14, 47, 72, 0.72);
+}
+
+@media (max-width: 1550px) {
+  .App[data-sidebar-style="glass"] .app-header {
+    row-gap: 8px;
+  }
+
+  .App[data-sidebar-style="glass"] .topbar-center {
+    order: 3;
+    flex: 1 1 100%;
+    justify-content: flex-start;
+    padding-left: 38px;
+  }
+
+  .topbar-tip {
+    display: none;
+  }
+}
+
+@media (max-width: 1280px) {
+  .App[data-sidebar-style="glass"] .topbar-center {
+    display: none;
+  }
+
+  .workspace-bottom-strip {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-brand-name,
+  .header-profile-text {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .topbar-actions button span:last-child {
+    display: none;
+  }
+
+  .topbar-actions button {
+    min-width: 34px;
+    justify-content: center;
+    padding: 5px 8px;
+  }
+
+  .App[data-sidebar-style="glass"] .game-status-pill,
+  .topbar-danger-btn {
+    display: none;
+  }
+}
+
+
+/* === Portal overlay scrollbar polish === */
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body * {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(100, 116, 139, 0.76) rgba(8, 17, 34, 0.72);
+}
+
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content::-webkit-scrollbar,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body::-webkit-scrollbar,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body *::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content::-webkit-scrollbar-track,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body::-webkit-scrollbar-track,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body *::-webkit-scrollbar-track {
+  background: rgba(8, 17, 34, 0.72);
+  border-radius: 2px;
+  border: 1px solid rgba(100, 116, 139, 0.14);
+}
+
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content::-webkit-scrollbar-thumb,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body::-webkit-scrollbar-thumb,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body *::-webkit-scrollbar-thumb {
+  background: rgba(106, 118, 134, 0.76);
+  border-radius: 2px;
+  border: 2px solid rgba(8, 17, 34, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(203, 213, 225, 0.06);
+}
+
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content::-webkit-scrollbar-thumb:hover,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body::-webkit-scrollbar-thumb:hover,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body *::-webkit-scrollbar-thumb:hover {
+  background: rgba(130, 145, 165, 0.84);
+}
+
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-content::-webkit-scrollbar-corner,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body::-webkit-scrollbar-corner,
+.overlay-backdrop[data-sidebar-style="glass"] .overlay-body *::-webkit-scrollbar-corner {
+  background: rgba(8, 17, 34, 0.72);
+}
+
+
+/* === Floating left palette rail fix === */
+.App[data-sidebar-style="glass"] .left-panel-floating-rail {
+  /* position is controlled by App.tsx drag state */
+  /* height is controlled by App.tsx resize state */
+  border-radius: 12px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(6, 14, 27, 0.86), rgba(4, 11, 22, 0.74)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.18) !important;
+  box-shadow:
+    0 18px 48px rgba(0, 0, 0, 0.48),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: blur(14px);
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail.left-panel-collapsed {
+  width: 72px !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-header {
+  min-height: 34px;
+  padding: 6px 8px !important;
+  background: rgba(2, 8, 18, 0.58) !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapse-button {
+  width: 28px;
+  height: 24px;
+  padding: 0 !important;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  cursor: pointer;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapse-button:hover {
+  color: #e0f2fe !important;
+  border-color: rgba(56, 189, 248, 0.46) !important;
+  background: rgba(14, 47, 72, 0.72) !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .panel-header span {
+  display: none;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .dynamic-menu,
+.App[data-sidebar-style="glass"] .left-panel-collapsed.left-panel > .dynamic-menu {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 10px 8px !important;
+  align-items: stretch;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-item,
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-icon-grid-button {
+  min-height: 48px !important;
+  padding: 8px 4px !important;
+  border-radius: 10px !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-label {
+  display: none !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-item [aria-hidden="true"],
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-item > span:last-child {
+  right: 5px !important;
+  bottom: 5px !important;
+  font-size: 0.52rem !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-collapsed .menu-icon-box {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  font-size: 1rem !important;
+}
+
+
+
+/* === Remove launcher submenu arrows only; keep icon contents === */
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .dynamic-menu .menu-item > span[aria-hidden="true"] {
+  display: none !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .dynamic-menu .menu-icon-box,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .dynamic-menu .menu-icon-box svg,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .dynamic-menu .menu-icon-box [aria-hidden="true"] {
+  display: inline-grid !important;
+  visibility: visible !important;
+}
+
+
+/* === Floating left palette resize handle === */
+.App[data-sidebar-style="glass"] .left-panel-floating-rail {
+  min-width: 120px;
+  max-width: 320px;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail.left-panel-collapsed {
+  min-width: 72px;
+  max-width: 72px;
+}
+
+.left-panel-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: ew-resize;
+  z-index: 6;
+  background: transparent;
+}
+
+.left-panel-resize-handle::after {
+  content: "";
+  position: absolute;
+  top: 44px;
+  right: 2px;
+  width: 2px;
+  height: calc(100% - 88px);
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.10);
+  opacity: 0;
+  transition: opacity 0.16s ease, background 0.16s ease;
+}
+
+.left-panel-resize-handle:hover::after {
+  opacity: 1;
+  background: rgba(56, 189, 248, 0.42);
+}
+
+
+/* === Allow floating left palette width to follow drag-resize state === */
+.App[data-sidebar-style="glass"] .left-panel-floating-rail:not(.left-panel-collapsed) {
+  max-width: 320px !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail.left-panel-collapsed {
+  width: 72px !important;
+  min-width: 72px !important;
+  max-width: 72px !important;
+}
+
+
+/* === Floating left palette vertical resize handle === */
+.left-panel-resize-handle-y {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 7;
+  background: transparent;
+}
+
+.left-panel-resize-handle-y::after {
+  content: "";
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.10);
+  opacity: 0;
+  transition: opacity 0.16s ease, background 0.16s ease;
+}
+
+.left-panel-resize-handle-y:hover::after {
+  opacity: 1;
+  background: rgba(56, 189, 248, 0.42);
+}
+
+
+/* === Keep selected launcher icons visible === */
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-icon-box.is-active,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-item.is-active .menu-icon-box {
+  color: #e0f2fe !important;
+  background: rgba(56, 189, 248, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.72) !important;
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.18),
+    0 0 14px rgba(56, 189, 248, 0.28) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-icon-box.is-active > *,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-item.is-active .menu-icon-box > *,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-icon-box.is-active svg,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-item.is-active .menu-icon-box svg {
+  color: #e0f2fe !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-icon-box.is-active svg *,
+.App[data-sidebar-style="glass"] .left-panel-floating-rail .menu-item.is-active .menu-icon-box svg * {
+  stroke: currentColor !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+
+/* === Right workspace: remove redundant internal tab buttons === */
+.App[data-sidebar-style="glass"] .right-panel .workspace-panel-tabs,
+.App[data-sidebar-style="glass"] .right-panel .panel-tab-strip {
+  display: none !important;
+}
+
+.App[data-sidebar-style="glass"] .right-panel .workspace-panel-body {
+  padding-top: 14px !important;
+}
+
+.App[data-sidebar-style="glass"] .right-panel .workspace-tab-panel {
+  border-top-left-radius: 8px;
+  margin-top: 0;
+}
+
+/* === Launcher drag feedback === */
+.launcher-tab-drag-preview {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+}
+
+.launcher-tab-drag-preview-shell {
+  min-width: 180px;
+  max-width: 260px;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 2px dashed var(--cu-accent, #38bdf8);
+  background: rgba(7, 17, 31, 0.82);
+  color: #e0f2fe;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(56, 189, 248, 0.18),
+    0 0 22px rgba(56, 189, 248, 0.20);
+  backdrop-filter: blur(12px);
+}
+
+.launcher-tab-drag-preview-shell span {
+  font-size: 1rem;
+  flex: 0 0 auto;
+}
+
+.launcher-tab-drag-preview-shell strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.cu-tab-detach-dragging .launcher-window-tab-row [role="tab"] {
+  cursor: grabbing !important;
+}
+
+.launcher-category-window.is-dragging {
+  opacity: 0.94;
+  outline: 2px solid rgba(56, 189, 248, 0.62);
+  outline-offset: 3px;
+  box-shadow:
+    0 32px 96px rgba(0, 0, 0, 0.66),
+    0 0 0 1px rgba(56, 189, 248, 0.24),
+    0 0 32px rgba(56, 189, 248, 0.18) !important;
+}
+
+.App[data-sidebar-style="glass"] .launcher-category-window.is-dragging .launcher-window-titlebar {
+  background: rgba(14, 47, 72, 0.74) !important;
+}
+
+.right-panel {
+  transition: box-shadow 0.12s;
+}
+
+.cu-workspace-dock-available .right-panel {
+  box-shadow: inset 0 0 0 2px var(--cu-accent, #38bdf8), 0 0 28px rgba(56, 189, 248, 0.16);
+}
+
+/* Tab-row dock-back indicator: highlights valid drop targets when dragging a floating window */
+.cu-launcher-dragging [data-launcher-dock-target] {
+  outline: 2px dashed rgba(56, 189, 248, 0.56);
+  outline-offset: 2px;
+  border-radius: 6px;
+  transition: outline-color 0.12s;
+}
+
+/* === Stacked docked workspace panels === */
+.docked-panels-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.docked-panel {
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(248, 250, 252, 0.96);
+}
+
+.docked-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(248, 250, 252, 0.94);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.docked-panel-header button {
+  background: rgba(15, 23, 42, 0.07);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  color: inherit;
+  cursor: pointer;
+}
+
+.docked-panel-tab-row {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.10);
+  padding-bottom: 0;
+}
+
+.docked-panel-body {
+  overflow: hidden;
+}
+
+.App[data-sidebar-style="glass"] .docked-panel {
+  background: rgba(7, 17, 31, 0.88);
+  border-color: rgba(56, 189, 248, 0.18);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.32);
+}
+
+.App[data-sidebar-style="glass"] .docked-panel-header {
+  background: rgba(2, 6, 23, 0.58);
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+  color: #e5edf7;
+}
+
+.App[data-sidebar-style="glass"] .docked-panel-header button {
+  background: rgba(15, 23, 42, 0.72);
+  border-color: rgba(148, 163, 184, 0.18);
+  color: #dbeafe;
+}
+
+.App[data-sidebar-style="glass"] .docked-panel-tab-row {
+  border-bottom-color: rgba(148, 163, 184, 0.14);
+}
+
+
+
+/* First-pass floating/docked view polish: dark glass embedded surfaces */
+.launcher-category-window *,
+.docked-panel * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) rgba(2, 6, 23, 0.28);
+}
+
+.launcher-category-window *::-webkit-scrollbar,
+.docked-panel *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.launcher-category-window *::-webkit-scrollbar-track,
+.docked-panel *::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.38);
+  border-radius: 999px;
+}
+
+.launcher-category-window *::-webkit-scrollbar-thumb,
+.docked-panel *::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.62), rgba(71, 85, 105, 0.72));
+  border: 2px solid rgba(2, 6, 23, 0.42);
+  border-radius: 999px;
+}
+
+.launcher-category-window *::-webkit-scrollbar-corner,
+.docked-panel *::-webkit-scrollbar-corner {
+  background: rgba(2, 6, 23, 0.55);
+}
+
+.cu-themed-embedded-view {
+  max-width: none !important;
+  min-height: 100%;
+  box-sizing: border-box;
+  color: #dbeafe !important;
+  background: rgba(7, 17, 31, 0.92) !important;
+}
+
+.cu-themed-embedded-view h1,
+.cu-themed-embedded-view h2,
+.cu-themed-embedded-view h3,
+.cu-themed-embedded-view h4,
+.cu-themed-embedded-view strong {
+  color: #e5edf7 !important;
+}
+
+.cu-themed-embedded-view p,
+.cu-themed-embedded-view span,
+.cu-themed-embedded-view label,
+.cu-themed-embedded-view div {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+.cu-themed-embedded-view section,
+.cu-themed-embedded-view article,
+.cu-themed-embedded-view pre,
+.cu-themed-embedded-view [style*="background: #fff"],
+.cu-themed-embedded-view [style*="background: '#fff"],
+.cu-themed-embedded-view [style*="background: rgb(255"],
+.cu-themed-embedded-view [style*="background: #fafafa"],
+.cu-themed-embedded-view [style*="background: #f8fafc"],
+.cu-themed-embedded-view [style*="background: #f6f8fa"],
+.cu-themed-embedded-view [style*="background: #fdfdfd"],
+.cu-themed-embedded-view [style*="background: #f0f6ff"],
+.cu-themed-embedded-view [style*="background: rgba(255"] {
+  background: rgba(15, 23, 42, 0.72) !important;
+  color: #dbeafe !important;
+  border-color: rgba(148, 163, 184, 0.18) !important;
+}
+
+.cu-themed-embedded-view button,
+.cu-themed-embedded-view input,
+.cu-themed-embedded-view select,
+.cu-themed-embedded-view textarea {
+  background: rgba(15, 23, 42, 0.76) !important;
+  color: #dbeafe !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  border-radius: 7px !important;
+}
+
+.cu-themed-embedded-view button {
+  font-weight: 700;
+}
+
+.cu-themed-embedded-view button:hover:not(:disabled) {
+  border-color: rgba(56, 189, 248, 0.48) !important;
+  background: rgba(14, 47, 72, 0.82) !important;
+}
+
+.cu-themed-embedded-view button:disabled,
+.cu-themed-embedded-view input:disabled,
+.cu-themed-embedded-view select:disabled,
+.cu-themed-embedded-view textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cu-themed-embedded-view .cu-danger,
+.cu-themed-embedded-view [style*="#b42318"],
+.cu-themed-embedded-view [style*="#991b1b"] {
+  color: #fecaca !important;
+  border-color: rgba(248, 113, 113, 0.38) !important;
+  background: rgba(127, 29, 29, 0.34) !important;
+}
+
+.cu-event-log-view,
+.cu-event-builder-view,
+.cu-ai-package-builder-view,
+.cu-active-template-audit-view,
+.cu-about-support-view {
+  padding: 16px !important;
+  overflow: auto;
+}
+
+.cu-sound-editor-view {
+  min-width: 0;
+}
+
+.cu-sound-rules-table {
+  min-width: 0;
+}
+
+.cu-sound-rules-table > div {
+  min-width: 0;
+}
+
+.cu-sound-rules-table span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cu-layer-editor-card,
+.cu-layers-view section {
+  box-sizing: border-box;
+}
+
+.cu-compact-setting-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px !important;
+}
+
+.cu-compact-setting-item input[type="color"] {
+  width: 30px !important;
+  height: 28px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: 6px !important;
+  padding: 2px !important;
+}
+
+
+/* === Shared view theming infrastructure ===
+   These classes are intentionally generic and registry-friendly:
+   registered views render inside these wrappers instead of each view
+   inventing its own dark/glass overrides. */
+.App[data-sidebar-style="glass"] .cu-view-shell {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  color: #dbeafe;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell *,
+.App[data-sidebar-style="glass"] .cu-themed-embedded-view * {
+  box-sizing: border-box;
+}
+
+.App[data-sidebar-style="glass"] .cu-panel-card,
+.App[data-sidebar-style="glass"] .cu-view-shell section,
+.App[data-sidebar-style="glass"] .cu-view-shell article,
+.App[data-sidebar-style="glass"] .cu-view-shell .card,
+.App[data-sidebar-style="glass"] .cu-view-shell [class*="card"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: #fff"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background:#fff"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: white"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background:white"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: rgb(255, 255, 255)"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: rgb(248, 250, 252)"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: rgb(248, 249, 250)"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: #f8fafc"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="background: #f6f8fa"] {
+  background: rgba(10, 20, 38, 0.78) !important;
+  color: #dbeafe !important;
+  border-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-panel-card-muted,
+.App[data-sidebar-style="glass"] .cu-view-shell pre,
+.App[data-sidebar-style="glass"] .cu-view-shell code,
+.App[data-sidebar-style="glass"] .cu-view-shell table {
+  background: rgba(5, 13, 25, 0.72) !important;
+  color: #cbd5e1 !important;
+  border-color: rgba(148, 163, 184, 0.14) !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell h1,
+.App[data-sidebar-style="glass"] .cu-view-shell h2,
+.App[data-sidebar-style="glass"] .cu-view-shell h3,
+.App[data-sidebar-style="glass"] .cu-view-shell h4,
+.App[data-sidebar-style="glass"] .cu-view-shell strong {
+  color: #e5edf7 !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell p,
+.App[data-sidebar-style="glass"] .cu-view-shell span,
+.App[data-sidebar-style="glass"] .cu-view-shell label,
+.App[data-sidebar-style="glass"] .cu-view-shell small,
+.App[data-sidebar-style="glass"] .cu-view-shell li,
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: #666"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color:#666"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: rgb(102, 102, 102)"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: #2c3e50"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: rgb(44, 62, 80)"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: #1f2937"],
+.App[data-sidebar-style="glass"] .cu-view-shell [style*="color: rgb(31, 41, 55)"] {
+  color: #b8c7d8 !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell button,
+.App[data-sidebar-style="glass"] .cu-view-shell input:not([type="color"]),
+.App[data-sidebar-style="glass"] .cu-view-shell select,
+.App[data-sidebar-style="glass"] .cu-view-shell textarea,
+.App[data-sidebar-style="glass"] .cu-inline-button {
+  background: rgba(15, 23, 42, 0.76) !important;
+  color: #dbeafe !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  border-radius: var(--cu-btn-radius, 7px) !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell button:hover:not(:disabled),
+.App[data-sidebar-style="glass"] .cu-inline-button:hover:not(:disabled) {
+  background: rgba(14, 47, 72, 0.82) !important;
+  border-color: rgba(56, 189, 248, 0.44) !important;
+}
+
+.App[data-sidebar-style="glass"] .cu-view-shell button:disabled,
+.App[data-sidebar-style="glass"] .cu-view-shell input:disabled,
+.App[data-sidebar-style="glass"] .cu-view-shell select:disabled,
+.App[data-sidebar-style="glass"] .cu-view-shell textarea:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cu-control-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cu-control-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.cu-table-compact {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
+}
+
+.cu-scroll-area,
+.App[data-sidebar-style="glass"] .cu-view-shell,
+.App[data-sidebar-style="glass"] .launcher-window-content,
+.App[data-sidebar-style="glass"] .launcher-nested-tab-content,
+.App[data-sidebar-style="glass"] .docked-panel-body,
+.App[data-sidebar-style="glass"] .workspace-panel-body {
+  scrollbar-width: auto;
+  scrollbar-color: rgba(100, 116, 139, 0.76) rgba(8, 17, 34, 0.72);
+}
+
+.cu-scroll-area::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .cu-view-shell::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .launcher-window-content::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .launcher-nested-tab-content::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .docked-panel-body::-webkit-scrollbar,
+.App[data-sidebar-style="glass"] .workspace-panel-body::-webkit-scrollbar {
+  width: 13px;
+  height: 13px;
+}
+
+.cu-scroll-area::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .cu-view-shell::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .launcher-window-content::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .launcher-nested-tab-content::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .docked-panel-body::-webkit-scrollbar-track,
+.App[data-sidebar-style="glass"] .workspace-panel-body::-webkit-scrollbar-track {
+  background: rgba(8, 17, 34, 0.72);
+  border-radius: 2px;
+  border: 1px solid rgba(100, 116, 139, 0.14);
+}
+
+.cu-scroll-area::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .cu-view-shell::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .launcher-window-content::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .launcher-nested-tab-content::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .docked-panel-body::-webkit-scrollbar-thumb,
+.App[data-sidebar-style="glass"] .workspace-panel-body::-webkit-scrollbar-thumb {
+  background: rgba(106, 118, 134, 0.76);
+  border-radius: 2px;
+  border: 2px solid rgba(8, 17, 34, 0.72);
+}
+
+/* === HUD isolation fix: keep movable bottom strips out of broad view theming === */
+.App[data-sidebar-style="glass"] .workspace-hud-panel.workspace-bottom-strip {
+  left: auto !important;
+  right: auto !important;
+  min-height: 0 !important;
+  width: auto !important;
+  max-width: calc(100vw - 48px);
+  display: block !important;
+  align-items: unset !important;
+  justify-content: unset !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  pointer-events: auto !important;
+}
+
+.App[data-sidebar-style="glass"] .workspace-activity-hud.workspace-bottom-strip {
+  left: 18px !important;
+  right: auto !important;
+}
+
+.App[data-sidebar-style="glass"] .workspace-meta-hud.workspace-bottom-strip {
+  left: auto !important;
+  right: 18px !important;
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card,
+.App[data-sidebar-style="glass"] .workspace-hud-panel .workspace-bottom-meta {
+  min-height: 42px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  background: rgba(5, 13, 25, 0.78) !important;
+  color: #95a7bd !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.30) !important;
+  backdrop-filter: blur(10px);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card {
+  min-width: 320px;
+  max-width: min(520px, calc(100vw - 48px));
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .workspace-bottom-meta {
+  max-width: min(520px, calc(100vw - 48px));
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card span,
+.App[data-sidebar-style="glass"] .workspace-hud-panel .workspace-bottom-meta span {
+  color: #95a7bd !important;
+  text-align: center;
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card strong {
+  color: #dbeafe !important;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card button,
+.App[data-sidebar-style="glass"] .workspace-hud-panel .workspace-bottom-meta button,
+.App[data-sidebar-style="glass"] .workspace-status-restore {
+  appearance: none;
+  min-width: 26px;
+  height: 24px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 6px !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  background: rgba(15, 23, 42, 0.76) !important;
+  color: #dbeafe !important;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.App[data-sidebar-style="glass"] .workspace-hud-panel .recent-activity-card button:hover,
+.App[data-sidebar-style="glass"] .workspace-hud-panel .workspace-bottom-meta button:hover,
+.App[data-sidebar-style="glass"] .workspace-status-restore:hover {
+  border-color: rgba(56, 189, 248, 0.48) !important;
+  background: rgba(14, 47, 72, 0.82) !important;
 }

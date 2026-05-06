@@ -1,5 +1,6 @@
 import electron from 'electron';
 import dgram from 'dgram';
+import net from 'net';
 import fs from 'fs/promises';
 import os from 'os';
 import path from 'path';
@@ -15,6 +16,17 @@ let lanDiscoverySocket = null;
 let lanBroadcastTimer = null;
 let lanStalePruneTimer = null;
 let lanBroadcastPayload = null;
+let ficsSocket = null;
+let ficsSender = null;
+
+function sendFicsToRenderer(channel, payload) {
+  try {
+    if (!ficsSender || ficsSender.isDestroyed?.()) return;
+    ficsSender.send(channel, payload);
+  } catch (error) {
+    // Renderer may already be gone during app/window shutdown. Ignore late socket events.
+  }
+}
 
 const LAN_DISCOVERY_PORT = Number(process.env.CHESS_UNLEASHED_LAN_DISCOVERY_PORT || 49494);
 const LAN_DISCOVERY_APP_ID = 'chess-unleashed-lan-v1';
@@ -101,7 +113,7 @@ async function createSplashWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.cjs')
     }
   });
 
@@ -257,7 +269,7 @@ async function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.cjs')
     },
   });
 
@@ -283,6 +295,7 @@ async function createWindow() {
   }
 
   mainWindow.on('closed', () => {
+    if (ficsSender && ficsSender.isDestroyed?.()) ficsSender = null;
     mainWindow = null;
   });
 }
@@ -369,6 +382,54 @@ ipcMain.handle('chess-lan:stop-broadcast', async () => {
   return { available: true };
 });
 
+ipcMain.handle('fics:connect', async (event, { host, port }) => {
+  if (ficsSocket) {
+    ficsSocket.destroy();
+    ficsSocket = null;
+  }
+  ficsSender = event.sender;
+
+  return new Promise((resolve, reject) => {
+    let resolved = false;
+    const socket = new net.Socket();
+    ficsSocket = socket;
+
+    socket.on('connect', () => {
+      resolved = true;
+      sendFicsToRenderer('fics:status', { status: 'connected' });
+      resolve({ ok: true });
+    });
+
+    socket.on('data', (data) => {
+      sendFicsToRenderer('fics:data', data.toString('utf8'));
+    });
+
+    socket.on('close', () => {
+      if (ficsSocket === socket) ficsSocket = null;
+      sendFicsToRenderer('fics:status', { status: 'disconnected' });
+    });
+
+    socket.on('error', (error) => {
+      sendFicsToRenderer('fics:error', { message: error.message });
+      if (!resolved) reject(new Error(error.message));
+    });
+
+    socket.connect(port, host);
+  });
+});
+
+ipcMain.handle('fics:disconnect', async () => {
+  ficsSocket?.destroy();
+  ficsSocket = null;
+  return { ok: true };
+});
+
+ipcMain.handle('fics:send', async (_event, { command }) => {
+  if (!ficsSocket || ficsSocket.destroyed) throw new Error('FICS socket is not connected.');
+  ficsSocket.write(command + '\n', 'utf8');
+  return { ok: true };
+});
+
 app.on('second-instance', () => {
   if (mainWindow) {
     if (mainWindow.isMinimized()) mainWindow.restore();
@@ -396,6 +457,9 @@ app.on('activate', () => {
 });
 
 app.on('before-quit', () => {
+  ficsSender = null;
+  ficsSocket?.destroy();
+  ficsSocket = null;
   localServer?.wss?.close();
   stopLanBroadcast();
   if (lanStalePruneTimer) {

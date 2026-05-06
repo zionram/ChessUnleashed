@@ -7,7 +7,7 @@ import AIPackageBuilderView from '../views/AIPackageBuilderView';
 import ActiveTemplateAuditView from '../views/ActiveTemplateAuditView';
 
 import {
-  Gamepad2, Palette, Puzzle, Grid3x3, Route, Layers, Volume2, Sliders, Package, Settings, MessageCircle, Wand2, Sparkles, FileText
+  Gamepad2, Palette, Puzzle, Grid3x3, Route, Layers, Volume2, Sliders, Package, Settings, MessageCircle, Wand2, Sparkles, FileText, Globe, Terminal
 } from 'lucide-react';
 
 export interface MenuItem {
@@ -123,7 +123,14 @@ export const MENU_SCHEMA: MenuItem[] = [
       { id: 'toggle-history', label: 'History', type: 'toggle', actionId: 'toggle-history' },
       { id: 'toggle-stats', label: 'Stats', type: 'toggle', actionId: 'toggle-stats' },
       { id: 'toggle-analysis', label: 'Analysis', type: 'toggle', actionId: 'toggle-analysis' },
-      { id: 'toggle-wheels', label: 'Move Assist', type: 'toggle', actionId: 'toggle-wheels' }
+      { id: 'toggle-wheels', label: 'Move Assist', type: 'toggle', actionId: 'toggle-wheels' },
+      {
+        id: 'fics-online',
+        label: 'FICS Online',
+        icon: React.createElement(Globe, { size: 16 }),
+        type: 'action',
+        actionId: 'toggle-fics-online'
+      }
     ]
   },
   {
@@ -142,6 +149,13 @@ export const MENU_SCHEMA: MenuItem[] = [
           { id: 'toggle-event-builder', label: 'Event Builder', type: 'toggle', actionId: 'toggle-event-builder' },
           { id: 'toggle-animation-builder', label: 'Animation Builder', icon: React.createElement(Wand2, { size: 16 }), type: 'toggle', actionId: 'toggle-animation-builder' },
           { id: 'toggle-event-log', label: 'Event Log', type: 'toggle', actionId: 'toggle-event-log' },
+          {
+            id: 'fics-console',
+            label: 'FICS Console',
+            icon: React.createElement(Terminal, { size: 16 }),
+            type: 'toggle',
+            actionId: 'toggle-fics-console'
+          },
           {
             id: 'advanced-ai-package-builder',
             label: 'AI Package Builder',

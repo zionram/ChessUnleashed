@@ -70,6 +70,7 @@ export interface FicsGameRow {
   variant: string;
   rawLine: string;
   parsedReliably: boolean;
+  supported?: boolean;
 }
 
 export interface FicsSeekRow {
@@ -83,6 +84,7 @@ export interface FicsSeekRow {
   variant: string;
   rawLine: string;
   parsedReliably: boolean;
+  supported?: boolean;
 }
 
 export type FicsGameControlAction = 'resign' | 'draw' | 'abort' | 'adjourn';
@@ -92,8 +94,37 @@ export interface FicsGameState {
   active: boolean;
   whitePlayer: string;
   blackPlayer: string;
+  variant?: string;
+  supportedVariant?: boolean;
   whiteTimeMs: number;
   blackTimeMs: number;
   moveNumber: number;
   turn: 'white' | 'black';
+}
+
+export type FicsGameEndReason =
+  | 'checkmate'
+  | 'resignation'
+  | 'timeout'
+  | 'draw'
+  | 'aborted'
+  | 'adjourned'
+  | 'disconnected'
+  | 'unknown';
+
+export interface FicsGameEndState {
+  gameId: string;
+  result: '1-0' | '0-1' | '1/2-1/2' | '*';
+  reason: FicsGameEndReason;
+  reasonText: string;
+  isRatedResult: boolean;
+  whitePlayer: string;
+  blackPlayer: string;
+  whiteRating?: string;
+  blackRating?: string;
+  variant?: string;
+  supportedVariant?: boolean;
+  myRelation: number;
+  myHandle?: string | null;
+  rawText: string;
 }

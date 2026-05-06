@@ -12,6 +12,7 @@ import WelcomeView from './views/WelcomeView';
 import ThemeEditorView from './views/ThemeEditorView';
 import MultiplayerView from './views/MultiplayerView';
 import AnalysisView from './views/AnalysisView';
+import MoveAssistView from './views/MoveAssistView';
 import ComputerOpponentView from './views/ComputerOpponentView';
 import SquaresView from './views/SquaresView';
 import PathsView from './views/PathsView';
@@ -76,6 +77,7 @@ registerView({ id: 'stats', name: 'Stats', component: StatsView, defaultEnabled:
 registerView({ id: 'theme-editor', name: 'Piece Editor', component: ThemeEditorView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'multiplayer', name: 'Multiplayer', component: MultiplayerView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'analysis', name: 'Analysis', component: AnalysisView, defaultEnabled: false, position: 'right' });
+registerView({ id: 'move-assist', name: 'Move Assist', component: MoveAssistView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'computer-opponent', name: 'Computer Opponent', component: ComputerOpponentView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'squares', name: 'Squares', component: SquaresView, defaultEnabled: false, position: 'right' });
 registerView({ id: 'paths', name: 'Paths', component: PathsView, defaultEnabled: false, position: 'right' });
@@ -140,7 +142,7 @@ type TabDragPreviewState = {
 const WORKSPACE_VIEW_ID_OVERRIDES: Record<string, string | null> = {
   'toggle-piece-editor': 'theme-editor',
   'toggle-computer': 'computer-opponent',
-  'toggle-wheels': null,
+  'toggle-wheels': 'move-assist',
   'reset-system': null,
   'upload-rules': null,
   'set-mode-standard': null
@@ -170,7 +172,7 @@ const FICS_LAUNCHER_ITEM: MenuItem = {
 };
 
 function MainLayout() {
-  const { settings, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
+  const { settings, toggleView, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
   const { gameState, multiplayer, timeoutResult, resignationResult, resetGame, resignGame, ficsGame } = useGame();
   const { localProfile } = settings;
 
@@ -232,6 +234,7 @@ function MainLayout() {
   const [workspaceMetaVisible, setWorkspaceMetaVisible] = useState(true);
   const [workspaceActivityPosition, setWorkspaceActivityPosition] = useState({ x: 0, y: 0 });
   const [workspaceMetaPosition, setWorkspaceMetaPosition] = useState({ x: 0, y: 0 });
+  const workspaceMetaDefaultRight = rightPanelCollapsed ? 18 : rightWidth + 36;
   const [workspaceHudHover, setWorkspaceHudHover] = useState<'activity' | 'meta' | null>(null);
   const workspaceHudDragRef = useRef<{ panel: 'activity' | 'meta'; x: number; y: number; startX: number; startY: number } | null>(null);
   const [boardDragPosition, setBoardDragPosition] = useState({ x: 0, y: 0 });
@@ -537,7 +540,7 @@ function MainLayout() {
         setThemeEditorMode(true);
         if (!settings.activeViews.includes('theme-editor')) toggleView('theme-editor');
         break;
-      case 'toggle-wheels': setTrainingWheels(!settings.trainingWheels); break;
+      case 'toggle-wheels': toggleView('move-assist'); break;
       case 'reset-system': setResetConfirmationOpen(true); break;
       case 'upload-rules': alert('Rule Uploading enabled! Please select your .json rule file.'); break;
       case 'set-mode-standard': setGameMode('standard'); break;
@@ -1457,8 +1460,9 @@ function MainLayout() {
                 zIndex: 8,
                 pointerEvents: 'auto',
                 transform: `translate(${workspaceMetaPosition.x}px, ${workspaceMetaPosition.y}px)`,
-                cursor: 'move'
-              }}
+                cursor: 'move',
+                ['--workspace-meta-right' as string]: `${workspaceMetaDefaultRight}px`
+              } as CSSProperties}
             >
               <div className="workspace-bottom-meta">
                 <span>Board: {activeCustomRuleset ? 'Custom' : 'Standard'}</span>

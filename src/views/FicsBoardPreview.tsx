@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Style12Data } from '../services/online/fics/FicsTypes';
+import { getFicsAdapter } from '../services/online/fics/FicsAdapter';
 
 const PIECE_GLYPH: Record<string, string> = {
   K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
@@ -30,9 +31,19 @@ interface Props {
   onMove?: (uciMove: string) => void;
 }
 
-const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
+const FicsBoardPreview: React.FC<Partial<Props>> = ({ style12: externalStyle12, onMove }) => {
+  const adapter = getFicsAdapter();
+  const [internalStyle12, setInternalStyle12] = useState<Style12Data | null>(adapter.latestStyle12);
+  const style12 = externalStyle12 ?? internalStyle12;
+  const moveSender = onMove ?? ((uciMove: string) => adapter.sendMove(uciMove));
   const [flipped, setFlipped] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (externalStyle12) return;
+    const unsubscribe = adapter.onStyle12(s12 => setInternalStyle12(s12));
+    return unsubscribe;
+  }, [adapter, externalStyle12]);
 
   useEffect(() => {
     if (style12) {
@@ -43,9 +54,9 @@ const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
 
   if (!style12) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 10px', gap: 4, background: 'rgba(8,18,34,0.72)', border: '1px solid rgba(148,163,184,0.12)', borderRadius: 6, fontSize: '0.72rem', color: '#475569' }}>
-        <div>— No board data —</div>
-        <div style={{ fontSize: '0.65rem', color: '#334155' }}>Awaiting Style 12…</div>
+      <div className="cu-panel-card cu-empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 10px', gap: 4, fontSize: '0.72rem' }}>
+        <div>— No FICS board data —</div>
+        <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Open or observe a FICS game to populate Your Game.</div>
       </div>
     );
   }
@@ -64,7 +75,7 @@ const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
   };
 
   const handleSquareClick = (ri: number, fi: number) => {
-    if (!isPlaying || !myTurn || !onMove) return;
+    if (!isPlaying || !myTurn || !moveSender) return;
     const coord = squareToCoord(ri, fi);
     const piece = board[ri][fi];
     const isMyPiece = myRelation === 1
@@ -79,7 +90,7 @@ const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
       setSelected(null);
       return;
     }
-    onMove(selected + coord);
+    moveSender(selected + coord);
     setSelected(null);
   };
 
@@ -102,7 +113,19 @@ const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
   const relationLabel = RELATION_LABELS[String(myRelation)] ?? `rel:${myRelation}`;
 
   return (
-    <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 0, border: '1px solid rgba(148,163,184,0.16)', borderRadius: 6, overflow: 'hidden', background: 'rgba(8,18,34,0.72)', userSelect: 'none' }}>
+    <div
+      className="cu-fics-board-preview-stage"
+      style={{
+        width: '100%',
+        minWidth: 0,
+        boxSizing: 'border-box',
+        padding: '12px',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start'
+      }}
+    >
+      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 0, border: '1px solid rgba(148,163,184,0.16)', borderRadius: 6, overflow: 'hidden', background: 'rgba(8,18,34,0.72)', userSelect: 'none' }}>
 
       {/* Toolbar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '2px 5px', background: 'rgba(2,6,23,0.72)', fontSize: '0.6rem', color: '#475569', borderBottom: '1px solid rgba(148,163,184,0.08)' }}>
@@ -161,6 +184,7 @@ const FicsBoardPreview: React.FC<Props> = ({ style12, onMove }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 5px', background: 'rgba(2,6,23,0.72)', fontSize: '0.62rem', color: '#475569', borderTop: '1px solid rgba(148,163,184,0.08)' }}>
         <span>#{gameId} · mv {moveNumber}</span>
         <span style={{ color: '#64748b' }}>{lastMoveSan !== 'none' ? lastMoveSan : '—'}</span>
+      </div>
       </div>
     </div>
   );

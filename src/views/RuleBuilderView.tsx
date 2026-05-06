@@ -658,7 +658,7 @@ const RuleBuilderView: React.FC = () => {
     };
 
     return (
-      <div className="view-container">
+      <div className="view-container cu-view-shell">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>{sandboxMode === 'test-play' ? 'Rule Test Play' : 'Rule Test Sandbox'}</h3>
@@ -946,7 +946,7 @@ const RuleBuilderView: React.FC = () => {
   }
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <input id="rule-builder-import-file" type="file" accept=".json,application/json" onChange={importRulesetFile} style={{ display: 'none' }} />
         <div style={{ fontSize: '0.72rem', color: '#64748b' }}>

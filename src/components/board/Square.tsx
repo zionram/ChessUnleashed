@@ -16,6 +16,7 @@ interface SquareProps {
   isSelected: boolean;
   isMoveTarget: boolean;
   hidePiece?: boolean;
+  isOnlineGame?: boolean;
 }
 
 const Square: React.FC<SquareProps> = ({
@@ -31,15 +32,18 @@ const Square: React.FC<SquareProps> = ({
   isSelected,
   isMoveTarget,
   hidePiece = false,
+  isOnlineGame = false,
 }) => {
   const { settings, updateThemeDraft } = useSettings();
   const [isOver, setIsOver] = useState(false);
+  const [isSquareHovered, setIsSquareHovered] = useState(false);
   
   if (!settings || !settings.template) {
     return <div className="square-placeholder" style={{ aspectRatio: '1/1', background: '#ccc' }} />;
   }
 
-  const { boardColors, pathStyle, badgeColors, boardOverlay } = settings.template;
+  const visualTemplate = settings.themeDraft ?? settings.template;
+  const { boardColors, pathStyle, badgeColors, boardOverlay } = visualTemplate;
   const overlayBlendMode = ((boardOverlay as any).blendMode || 'normal') as string;
   const overlayActsAsBoardBase = !!boardOverlay.image && overlayBlendMode === 'normal';
 
@@ -63,6 +67,14 @@ const Square: React.FC<SquareProps> = ({
   const attackers = isWhitePiece ? blackPressure : isBlackPiece ? whitePressure : [];
   const defenders = isWhitePiece ? whitePressure : isBlackPiece ? blackPressure : [];
   const comfort = defenders.length - attackers.length;
+  const moveAssist = settings.moveAssistSettings;
+  const shouldShowHoverIdentity = !!piece && !hidePiece && !!moveAssist?.hoverPieceIdentity && (!moveAssist.hoverPieceIdentityOnlineOnly || isOnlineGame);
+  const shouldGlowOnHover = !!piece && !hidePiece && !!moveAssist?.hoverPieceGlow;
+  const standardPieceIconMap: Record<string, string> = {
+    wk: '♔', wq: '♕', wr: '♖', wb: '♗', wn: '♘', wp: '♙',
+    bk: '♚', bq: '♛', br: '♜', bb: '♝', bn: '♞', bp: '♟'
+  };
+  const standardPieceIcon = piece ? standardPieceIconMap[`${piece.color}${piece.type}`] : '';
 
   const renderPathIcon = (source: PressureSource) => {
     const color = pathStyle.colors[source.type] || '#000';
@@ -141,6 +153,8 @@ const Square: React.FC<SquareProps> = ({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
+      onMouseEnter={() => setIsSquareHovered(true)}
+      onMouseLeave={() => setIsSquareHovered(false)}
     >
       <style>{`
         .editable-slot:hover {
@@ -156,6 +170,34 @@ const Square: React.FC<SquareProps> = ({
         zIndex: 0
       }} />
 
+      {shouldShowHoverIdentity && isSquareHovered && standardPieceIcon && (
+        <div
+          className="cu-piece-identity-hover"
+          aria-label={`${piece?.color === 'w' ? 'White' : 'Black'} ${piece?.type}`}
+          style={{
+            position: 'absolute',
+            top: '3px',
+            left: '3px',
+            zIndex: 80,
+            width: '18px',
+            height: '18px',
+            display: 'grid',
+            placeItems: 'center',
+            borderRadius: '4px',
+            border: '1px solid rgba(15, 23, 42, 0.45)',
+            background: 'rgba(248, 250, 252, 0.92)',
+            color: '#0f172a',
+            fontSize: '0.85rem',
+            lineHeight: 1,
+            fontWeight: 900,
+            boxShadow: '0 2px 7px rgba(0, 0, 0, 0.28)',
+            pointerEvents: 'none'
+          }}
+        >
+          {standardPieceIcon}
+        </div>
+      )}
+
       <div style={{ 
         position: 'absolute', 
         top: 0, left: 0, width: '100%', height: '100%', 
@@ -163,7 +205,20 @@ const Square: React.FC<SquareProps> = ({
         zIndex: 20,
         pointerEvents: 'none'
       }}>
-        <div style={{ width: '85%', height: '85%', zIndex: 1, position: 'relative', pointerEvents: 'none' }}>
+        <div
+          className={shouldGlowOnHover ? 'cu-board-piece-hover-target' : undefined}
+          style={{
+            width: '85%',
+            height: '85%',
+            zIndex: 1,
+            position: 'relative',
+            pointerEvents: piece && !hidePiece ? 'auto' : 'none',
+            borderRadius: '12px',
+            filter: shouldGlowOnHover && isSquareHovered ? 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.92)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.72))' : undefined,
+            transition: 'filter 0.16s ease, transform 0.16s ease',
+            transform: shouldGlowOnHover && isSquareHovered ? 'scale(1.035)' : undefined
+          }}
+        >
           {piece && !hidePiece && <Piece type={piece.type} color={piece.color} comfort={comfort} />}
         </div>
 

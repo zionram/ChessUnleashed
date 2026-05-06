@@ -1,6 +1,6 @@
 # Known Limitations and Roadmap
 
-Status: Current release-candidate notes
+Status: Current release-candidate notes.
 
 These items should be represented honestly in handoffs, release notes, and tester instructions.
 
@@ -9,35 +9,22 @@ These items should be represented honestly in handoffs, release notes, and teste
 - Custom Game / Rule Builder: playable local custom games exist, but custom rules and custom-game runtime need deeper user testing.
 - Package Manager: Load, Save, Extract, durable asset import, and real-file zip packaging are implemented, but large GIF/MP3/background packages need manual QA on real beta machines.
 - Multiplayer: server sources, host compliance, and asset matching foundations exist, but multiplayer requires broader network and packaged-app testing.
-- Electron packaged app: splash, build, Stockfish, durable assets, package workflows, and local server behavior need release-candidate smoke tests.
+- FICS: connect/login/seek/observe/main-board bridge exists, but live play, move sending, clocks, orientation, shutdown behavior, parser formats, and account/login paths need repeated packaged-app testing.
+- Electron packaged app: splash, build, Stockfish, durable assets, package workflows, local server behavior, FICS TCP bridge, and preload bridges need release-candidate smoke tests.
+- Theming foundation: many registered views still need semantic class cleanup; broad CSS overrides may affect unrelated UI unless carefully scoped.
+- Packaging/performance: release size and startup time need measured audit before optimization/refactor work.
 
 ## Experimental / Partial
 
 - Custom multiplayer games are not complete.
 - Bot support for Custom Game is not complete.
 - Full cloud/server account system is not implemented.
+- FICS Timeseal is not implemented.
+- Browser-based FICS is not supported because browsers cannot open raw TCP to FICS; future browser support would require a backend/WebSocket relay.
+- FICS account registration is external via the official FICS website.
 - Official profiles/accounts/rankings are future work.
 - Browser mode durable imported asset persistence may be session-only.
 - Settings Builder and Validation may need clarification before being presented as fully finished.
-
-## UI Shell / Floating Launcher Roadmap
-
-Current verified UI shell improvements:
-
-- The left Tool Palette floats over the background.
-- The Tool Palette is draggable and resizable.
-- Collapsed mode is a clean icon-only rail.
-- Selected launcher icons stay visible.
-- The Let’s Play overlay opens centered above the background and uses restored dark/glass styling.
-- Redundant right workspace quick buttons and the inner redundant Workspace button/tab were removed.
-- The chessboard glass shell can be dragged by grabbing the surrounding glass, with double-click reset.
-
-Current limitation / next task:
-
-- Environment launcher tabs still show “Open” cards for tools like Pieces.
-- Desired behavior: launcher tabs should render the actual tool controls directly inside the floating launcher window.
-- “Dock” should be a small secondary option inside the tool interface, not the main action.
-- This should be implemented with existing real tool state/actions only. Do not add fake tabs, fake save states, fake history, fake activity, fake board info, or fake help.
 
 ## Tactical Events
 
@@ -63,11 +50,47 @@ Future animation work may include:
 - broader custom-game animation support
 - more detailed per-piece/per-side animation policy
 
+## Visual / Theme Roadmap
+
+Current direction:
+
+- Built-in default theme images should live under `src/assets/default-themes/<theme-name>/`.
+- User-imported images should use durable asset storage / `local-asset://`.
+- Experience package assets should use package asset manifests and package/local asset references.
+
+Pending UI polish:
+
+- Background should become its own higher-level Environment -> Look tab.
+- Lower HUD/status strips need better theme alignment and centered content.
+- Docked workspace panels need an Undock option.
+- Floating-window embedded views should use explicit shared theme classes.
+- Sound Editor docked/wide layout needs tighter spacing to avoid needless horizontal overflow.
+
 ## Package Roadmap
 
 Current packages are reusable setup/config/assets packages. Runtime game snapshots are separate.
 
 Future work may add explicit optional save-slot exports, cloud sync, or manual snapshot management, but those must not be mixed into normal ExperiencePackage exports by default.
+
+## Optimization Roadmap
+
+Before optimization, measure:
+
+- fresh `release` output size
+- largest packaged files
+- `dist` bundle size
+- node_modules contributors
+- Stockfish/WASM size
+- source maps / TypeScript sources accidentally included
+- startup services
+
+Likely future actions:
+
+- clean old `release` artifacts before measuring
+- consider `asar: true` with targeted `asarUnpack`
+- exclude source maps, TypeScript, logs, zips, and release artifacts from packaged output
+- lazy-load heavy views
+- delay LAN/FICS services until used
 
 ## Release Rule
 

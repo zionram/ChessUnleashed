@@ -575,12 +575,12 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
     setSelected: (next: string[]) => void,
     includedCategories?: PackageCategoryId[]
   ) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+    <div className="cu-field-list" style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
       {categories.map(category => {
         const included = includedCategories ? includedCategories.includes(category.id) : true;
         const disabled = !category.applySupported || !included;
         return (
-          <label key={category.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', color: disabled ? '#94a3b8' : '#334155' }}>
+          <label key={category.id} className="cu-check-row" style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '0.78rem', color: disabled ? '#94a3b8' : '#334155' }}>
             <input
               type="checkbox"
               checked={selected.includes(category.id)}
@@ -604,19 +604,19 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
   );
 
   return (
-    <div className="view-container">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+    <div className="view-container cu-view-shell cu-import-export-view">
+      <div className="cu-view-stack" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {mode === 'landing' && (
           <>
-            <button type="button" onClick={() => setMode('import')} style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
+            <button type="button" className="cu-panel-card" onClick={() => setMode('import')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
               Load Package
               <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Choose a .json or .zip package, validate it, preview contents, then apply it.</div>
             </button>
-            <button type="button" onClick={() => setMode('export')} style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
+            <button type="button" className="cu-panel-card" onClick={() => setMode('export')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
               Save Package
               <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Choose what to include, prepare the zip, then save a shareable package with real media files.</div>
             </button>
-            <button type="button" onClick={() => setMode('extract')} style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
+            <button type="button" className="cu-panel-card" onClick={() => setMode('extract')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
               Extract Package
               <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Unpack a package into readable folders for inspection, editing, or manual sharing.</div>
             </button>
@@ -625,11 +625,11 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
 
         {mode === 'import' && (
           <>
-            <button type="button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Back</button>
+            <button type="button" className="cu-inline-button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', cursor: 'pointer' }}>Back</button>
             <h3 style={{ margin: 0, fontSize: '1rem' }}>Load Package</h3>
             <input type="file" accept=".json,.zip,application/json,application/zip" onChange={handleImportFile} />
             {importStatus && (
-              <div style={{ padding: '8px 10px', borderRadius: 6, border: pendingImport ? '1px solid #d0d7de' : '1px solid #bfdbfe', background: pendingImport ? '#f8fafc' : '#eff6ff', color: '#334155', fontSize: '0.76rem' }}>
+              <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: pendingImport ? '1px solid #d0d7de' : '1px solid #bfdbfe', background: pendingImport ? '#f8fafc' : '#eff6ff', color: '#334155', fontSize: '0.76rem' }}>
                 <strong>{isLoadingPackage ? 'Loading Package' : 'Package Status'}</strong>
                 <div>{importStatus}</div>
                 {importProgress?.total ? (
@@ -640,7 +640,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               </div>
             )}
             {pendingImport && (
-              <div style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="cu-panel-card" style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div>
                   <div style={{ fontWeight: 700, color: '#2c3e50' }}>Preview Contents</div>
                   <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Name: {pendingImport.name}</div>
@@ -655,7 +655,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
                   {renderCategoryChecklist(PACKAGE_CATEGORY_MANIFEST, selectedImportCategories, setSelectedImportCategories, importCategoryOptions)}
                 </div>
                 {importWarnings.length > 0 && (
-                  <div style={{ padding: '8px', borderRadius: 6, border: '1px solid #facc15', background: '#fefce8', color: '#854d0e', fontSize: '0.72rem' }}>
+                  <div className="cu-panel-card" style={{ padding: '8px', borderRadius: 6, border: '1px solid #facc15', background: '#fefce8', color: '#854d0e', fontSize: '0.72rem' }}>
                     <strong>Compatibility notes</strong>
                     <ul style={{ margin: '6px 0 0 18px', padding: 0 }}>
                       {importWarnings.map((warning, index) => (
@@ -676,9 +676,9 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
 
         {mode === 'export' && (
           <>
-            <button type="button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Back</button>
+            <button type="button" className="cu-inline-button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', cursor: 'pointer' }}>Back</button>
             <h3 style={{ margin: 0, fontSize: '1rem' }}>Save Package</h3>
-            <div style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
+            <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
               Experience packages save reusable setup and assets as a shareable .zip. Current board position, turn, move history, timers in progress, and game results are saved only by Game Snapshot resume.
             </div>
             <div>
@@ -690,7 +690,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               )}
             </div>
             {prepareStatus && (
-              <div style={{ padding: '8px 10px', borderRadius: 6, border: preparedPackage ? '1px solid #bbf7d0' : '1px solid #d0d7de', background: preparedPackage ? '#f0fdf4' : '#f8fafc', color: preparedPackage ? '#166534' : '#334155', fontSize: '0.76rem' }}>
+              <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: preparedPackage ? '1px solid #bbf7d0' : '1px solid #d0d7de', background: preparedPackage ? '#f0fdf4' : '#f8fafc', color: preparedPackage ? '#166534' : '#334155', fontSize: '0.76rem' }}>
                 <strong>{preparedPackage ? 'Package Ready' : 'Preparing Package'}</strong>
                 <div>{prepareStatus}</div>
                 {prepareProgress?.total ? (
@@ -705,7 +705,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
                 )}
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="cu-control-row" style={{ flexWrap: 'wrap' }}>
               <button type="button" onClick={prepareExportPackage} disabled={selectedExportCategories.length === 0 || isPreparingPackage} style={{ alignSelf: 'flex-start', padding: '8px 12px', borderRadius: 6, border: '1px solid #2c3e50', background: selectedExportCategories.length && !isPreparingPackage ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: selectedExportCategories.length && !isPreparingPackage ? 'pointer' : 'not-allowed', fontWeight: 700 }}>
                 {isPreparingPackage ? 'Preparing Package...' : 'Prepare Package'}
               </button>
@@ -718,9 +718,9 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
 
         {mode === 'extract' && (
           <>
-            <button type="button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>Back</button>
+            <button type="button" className="cu-inline-button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', cursor: 'pointer' }}>Back</button>
             <h3 style={{ margin: 0, fontSize: '1rem' }}>Extract Package</h3>
-            <div style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
+            <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#475569', fontSize: '0.72rem' }}>
               Extracting does not apply package settings. It creates a readable folder layout inside a new zip.
             </div>
             <label style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.78rem', color: '#334155' }}>
@@ -728,7 +728,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               <input type="file" accept=".zip,application/zip" onChange={handleExtractFile} />
             </label>
             {extractStatus && (
-              <div style={{ padding: '8px 10px', borderRadius: 6, border: preparedExtract ? '1px solid #bbf7d0' : '1px solid #d0d7de', background: preparedExtract ? '#f0fdf4' : '#f8fafc', color: preparedExtract ? '#166534' : '#334155', fontSize: '0.76rem' }}>
+              <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: preparedExtract ? '1px solid #bbf7d0' : '1px solid #d0d7de', background: preparedExtract ? '#f0fdf4' : '#f8fafc', color: preparedExtract ? '#166534' : '#334155', fontSize: '0.76rem' }}>
                 <strong>{preparedExtract ? 'Extract Ready' : 'Preparing Extract'}</strong>
                 <div>{extractStatus}</div>
                 {extractProgress?.total ? (
@@ -739,7 +739,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               </div>
             )}
             {extractPreview && (
-              <div style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="cu-panel-card" style={{ padding: '12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontWeight: 700, color: '#2c3e50' }}>Extract Preview</div>
                 <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Name: {extractPreview.name}</div>
                 {extractPreview.version && <div style={{ fontSize: '0.78rem', color: '#64748b' }}>Version: {extractPreview.version}</div>}
@@ -757,11 +757,11 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               </div>
             )}
             {preparedExtract?.warnings.length ? (
-              <div style={{ padding: 8, borderRadius: 6, border: '1px solid #facc15', background: '#fefce8', color: '#854d0e', fontSize: '0.72rem' }}>
+              <div className="cu-panel-card" style={{ padding: 8, borderRadius: 6, border: '1px solid #facc15', background: '#fefce8', color: '#854d0e', fontSize: '0.72rem' }}>
                 {preparedExtract.warnings.map(warning => <div key={warning}>{warning}</div>)}
               </div>
             ) : null}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="cu-control-row" style={{ flexWrap: 'wrap' }}>
               <button type="button" onClick={prepareExtractedPackage} disabled={!extractFile || isExtractingPackage} style={{ alignSelf: 'flex-start', padding: '8px 12px', borderRadius: 6, border: '1px solid #2c3e50', background: extractFile && !isExtractingPackage ? '#2c3e50' : '#94a3b8', color: '#fff', cursor: extractFile && !isExtractingPackage ? 'pointer' : 'not-allowed', fontWeight: 700 }}>
                 {isExtractingPackage ? 'Preparing Extracted Folder...' : 'Prepare Extracted Folder'}
               </button>
@@ -773,7 +773,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
         )}
 
         {message && (
-          <div style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#334155', fontSize: '0.76rem' }}>
+          <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#f8fafc', color: '#334155', fontSize: '0.76rem' }}>
             {message}
           </div>
         )}

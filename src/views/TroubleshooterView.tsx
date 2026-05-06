@@ -56,7 +56,7 @@ const TroubleshooterView: React.FC = () => {
   };
 
   return (
-    <div className="view-container" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div className="view-container cu-view-shell" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       <div>
         <h3 style={{ margin: '0 0 4px', fontSize: '1rem' }}>Troubleshooter</h3>
         <div style={{ fontSize: '0.72rem', color: '#64748b' }}>

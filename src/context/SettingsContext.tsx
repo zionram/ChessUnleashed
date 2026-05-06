@@ -301,6 +301,13 @@ export interface UIAppearanceSettings {
   toolbarBackgroundColor: string;
 }
 
+
+export interface MoveAssistSettings {
+  hoverPieceIdentity: boolean;
+  hoverPieceIdentityOnlineOnly: boolean;
+  hoverPieceGlow: boolean;
+}
+
 export interface PieceAnimationSettings {
   enabled: boolean;
   movementSpeedMs: number;
@@ -379,6 +386,7 @@ export interface SettingsState {
   personalityProfiles: Record<string, BotPersonalityProfile>;
   chatSettings: ChatSettings;
   uiAppearance: UIAppearanceSettings;
+  moveAssistSettings: MoveAssistSettings;
   pieceAnimations: PieceAnimationSettings;
   timeControl: TimeControlConfig;
   registeredBots: CustomBotConfig[];
@@ -412,6 +420,7 @@ interface SettingsContextType {
   updateBotSettings: (updates: Partial<BotSettings>) => void;
   updateChatSettings: (updates: Partial<ChatSettings>) => void;
   updateUIAppearance: (updates: Partial<UIAppearanceSettings>) => void;
+  updateMoveAssistSettings: (updates: Partial<MoveAssistSettings>) => void;
   updatePieceAnimations: (updates: Partial<PieceAnimationSettings>) => void;
   updateTimeControl: (updates: Partial<TimeControlConfig>) => void;
   updateMultiplayerServer: (updates: Partial<MultiplayerServerConfig>) => void;
@@ -522,6 +531,11 @@ const createDefaultSettings = (): SettingsState => ({
         'Chess fact: Castling is the only move where two pieces move at once.',
         'Tip: Save your favorite setup as an ExperiencePackage.'
       ]
+    },
+    moveAssistSettings: {
+      hoverPieceIdentity: true,
+      hoverPieceIdentityOnlineOnly: false,
+      hoverPieceGlow: true
     },
     pieceAnimations: {
       enabled: true,
@@ -643,6 +657,10 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
     uiAppearance: {
       ...defaults.uiAppearance,
       ...saved.uiAppearance
+    },
+    moveAssistSettings: {
+      ...defaults.moveAssistSettings,
+      ...saved.moveAssistSettings
     },
     pieceAnimations: {
       ...defaults.pieceAnimations,
@@ -822,6 +840,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   const updateThemeDraft = (updates: Partial<Template>) => setSettings(s => ({ ...s, themeDraft: s.themeDraft ? { ...s.themeDraft, ...updates } : null }));
   const updateBotSettings = (updates: Partial<BotSettings>) => setSettings(s => ({ ...s, botSettings: { ...s.botSettings, ...updates } }));
   const updateUIAppearance = (updates: Partial<UIAppearanceSettings>) => setSettings(s => ({ ...s, uiAppearance: { ...s.uiAppearance, ...updates } }));
+  const updateMoveAssistSettings = (updates: Partial<MoveAssistSettings>) => setSettings(s => ({ ...s, moveAssistSettings: { ...s.moveAssistSettings, ...updates } }));
   const updatePieceAnimations = (updates: Partial<PieceAnimationSettings>) => setSettings(s => ({ ...s, pieceAnimations: { ...s.pieceAnimations, ...updates } }));
   const updateTimeControl = (updates: Partial<TimeControlConfig>) => setSettings(s => ({ ...s, timeControl: { ...s.timeControl, ...updates } }));
   const updateMultiplayerServer = (updates: Partial<MultiplayerServerConfig>) => setSettings(s => ({ ...s, multiplayerServer: { ...s.multiplayerServer, ...updates } }));
@@ -1002,7 +1021,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   return (
-    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updatePieceAnimations, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationDefinition, updateAnimationDefinition, deleteAnimationDefinition, createAnimationRule, updateAnimationRule, deleteAnimationRule, importSettingsCategories, updateTrustedAssetDomains, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
+    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updateMoveAssistSettings, updatePieceAnimations, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationDefinition, updateAnimationDefinition, deleteAnimationDefinition, createAnimationRule, updateAnimationRule, deleteAnimationRule, importSettingsCategories, updateTrustedAssetDomains, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
       {children}
     </SettingsContext.Provider>
   );

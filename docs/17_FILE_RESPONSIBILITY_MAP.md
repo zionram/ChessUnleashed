@@ -1,32 +1,27 @@
 # File Responsibility Map
 
-Status: Current, targeted verification plus Chat 7 UI responsibilities
+Status: Current, targeted verification.
 
 This map lists high-value ownership files. It is not a full source inventory.
 
 | File | Responsibility |
 | --- | --- |
-| `src/App.tsx` | View registration, panel placement, center/floating tool rendering, overlay entry points, left rail position/resize state, board glass drag state, active Custom Game runtime rendering. |
-| `src/App.css` | App shell visual styling, glass theme, responsive topbar, left floating rail style, right workspace styling, floating window/overlay scrollbars, selected launcher icon visibility. |
+| `src/App.tsx` | View registration, panel placement, launcher/floating window rendering, docked workspace panels, lower HUD/status strips, FICS hub opening, and active Custom Game runtime rendering. |
 | `src/config/menuSchema.ts` | Top-level menu order and nested menu/tool routes. |
-| `src/components/menu/DynamicMenu.tsx` | Launcher menu rendering, active root state, icon tile state/class hooks. |
-| `src/components/layout/FloatingWindow.tsx` | Shared floating window shell behavior. |
-| `src/components/layout/Overlay.tsx` | Shared centered overlay/modal shell; currently must render above background/workspace and support dark/glass overlay theming. |
 | `src/context/SettingsContext.tsx` | Persistent settings/config source of truth, defaults, registered bots, profiles, events, animations, rulesets, and imported asset metadata. |
-| `src/context/GameContext.tsx` | Standard Chess runtime, game actions, bot integration, event emission, tactical payloads, animation timing gates, and standard game snapshots. |
+| `src/context/GameContext.tsx` | Standard Chess runtime, game actions, bot integration, FICS online board bridge/routing, event emission, tactical payloads, animation timing gates, and standard game snapshots. |
 | `src/runtime/GameSnapshot.ts` | Runtime game snapshot model/helper; separate from ExperiencePackage. |
 | `src/packages/ExperiencePackage.ts` | Package creation/import/apply, asset manifest, zip assets, durable asset hydration, package extraction, and runtime-state stripping. |
 | `src/packages/ExperienceCompliancePolicy.ts` | Multiplayer host compliance policy foundation. |
 | `src/views/ImportExportView.tsx` | Package Manager UI: Load Package, Save Package, Extract Package, progress/status/error display. |
 | `src/views/ThemeEditorView.tsx` | Visual/theme editing and guided Piece Set workflow. |
-| `src/views/LayersView.tsx` | Layer/frame/background editing and draft layer changes. |
+| `src/views/LayersView.tsx` | Layer/frame/background editing and draft layer changes. Background may be moved to its own higher-level Look tab, but this file currently contains relevant controls. |
 | `src/views/PlatformAppearanceView.tsx` | Platform UI appearance settings, including welcome panel/sidebar color controls. |
 | `src/views/WelcomeView.tsx` | Welcome/tips panel UI and welcome sidebar container styling consumption. |
-| `src/views/LetsPlaySetupView.tsx` | Let's Play setup, Standard/Bot/Multiplayer/Custom Game entry flows. |
 | `src/views/AnimationSettingsView.tsx` | Environment animation defaults, movement scope controls, active-status feedback. |
-| `src/views/AnimationBuilderView.tsx` | Center/floating workflow for named animation definitions. |
+| `src/views/AnimationBuilderView.tsx` | Center workflow for named animation definitions. |
 | `src/components/animation/AnimationPreviewCard.tsx` | Shared animation preview UI. |
-| `src/components/board/ChessBoard.tsx` | Board rendering, Standard Chess visual movement animation, board overlays, and frame/layer rendering. |
+| `src/components/board/ChessBoard.tsx` | Board rendering, generic board interaction, Standard Chess visual movement animation, board overlays, and frame/layer rendering. Must remain provider-agnostic; do not put FICS command syntax here. |
 | `src/views/RuleBuilderView.tsx` | Custom ruleset metadata builder, validation, templates, and sandbox entry. |
 | `src/views/CustomGameRuntimeView.tsx` | Local Custom Game runtime for approved sandbox-playable rulesets. |
 | `src/rules/RulePackages.ts` | RulePackage/custom ruleset types, validators, templates, helpers. |
@@ -46,11 +41,20 @@ This map lists high-value ownership files. It is not a full source inventory.
 | `src/views/BotsView.tsx` | Tools -> Bots management, add/edit/remove/test registered bots. |
 | `src/views/ComputerOpponentView.tsx` | Full Computer Opponent controller/sidebar. |
 | `src/engines/UciWorkerAdapter.ts` | Browser-worker UCI engine adapter. |
-| `src/views/MultiplayerView.tsx` | Multiplayer server-source UI and host/join controls. |
+| `src/views/LetsPlaySetupView.tsx` | Let's Play setup, Standard/Bot/LAN/Online/Custom Game entry flows; includes path to FICS hub. |
+| `src/views/MultiplayerView.tsx` | LAN/multiplayer server-source UI and host/join controls. |
+| `src/views/FicsOnlineView.tsx` | Normal-user FICS controls: connect/login, account helper link, seek/play, match, observe, current game, chat, challenges. |
+| `src/views/FicsConsoleView.tsx` | Developer/raw FICS console: raw log, raw commands, quick commands, parser/debug visibility. |
+| `src/views/FicsBoardPreview.tsx` | Small read-only/interactive FICS board preview, orientation control, Style 12 clock/name display. |
+| `src/services/online/fics/FicsAdapter.ts` | FICS singleton adapter, status/data/message subscriptions, login flow, command methods, games/sought/challenge/game state tracking. |
+| `src/services/online/fics/FicsProtocolParser.ts` | FICS raw text parser, Style 12 parser, games/sought/challenge/game status parsing. |
+| `src/services/online/fics/FicsGameTranslator.ts` | FICS boundary translator: Style 12 -> normalized state/FEN and standardized command registry -> FICS command strings. |
+| `src/services/online/fics/FicsTypes.ts` | FICS-specific types. |
+| `src/services/online/OnlineServiceAdapter.ts` | Generic online service adapter interface/boundary. |
 | `src/views/ProfileView.tsx` | Local profile UI. |
 | `src/views/AboutSupportView.tsx` | About / Support information view. |
-| `electron/main.js` | Electron production load, splash window, local asset protocol, durable asset IPC, local server startup. |
-| `electron/preload.js` | Safe renderer bridge for durable asset storage and splash/status IPC. |
+| `electron/main.js` | Electron production load, splash window, local asset protocol, durable asset IPC, LAN server/discovery, FICS TCP socket bridge, shutdown guards. |
+| `electron/preload.cjs` | Safe renderer bridge for durable asset storage, splash/status IPC, LAN IPC, and FICS IPC. |
 | `electron/splash.html` | Real splash loading/status UI. |
 | `server/chessServer.js` | Local multiplayer server. |
 | `package.json` | Build/dev/package scripts and Electron builder config. |

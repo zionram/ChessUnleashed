@@ -977,11 +977,11 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="cu-themed-embedded-view cu-ai-package-builder-view" style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
+    <div className="cu-view-shell cu-themed-embedded-view cu-ai-package-builder-view cu-scroll-area">
 
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>AI Package Builder</h2>
+      <div className="cu-view-title-row">
+        <h2 className="cu-view-title">AI Package Builder</h2>
         <span style={{
           fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
           borderRadius: 10, background: '#fffbe6', border: '1px solid #f5d87a', color: '#8a6d00',
@@ -990,14 +990,14 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           Experimental · AI-assisted
         </span>
       </div>
-      <p style={{ margin: '0 0 20px', fontSize: '0.84rem', color: '#555', lineHeight: 1.5 }}>
+      <p className="cu-view-help-text">
         Use an external AI (ChatGPT, Claude, Gemini) to generate Chess Unleashed package JSON,
         then paste it here to validate, review, and apply. No AI accounts or API keys required.
       </p>
 
       {/* Universal Prompt — primary action */}
-      <div style={{ marginBottom: 16, border: '1px solid #b6d4fe', borderRadius: 8, overflow: 'hidden', background: '#f0f6ff' }}>
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid #b6d4fe', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+      <div className="cu-panel-card cu-ai-prompt-card">
+        <div className="cu-panel-card-header">
           <div>
             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#1d4ed8' }}>✨ Universal Package Prompt</div>
             <div style={{ fontSize: '0.78rem', color: '#3b5ea6', marginTop: 2 }}>
@@ -1006,8 +1006,8 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           </div>
           <button
             onClick={() => copyPrompt('universal', buildUniversalPrompt(userRequest))}
+            className="cu-primary-button"
             style={{
-              padding: '7px 16px', borderRadius: 6, border: 'none', flexShrink: 0,
               background: copiedPromptId === 'universal' ? '#d1fae5' : '#2c7be5',
               color: copiedPromptId === 'universal' ? '#065f46' : '#fff',
               fontWeight: 700, fontSize: '0.84rem', cursor: 'pointer', transition: 'background 0.15s',
@@ -1017,7 +1017,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
             {copiedPromptId === 'universal' ? '✓ Copied!' : 'Copy Full Prompt'}
           </button>
         </div>
-        <div style={{ padding: '10px 14px', borderBottom: '1px solid #b6d4fe' }}>
+        <div className="cu-panel-card-body cu-panel-card-body-bordered">
           <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#1d4ed8', marginBottom: 5 }}>
             Describe what you want
           </label>
@@ -1035,7 +1035,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
             }}
           />
         </div>
-        <div style={{ padding: '10px 14px', fontSize: '0.8rem', color: '#1e3a8a', lineHeight: 1.7 }}>
+        <div className="cu-panel-card-body cu-ai-guidance">
           <div style={{ fontWeight: 600, marginBottom: 4, color: '#1d4ed8' }}>Your description can include any of:</div>
           <ul style={{ margin: 0, paddingLeft: 18, color: '#3b5ea6' }}>
             <li>Theme or mood (e.g. underwater, medieval, neon city, nature)</li>
@@ -1051,7 +1051,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
       </div>
 
       {/* Specialized Prompts — optional/secondary */}
-      <div style={{ marginBottom: 20, border: '1px solid #d0d7de', borderRadius: 8, overflow: 'hidden' }}>
+      <div className="cu-panel-card cu-ai-collapsible-card">
         <button
           onClick={() => setShowPrompts(v => !v)}
           style={{
@@ -1068,12 +1068,12 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           </span>
         </button>
         {showPrompts && (
-          <div style={{ padding: 14 }}>
+          <div className="cu-panel-card-body">
             <p style={{ margin: '0 0 12px', fontSize: '0.81rem', color: '#666', lineHeight: 1.5 }}>
               Use these when you want tighter control over a specific category.
               For most cases the Universal prompt above is all you need.
             </p>
-            <div style={{ display: 'grid', gap: 10 }}>
+            <div className="cu-card-stack">
               {PROMPTS.map(prompt => (
                 <div key={prompt.id} style={{
                   border: '1px solid #d0d7de', borderRadius: 6, overflow: 'hidden', background: '#fdfdfd'
@@ -1115,8 +1115,8 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
       </div>
 
       {/* JSON Input */}
-      <div style={{ marginBottom: 10 }}>
-        <label style={{ display: 'block', fontWeight: 600, marginBottom: 6, fontSize: '0.85rem' }}>
+      <div className="cu-field-block">
+        <label className="cu-field-label">
           Package JSON
         </label>
         <textarea
@@ -1124,8 +1124,8 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           onChange={e => { setJsonInput(e.target.value); resetState(); }}
           placeholder="Paste AI-generated package JSON here..."
           rows={13}
+          className="cu-code-textarea"
           style={{
-            width: '100%', fontFamily: 'monospace', fontSize: '0.77rem',
             padding: '10px', border: '1px solid #d0d7de', borderRadius: 6,
             resize: 'vertical', background: '#fdfdfd', color: '#1e1e1e',
             boxSizing: 'border-box', lineHeight: 1.5
@@ -1134,7 +1134,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
       </div>
 
       {/* Action Buttons */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div className="cu-action-row">
         <button
           onClick={validate}
           disabled={canInput}
@@ -1165,7 +1165,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
 
       {/* Normalize Log */}
       {normalizeLog.length > 0 && (
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: '#f0f6ff', border: '1px solid #b6d4fe', borderRadius: 6 }}>
+        <div className="cu-alert-card cu-alert-info">
           <div style={{ fontWeight: 700, color: '#1d4ed8', marginBottom: 6, fontSize: '0.83rem' }}>Normalize Changes</div>
           {normalizeLog.map((line, i) => (
             <div key={i} style={{ fontSize: '0.8rem', color: '#1e3a8a', marginBottom: 2 }}>{line}</div>
@@ -1175,7 +1175,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
 
       {/* Validation Errors (blocking) */}
       {validationErrors.length > 0 && (
-        <div style={{ marginBottom: 16, padding: '12px 14px', background: '#fff5f5', border: '1px solid #f5c2c7', borderRadius: 6 }}>
+        <div className="cu-alert-card cu-alert-danger">
           <div style={{ fontWeight: 700, color: '#c0392b', marginBottom: 6, fontSize: '0.85rem' }}>Invalid Package</div>
           {validationErrors.map((err, i) => (
             <div key={i} style={{ color: '#c0392b', fontSize: '0.82rem', marginBottom: 2 }}>✗ {err}</div>
@@ -1188,7 +1188,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
 
       {/* Validation Notices (non-blocking) */}
       {validationNotices.length > 0 && parsedPackage && (
-        <div style={{ marginBottom: 16, padding: '10px 14px', background: '#fffbea', border: '1px solid #f5d87a', borderRadius: 6 }}>
+        <div className="cu-alert-card cu-alert-warning">
           <div style={{ fontWeight: 700, color: '#8a6d00', marginBottom: 6, fontSize: '0.83rem' }}>Notices</div>
           {validationNotices.map((notice, i) => (
             <div key={i} style={{ fontSize: '0.8rem', color: '#6b5000', marginBottom: 2 }}>⚠ {notice}</div>
@@ -1199,7 +1199,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
       {/* Valid Package Panel */}
       {parsedPackage && (
         <>
-          <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f0fff4', border: '1px solid #b2dfdb', borderRadius: 6 }}>
+          <div className="cu-alert-card cu-alert-success">
             <div style={{ fontWeight: 700, color: '#1a7a4a', marginBottom: 4, fontSize: '0.85rem' }}>✓ Valid Package</div>
             <div style={{ fontSize: '0.83rem', color: '#333' }}>
               <strong>{parsedPackage.metadata.name}</strong>
@@ -1213,7 +1213,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
 
           {/* Category Warnings */}
           {totalWarnings > 0 && (
-            <div style={{ marginBottom: 14, padding: '10px 14px', background: '#fffbea', border: '1px solid #f5d87a', borderRadius: 6 }}>
+            <div className="cu-alert-card cu-alert-warning">
               <div style={{ fontWeight: 700, color: '#8a6d00', marginBottom: 6, fontSize: '0.83rem' }}>
                 Category Warnings ({totalWarnings})
               </div>
@@ -1228,12 +1228,12 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           )}
 
           {/* Category Selection */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div className="cu-panel-card cu-category-card">
+            <div className="cu-card-title-row">
               <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
                 Categories to Apply ({selectedCategories.length}/{availableCategories.filter(c => KNOWN_CONTENT_KEYS.has(c)).length} selected)
               </span>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="cu-button-row-compact">
                 <button
                   onClick={() => setSelectedCategories(availableCategories.filter(c => KNOWN_CONTENT_KEYS.has(c)))}
                   style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: 4, border: '1px solid #d0d7de', background: '#f6f8fa', cursor: 'pointer', color: '#444' }}
@@ -1248,7 +1248,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
                 </button>
               </div>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="cu-check-list">
               {availableCategories.map(cat => {
                 const isKnown = KNOWN_CONTENT_KEYS.has(cat);
                 const warns = allCategoryWarnings[cat] ?? [];
@@ -1277,7 +1277,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           </div>
 
           {/* Apply / Save */}
-          <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+          <div className="cu-action-row cu-wrap">
             <button
               onClick={applyPackage}
               disabled={selectedCategories.length === 0}
@@ -1303,9 +1303,9 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
           </div>
 
           {/* ZIP Export */}
-          <div style={{ marginBottom: 14, padding: '10px 12px', background: '#f6f8fa', borderRadius: 6, border: '1px solid #d0d7de' }}>
+          <div className="cu-panel-card cu-zip-export-card">
             <div style={{ fontWeight: 600, fontSize: '0.83rem', color: '#444', marginBottom: 8 }}>Export as ZIP</div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div className="cu-control-row cu-wrap">
               <button
                 onClick={() => zipFileInputRef.current?.click()}
                 style={{
@@ -1349,7 +1349,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
               <div style={{ fontWeight: 600, fontSize: '0.78rem', color: '#555', marginBottom: 5 }}>
                 Trusted remote asset domains
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 6 }}>
+              <div className="cu-domain-list">
                 {settings.trustedAssetDomains.map(domain => (
                   <div key={domain} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', background: '#fff', border: '1px solid #d0d7de', borderRadius: 4, padding: '3px 8px' }}>
                     <span style={{ fontFamily: 'monospace', color: '#2c3e50' }}>{domain}</span>
@@ -1363,7 +1363,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div className="cu-button-row-compact">
                 <input
                   type="text"
                   value={domainInput}
@@ -1409,8 +1409,8 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
 
           {/* Missing Assets Report */}
           {missingAssets.length > 0 && (
-            <div style={{ marginTop: 12, border: '1px solid #fbbf24', borderRadius: 6, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 12px', background: '#fffbe6', borderBottom: '1px solid #fbbf24' }}>
+            <div className="cu-panel-card cu-missing-assets-card">
+              <div className="cu-panel-card-header cu-alert-warning">
                 <span style={{ fontWeight: 700, fontSize: '0.82rem', color: '#92400e' }}>
                   {missingAssets.length} asset{missingAssets.length !== 1 ? 's' : ''} not bundled
                 </span>
@@ -1425,7 +1425,7 @@ const AIPackageBuilderView: React.FC<AIPackageBuilderViewProps> = ({ closeOverla
                   Copy Missing Assets
                 </button>
               </div>
-              <div style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div className="cu-card-stack cu-panel-card-body">
                 {missingAssets.map((a, i) => (
                   <div key={i} style={{ fontSize: '0.78rem', lineHeight: 1.5 }}>
                     <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#1e1e1e' }}>{a.filename}</span>

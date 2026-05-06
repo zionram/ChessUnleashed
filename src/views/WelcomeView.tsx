@@ -46,7 +46,7 @@ const WelcomeView: React.FC = () => {
 
   if (!showTipsBoard) {
     return (
-      <div className="view-container">
+      <div className="view-container cu-view-shell">
         <button
           onClick={() => updateUIAppearance({ showTipsBoard: true })}
           style={{ width: '100%', padding: '8px', fontSize: '0.75rem' }}
@@ -58,7 +58,7 @@ const WelcomeView: React.FC = () => {
   }
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div
         style={{
           border: welcomePanelFrameMode === 'none'

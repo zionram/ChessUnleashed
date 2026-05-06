@@ -583,25 +583,42 @@ interface ActiveTemplateAuditViewProps {
 }
 
 const section = (title: string, children: React.ReactNode) => (
-  <div style={{ marginBottom: 20 }}>
-    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#2c3e50', borderBottom: '1px solid #e1e4e8', paddingBottom: 4, marginBottom: 8 }}>
-      {title}
+  <section className="cu-panel-card cu-pad cu-stack-sm">
+    <div className="cu-section-header">
+      <h3 className="cu-section-title">{title}</h3>
     </div>
-    {children}
-  </div>
+    <div className="cu-stack-sm">{children}</div>
+  </section>
 );
 
 const row = (label: string, value: React.ReactNode) => (
-  <div style={{ display: 'flex', gap: 8, marginBottom: 3, fontSize: '0.82rem' }}>
-    <span style={{ color: '#666', minWidth: 180, flexShrink: 0 }}>{label}</span>
-    <span style={{ color: '#1e1e1e', fontFamily: 'monospace', wordBreak: 'break-all' }}>{value}</span>
+  <div className="cu-summary-row">
+    <span className="cu-field-label-inline">{label}</span>
+    <span className="cu-code-input cu-flex-1" style={{ background: 'transparent', border: 0, padding: 0, wordBreak: 'break-all' }}>{value}</span>
   </div>
 );
 
-const chip = (text: string, color = '#2c3e50', bg = '#f0f0f0') => (
-  <span style={{ display: 'inline-block', padding: '1px 7px', borderRadius: 10, background: bg, color, fontSize: '0.75rem', fontWeight: 600, fontFamily: 'monospace' }}>
+const chip = (text: string, color?: string, bg?: string) => (
+  <span className="cu-chip" style={color || bg ? { color, background: bg } : undefined}>
     {text}
   </span>
+);
+
+const colorSwatch = (color: string, size = 14) => (
+  <span
+    aria-hidden="true"
+    style={{
+      width: size,
+      height: size,
+      borderRadius: 3,
+      background: color,
+      border: '1px solid var(--cu-border, rgba(148,163,184,0.35))',
+      display: 'inline-block',
+      marginRight: 6,
+      verticalAlign: 'middle',
+      flexShrink: 0
+    }}
+  />
 );
 
 const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
@@ -669,66 +686,51 @@ const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
   const bg = audit.background;
 
   return (
-    <div className="cu-themed-embedded-view cu-active-template-audit-view" style={{ padding: '24px', maxWidth: 700, fontFamily: 'sans-serif', color: '#2c3e50' }}>
-
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-        <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>Active Template Audit</h2>
-        <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: '#f0f6ff', border: '1px solid #b6d4fe', color: '#1d4ed8' }}>
-          Read-only Report
-        </span>
+    <div className="cu-themed-embedded-view cu-active-template-audit-view cu-view-shell cu-stack-lg">
+      <div className="cu-view-title-row">
+        <h2 className="cu-view-title">Active Template Audit</h2>
+        <span className="cu-status-pill">Read-only Report</span>
       </div>
-      <p style={{ margin: '0 0 8px', fontSize: '0.83rem', color: '#555' }}>
+      <p className="cu-view-help-text">
         Current active visual/layer settings for the live template. Use this as context for AI asset generation.
       </p>
-      <p style={{ margin: '0 0 18px', fontSize: '0.79rem', color: '#888' }}>
+      <p className="cu-help-text">
         Source: <strong>{audit.templateSource}</strong> — generated {new Date(audit.generatedAt).toLocaleTimeString()}
       </p>
 
-      {/* Download / Copy toolbar */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 24, padding: '12px 14px', background: '#f6f8fa', border: '1px solid #d0d7de', borderRadius: 8 }}>
-        <button onClick={downloadMd} style={{ padding: '7px 14px', borderRadius: 6, border: 'none', background: '#2c7be5', color: '#fff', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}>
-          ⬇ Download Active Template Report (.md)
-        </button>
-        <button onClick={downloadJson} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-          ⬇ Download Audit JSON
-        </button>
-        <button onClick={copyReport} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #d0d7de', background: copyStatus === 'copied' ? '#d1fae5' : '#fff', color: copyStatus === 'copied' ? '#065f46' : '#2c3e50', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer', transition: 'background 0.15s' }}>
-          {copyStatus === 'copied' ? '✓ Copied!' : '⎘ Copy Report'}
-        </button>
-        <button onClick={generate} style={{ padding: '7px 14px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-          ↺ Regenerate
-        </button>
-        <div style={{ width: '100%', borderTop: '1px solid #e0e0e0', margin: '6px 0 2px' }} />
-        <span style={{ fontSize: '0.77rem', color: '#888', alignSelf: 'center' }}>Guideline JPGs:</span>
-        <button onClick={() => downloadCanvasAsJpg(drawBoardGuidelineCanvas(audit), 'board-guideline.jpg')} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', fontWeight: 600, fontSize: '0.79rem', cursor: 'pointer' }}>
-          ⬇ Board
-        </button>
-        <button onClick={() => downloadCanvasAsJpg(drawPieceGuidelineCanvas(audit), 'piece-guideline.jpg')} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', fontWeight: 600, fontSize: '0.79rem', cursor: 'pointer' }}>
-          ⬇ Pieces
-        </button>
-        <button onClick={() => downloadCanvasAsJpg(drawFrameGuidelineCanvas(audit), 'frame-guideline.jpg')} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', fontWeight: 600, fontSize: '0.79rem', cursor: 'pointer' }}>
-          ⬇ Frame / Background
-        </button>
+      <div className="cu-panel-card cu-pad cu-stack-sm">
+        <div className="cu-row-wrap">
+          <button className="cu-button-primary" onClick={downloadMd}>⬇ Download Active Template Report (.md)</button>
+          <button className="cu-button-secondary" onClick={downloadJson}>⬇ Download Audit JSON</button>
+          <button className={copyStatus === 'copied' ? 'cu-button-success' : 'cu-button-secondary'} onClick={copyReport}>
+            {copyStatus === 'copied' ? '✓ Copied!' : '⎘ Copy Report'}
+          </button>
+          <button className="cu-button-secondary" onClick={generate}>↺ Regenerate</button>
+        </div>
+        <div className="cu-divider" />
+        <div className="cu-row-wrap">
+          <span className="cu-muted cu-small">Guideline JPGs:</span>
+          <button className="cu-button-secondary cu-button-compact" onClick={() => downloadCanvasAsJpg(drawBoardGuidelineCanvas(audit), 'board-guideline.jpg')}>⬇ Board</button>
+          <button className="cu-button-secondary cu-button-compact" onClick={() => downloadCanvasAsJpg(drawPieceGuidelineCanvas(audit), 'piece-guideline.jpg')}>⬇ Pieces</button>
+          <button className="cu-button-secondary cu-button-compact" onClick={() => downloadCanvasAsJpg(drawFrameGuidelineCanvas(audit), 'frame-guideline.jpg')}>⬇ Frame / Background</button>
+        </div>
       </div>
 
-      {/* Template Identity */}
       {section('Template Identity', <>
         {row('Template ID', chip(audit.templateId))}
         {row('Template Name', <strong>{audit.templateName}</strong>)}
         {row('Piece Theme Mode', chip(audit.pieceThemeMode))}
       </>)}
 
-      {/* Piece Theme */}
       {section('Piece Theme', <>
         {audit.pieceThemeMode === 'team' ? (
           <>
-            <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: 6 }}>Team mode — white and black use separate configurations.</div>
-            <div style={{ fontWeight: 600, fontSize: '0.8rem', marginBottom: 4 }}>White Pieces</div>
+            <p className="cu-help-text">Team mode — white and black use separate configurations.</p>
+            <strong className="cu-subsection-title">White Pieces</strong>
             {row('Type', chip(audit.whitePieceTheme?.type ?? '—'))}
             {row('Builtin set', chip(audit.whitePieceTheme?.builtinSet ?? '—'))}
             {row('Custom slots in use', audit.whitePieceTheme?.customSlotsInUse.length ? audit.whitePieceTheme.customSlotsInUse.join(', ') : 'none')}
-            <div style={{ fontWeight: 600, fontSize: '0.8rem', margin: '8px 0 4px' }}>Black Pieces</div>
+            <strong className="cu-subsection-title">Black Pieces</strong>
             {row('Type', chip(audit.blackPieceTheme?.type ?? '—'))}
             {row('Builtin set', chip(audit.blackPieceTheme?.builtinSet ?? '—'))}
             {row('Custom slots in use', audit.blackPieceTheme?.customSlotsInUse.length ? audit.blackPieceTheme.customSlotsInUse.join(', ') : 'none')}
@@ -742,21 +744,18 @@ const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
         )}
       </>)}
 
-      {/* Board Colors */}
       {section('Board Colors', <>
         {(['light', 'dark', 'selected', 'moveTarget'] as const).map(k => (
-          <div key={k} style={{ display: 'flex', gap: 8, marginBottom: 3, fontSize: '0.82rem', alignItems: 'center' }}>
-            <span style={{ color: '#666', minWidth: 180, flexShrink: 0 }}>{k}</span>
-            <span style={{ width: 16, height: 16, borderRadius: 3, background: t.boardColors[k], border: '1px solid #ccc', flexShrink: 0 }} />
-            <span style={{ fontFamily: 'monospace', color: '#1e1e1e' }}>{t.boardColors[k]}</span>
+          <div key={k} className="cu-summary-row">
+            <span className="cu-field-label-inline">{k}</span>
+            <span className="cu-row cu-flex-1">{colorSwatch(t.boardColors[k], 16)}<span className="cu-code-input" style={{ background: 'transparent', border: 0, padding: 0 }}>{t.boardColors[k]}</span></span>
           </div>
         ))}
       </>)}
 
-      {/* Background */}
       {section('Background Layer', <>
         {row('Image present', bg.imagePresent ? chip('Yes', '#065f46', '#d1fae5') : chip('No', '#666', '#f0f0f0'))}
-        {row('Color', <><span style={{ width: 14, height: 14, borderRadius: 2, background: bg.color, border: '1px solid #ccc', display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />{bg.color}</>)}
+        {row('Color', <>{colorSwatch(bg.color)}{bg.color}</>)}
         {row('Opacity', String(bg.opacity))}
         {row('Repeat', bg.repeat)}
         {row('Size', bg.size)}
@@ -765,16 +764,14 @@ const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
         {row('Scale', pct(bg.scale))}
       </>)}
 
-      {/* Board Overlay */}
       {section('Board Overlay', <>
         {row('Image present', audit.boardOverlay.imagePresent ? chip('Yes', '#065f46', '#d1fae5') : chip('No', '#666', '#f0f0f0'))}
         {row('Opacity', String(audit.boardOverlay.opacity))}
       </>)}
 
-      {/* Frame Layer */}
       {section('Frame Layer', <>
         {row('Image present', fl.imagePresent ? chip('Yes', '#065f46', '#d1fae5') : chip('No', '#666', '#f0f0f0'))}
-        {row('Color', <><span style={{ width: 14, height: 14, borderRadius: 2, background: fl.color, border: '1px solid #ccc', display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }} />{fl.color}</>)}
+        {row('Color', <>{colorSwatch(fl.color)}{fl.color}</>)}
         {row('Opacity', String(fl.opacity))}
         {row('Repeat', fl.repeat)}
         {row('Size', fl.size)}
@@ -787,54 +784,49 @@ const ActiveTemplateAuditView: React.FC<ActiveTemplateAuditViewProps> = () => {
         {fl.frameSizeMode === 'fixed' && row('Fixed height', px(fl.fixedHeight))}
       </>)}
 
-      {/* Layer Upload Limit */}
-      {section('Layer Upload Limit', <>
-        {row('Max size per upload', `${audit.layerUploadMaxSizeMB}MB`)}
-      </>)}
+      {section('Layer Upload Limit', <>{row('Max size per upload', `${audit.layerUploadMaxSizeMB}MB`)}</>)}
 
-      {/* Board Runtime */}
       {section('Board Responsiveness', <>
-        <div style={{ fontSize: '0.81rem', color: '#444', marginBottom: 6, padding: '8px 10px', background: '#fffbea', border: '1px solid #f5d87a', borderRadius: 5 }}>
+        <div className="cu-notice cu-notice-warning">
           The board is responsive. Actual rendered pixel size depends on the container and window size.
         </div>
         {audit.board.measured ? (
           <>
-            {row('Current rendered width', <><strong>{audit.board.width}px</strong> <span style={{ color: '#888', fontSize: '0.76rem' }}>runtime-measured</span></>)}
-            {row('Current rendered height', <><strong>{audit.board.height}px</strong> <span style={{ color: '#888', fontSize: '0.76rem' }}>runtime-measured</span></>)}
-            {row('Square size (width ÷ 8)', <><strong>{audit.board.squareSize}px</strong> <span style={{ color: '#888', fontSize: '0.76rem' }}>runtime-measured</span></>)}
-            <div style={{ fontSize: '0.77rem', color: '#888', marginTop: 4 }}>{audit.board.note}</div>
+            {row('Current rendered width', <><strong>{audit.board.width}px</strong> <span className="cu-muted cu-tiny">runtime-measured</span></>)}
+            {row('Current rendered height', <><strong>{audit.board.height}px</strong> <span className="cu-muted cu-tiny">runtime-measured</span></>)}
+            {row('Square size (width ÷ 8)', <><strong>{audit.board.squareSize}px</strong> <span className="cu-muted cu-tiny">runtime-measured</span></>)}
+            <p className="cu-help-text">{audit.board.note}</p>
           </>
         ) : (
-          <div style={{ fontSize: '0.81rem', color: '#888' }}>{audit.board.note}</div>
+          <p className="cu-help-text">{audit.board.note}</p>
         )}
       </>)}
 
-      {/* Asset Recommendations */}
       {section('AI Asset Recommendations', <>
-        <div style={{ fontSize: '0.79rem', color: '#555', marginBottom: 8 }}>
-          Based on the active template settings above.
+        <p className="cu-help-text">Based on the active template settings above.</p>
+        <div className="cu-card-stack">
+          {(['background', 'boardOverlay', 'frameLayer', 'pieces', 'animatedOverlays'] as const).map(key => {
+            const labels: Record<string, string> = {
+              background: 'Background', boardOverlay: 'Board Overlay',
+              frameLayer: 'Frame Layer', pieces: 'Piece Images', animatedOverlays: 'Animated Overlays'
+            };
+            return (
+              <div key={key} className="cu-panel-card-muted cu-pad-sm">
+                <div className="cu-strong cu-small">{labels[key]}</div>
+                <div className="cu-help-text">{audit.assetRecommendations[key]}</div>
+              </div>
+            );
+          })}
         </div>
-        {(['background', 'boardOverlay', 'frameLayer', 'pieces', 'animatedOverlays'] as const).map(key => {
-          const labels: Record<string, string> = {
-            background: 'Background', boardOverlay: 'Board Overlay',
-            frameLayer: 'Frame Layer', pieces: 'Piece Images', animatedOverlays: 'Animated Overlays'
-          };
-          return (
-            <div key={key} style={{ marginBottom: 8, padding: '8px 10px', background: '#f6f8fa', border: '1px solid #d0d7de', borderRadius: 5 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.79rem', marginBottom: 3 }}>{labels[key]}</div>
-              <div style={{ fontSize: '0.79rem', color: '#444', lineHeight: 1.5 }}>{audit.assetRecommendations[key]}</div>
-            </div>
-          );
-        })}
       </>)}
 
-      {/* Known Limitations */}
       {section('Known Limitations', <>
-        {audit.knownLimitations.map((l, i) => (
-          <div key={i} style={{ fontSize: '0.8rem', color: '#666', marginBottom: 3 }}>• {l}</div>
-        ))}
+        <div className="cu-check-list">
+          {audit.knownLimitations.map((l, i) => (
+            <div key={i} className="cu-help-text">• {l}</div>
+          ))}
+        </div>
       </>)}
-
     </div>
   );
 };

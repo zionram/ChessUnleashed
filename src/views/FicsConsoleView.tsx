@@ -107,10 +107,10 @@ const FicsConsoleView: React.FC = () => {
   };
 
   return (
-    <div className="view-container" style={{ color: '#cbd5e1', display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div className="view-container cu-view-shell cu-fics-console-view">
 
       {/* Status summary */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '7px 10px', borderRadius: 7, background: 'rgba(2, 6, 23, 0.72)', border: '1px solid rgba(148, 163, 184, 0.14)', fontSize: '0.7rem' }}>
+      <div className="cu-panel-card cu-control-row" style={{ flexWrap: 'wrap', fontSize: '0.7rem' }}>
         <span>TCP: <strong style={{ color: tcpStatus === 'connected' ? '#86efac' : tcpStatus === 'connecting' ? '#fbbf24' : tcpStatus === 'error' ? '#fca5a5' : '#94a3b8' }}>{tcpStatus}</strong></span>
         <span style={{ color: '#334155' }}>|</span>
         <span>Login: <strong style={{ color: loginStatusColor[loginStatus] }}>{loginStatus}</strong></span>
@@ -125,15 +125,15 @@ const FicsConsoleView: React.FC = () => {
       </div>
 
       {!hasElectron && (
-        <div style={{ padding: '5px 10px', borderRadius: 6, background: 'rgba(120, 53, 15, 0.18)', border: '1px solid rgba(251, 191, 36, 0.18)', fontSize: '0.68rem', color: '#fbbf24' }}>
+        <div className="cu-panel-card cu-warning" style={{ fontSize: '0.68rem', color: '#fbbf24' }}>
           ⚠ Electron bridge unavailable — commands are no-ops.
         </div>
       )}
 
       {/* Quick commands */}
-      <div>
-        <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Quick Commands</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      <div className="cu-panel-card">
+        <div className="cu-section-label">Quick Commands</div>
+        <div className="cu-control-row" style={{ flexWrap: 'wrap', gap: 4 }}>
           {QUICK_CMDS.map(({ label, cmd }) => (
             <button key={cmd} style={{ ...qbtnStyle, opacity: isConnected ? 1 : 0.45 }} onClick={() => sendCmd(cmd)} disabled={!isConnected} title={cmd}>
               {label}
@@ -143,7 +143,7 @@ const FicsConsoleView: React.FC = () => {
       </div>
 
       {/* Observe row */}
-      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+      <div className="cu-control-row" style={{ gap: 4 }}>
         <input
           type="text"
           value={obsInput}
@@ -172,8 +172,8 @@ const FicsConsoleView: React.FC = () => {
       </div>
 
       {(gameRows.length > 0 || seekRows.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ border: '1px solid rgba(148,163,184,0.12)', borderRadius: 6, padding: 6, background: 'rgba(8,18,34,0.42)', minHeight: 40 }}>
+        <div className="cu-control-grid" style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}>
+          <div className="cu-panel-card" style={{ minHeight: 40 }}>
             <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Games ({gameRows.length})</div>
             {gameRows.slice(0, 6).map(row => (
               <div key={row.gameId} style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: '0.66rem', color: '#94a3b8', marginBottom: 3 }}>
@@ -183,7 +183,7 @@ const FicsConsoleView: React.FC = () => {
               </div>
             ))}
           </div>
-          <div style={{ border: '1px solid rgba(148,163,184,0.12)', borderRadius: 6, padding: 6, background: 'rgba(8,18,34,0.42)', minHeight: 40 }}>
+          <div className="cu-panel-card" style={{ minHeight: 40 }}>
             <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>Seeks ({seekRows.length})</div>
             {seekRows.slice(0, 6).map(row => (
               <div key={row.seekId} style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: '0.66rem', color: '#94a3b8', marginBottom: 3 }}>
@@ -197,11 +197,11 @@ const FicsConsoleView: React.FC = () => {
       )}
 
       {/* Raw server log */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div style={{ fontSize: '0.62rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+      <div className="cu-panel-card" style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <div className="cu-section-label">
           Server Log ({log.length})
         </div>
-        <div style={{ height: 220, overflowY: 'auto', background: 'rgba(2, 6, 23, 0.88)', border: '1px solid rgba(148, 163, 184, 0.14)', borderRadius: 6, padding: '8px', fontFamily: 'monospace', fontSize: '0.72rem', lineHeight: 1.5 }}>
+        <div className="cu-scroll-area cu-code-panel" style={{ height: 220, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.72rem', lineHeight: 1.5 }}>
           {log.length === 0 ? (
             <span style={{ color: '#334155', fontStyle: 'italic' }}>
               {isConnected ? 'Connected — waiting for server data…' : 'Not connected.'}
@@ -225,7 +225,7 @@ const FicsConsoleView: React.FC = () => {
       </div>
 
       {/* Command input */}
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div className="cu-control-row">
         <input
           style={inputStyle}
           type="text" value={cmdInput}
@@ -242,7 +242,7 @@ const FicsConsoleView: React.FC = () => {
       </div>
 
       {/* Dev inject */}
-      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+      <div className="cu-control-row" style={{ flexWrap: 'wrap', gap: 5 }}>
         <button onClick={() => appendInject('login: freechess.org FICS stub.')} style={qbtnStyle}>+ login stub</button>
         <button onClick={() => appendInject('<12> rnbqkbnr pppppppp -------- -------- -------- -------- PPPPPPPP RNBQKBNR W -1 1 1 1 1 0 42 GuestABC GuestXYZ -1 5 0 39 39 300 300 1 none (0:00) none 0 0 0')} style={qbtnStyle}>+ style12 stub</button>
         <button onClick={() => appendInject('Challenge: GuestXXXX (----) GuestYYYY (----) unrated blitz 5 0.')} style={qbtnStyle}>+ challenge stub</button>

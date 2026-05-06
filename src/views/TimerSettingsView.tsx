@@ -38,7 +38,7 @@ const TimerSettingsView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem' }}>
           <span>Enable Timer</span>

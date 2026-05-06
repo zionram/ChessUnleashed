@@ -1,7 +1,7 @@
 # Chess Unleashed AI Rule Set
 
 Version: v2
-Last Updated: 2026-05-04
+Last Updated: 2026-05-05
 
 ---
 
@@ -41,19 +41,6 @@ Last Updated: 2026-05-04
 
 ---
 
-## UI / UX Rules (R21a–R21h)
-
-**R21a.** Do not add fake UI or fake functionality.
-**R21b.** If a UI element looks clickable/functional, it must be wired to real state or a real action.
-**R21c.** Do not hardcode fake save states, fake history, fake recent activity, fake tabs, fake help, or fake board metadata.
-**R21d.** Use real overlay/floating-window architecture for modal/floating behavior.
-**R21e.** Keep complex tools readable in center/floating panels, not cramped side panels.
-**R21f.** Hiding launcher arrows must not hide SVG icon internals.
-**R21g.** Selected launcher icons must remain visible.
-**R21h.** Dock should only appear where docking is real; otherwise do not show it.
-
----
-
 ## Networking / Runtime Safety (R22–R24)
 
 **R22.** Do not modify LAN, networking, or multiplayer systems unless explicitly tasked.
@@ -64,7 +51,7 @@ Last Updated: 2026-05-04
 
 ## Build & Verification Rules (R25–R28)
 
-**R25.** Build must pass after changes (`npm.cmd run build`).
+**R25.** Build must pass after changes (`npm.cmd run build` or `npm run build`).
 **R26.** Do not leave the system in a broken or partial state.
 **R27.** If build fails, fix only what is necessary.
 **R28.** Do not ignore TypeScript or build errors.
@@ -98,41 +85,46 @@ Last Updated: 2026-05-04
 
 ---
 
-## File Handoff Rules (R41–R46)
+## Online/FICS Rules (R41–R46)
 
-**R41.** If a change is fewer than 4 files, ask/list the specific files.
-**R42.** If a change is more than 4 files, give a PowerShell zip command to collect them.
-**R43.** If the latest version of a file was just created by the assistant and the user did not change it, do not ask for it again.
-**R44.** When returning replacement files, provide target path and exact build/test action.
-**R45.** For small patches, prefer individual file links over zips.
-**R46.** If a zip download link fails, retry by resurfacing individual files when possible.
+**R41.** `ChessBoard.tsx` must remain provider-agnostic. Do not put FICS command syntax in the board.
+**R42.** FICS command translation belongs in `src/services/online/fics/FicsGameTranslator.ts`.
+**R43.** FICS socket/session handling belongs in `FicsAdapter.ts`, `electron/main.js`, and `electron/preload.cjs`.
+**R44.** FICS must not own templates, pieces, visual themes, or package systems.
+**R45.** Browser mode cannot use raw FICS TCP without a future relay; do not fake browser TCP support.
+**R46.** FICS should use standardized app command intents mapped through the command registry/translator.
 
 ---
 
-## Prompt Protocol (P1–P12)
+## UI / Theming Rules (R47–R51)
 
-P1. Every prompt must begin with a Prompt ID using the format: `C# . P-###`.
-P0. The C# prefix identifies the chat number that created the prompt.
-P0a. The chat number is assigned by the user, not guessed by the AI.
-P0b. If the AI does not know the current chat number, it must ask the user before creating numbered prompts.
-P0c. Do not invent or increment the chat number automatically.
-P2. Prompt numbering must be sequential within the chat.
-P3. Multi-objective prompts may use range notation.
-P4. Optional suffixes may be added for clarity: BATCH, FIX, VERIFY.
-P5. Every prompt must specify the intended AI model.
-P6. Model selection must be explicit and justified.
-P7. If a model is NOT suitable, explicitly forbid its use.
-P8. Prompts must include a Touches section listing systems/files if known.
-P9. Prompts must not allow scope expansion beyond Touches.
-P10. Every prompt must include one primary objective.
-P11. Every prompt must include a Verify section.
-P12. Every prompt must include a 5–10 word DONE summary request, with no prefilled summary.
+**R47.** Registered views should use shared semantic classes/wrappers instead of broad global CSS overrides.
+**R48.** Do not let view-content theming rules style HUD, board shell, floating-window chrome, or launcher shell unintentionally.
+**R49.** Floating window/docked workspace behavior should extend the existing launcher/docking system, not create one-off popup systems.
+**R50.** Lower HUD/status strips are optional/movable UI elements and should remain isolated from embedded-view theming.
+**R51.** Background controls are planned to become a higher-level Environment -> Look tab; do not bury new background behavior deeper under unrelated controls.
+
+---
+
+## Usage
+
+All AI prompts should include:
+
+- Prompt ID
+- Target model
+- Project/context constraints
+- Touches / allowed files
+- Do not touch list
+- Task
+- Verify
+- Report
+- DONE line
 
 ---
 
 ## Governance
 
-- This file is the single source of truth for AI behavior constraints.
+- This file is a source of truth for AI behavior constraints.
 - Do not casually edit this file.
 - If rule meaning changes, increment version.
 - Changes must be intentional and human-reviewed.

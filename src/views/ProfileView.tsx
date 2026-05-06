@@ -35,7 +35,7 @@ const ProfileView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div>
           <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Guest Profile now. Official profiles coming later.</div>

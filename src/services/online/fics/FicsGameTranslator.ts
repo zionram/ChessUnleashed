@@ -261,10 +261,11 @@ const normalizeMoveIntent = (payload: unknown): StandardMoveIntent | null => {
   if (!/^[a-h][1-8]$/.test(from) || !/^[a-h][1-8]$/.test(to)) return null;
 
   const promotion = typeof move?.promotion === 'string' ? move.promotion.trim().toLowerCase()[0] : undefined;
+  const isPromotionRank = /[18]$/.test(to);
   return {
     from,
     to,
-    ...(promotion && /^[qrbn]$/.test(promotion) ? { promotion } : {})
+    ...(isPromotionRank && promotion && /^[qrbn]$/.test(promotion) ? { promotion } : {})
   };
 };
 

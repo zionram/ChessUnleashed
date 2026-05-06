@@ -1,5 +1,13 @@
 import type { FicsServerMessage, FicsMessageType, Style12Data, FicsGameRow, FicsSeekRow } from './FicsTypes';
 
+const isSupportedFicsVariant = (variant: string): boolean => {
+  const normalized = variant.toLowerCase();
+  if (['blitz', 'standard', 'lightning', 'untimed'].includes(normalized)) return true;
+  // FICS games-list variant codes are compact, e.g. br=blitz rated, sr=standard rated.
+  if (/^[bsl][ru]?$/.test(normalized)) return true;
+  return false;
+};
+
 export class FicsProtocolParser {
   private _status: 'idle' | 'active' = 'idle';
 
@@ -56,14 +64,34 @@ export class FicsProtocolParser {
     return null;
   }
 
-  detectGameStart(raw: string): { gameId: number; white: string; black: string } | null {
-    const m = /\{Game (\d+) \((\w+) vs\. (\w+)\)/i.exec(raw);
-    return m ? { gameId: parseInt(m[1], 10), white: m[2], black: m[3] } : null;
+  detectGameStart(raw: string): { gameId: number; white: string; black: string; variant: string; supported: boolean } | null {
+    const m = /\{Game (\d+) \((\w+) vs\. (\w+)\)([^}]*)\}/i.exec(raw);
+    if (!m) return null;
+    const descriptor = (m[4] || '').toLowerCase();
+    const variant = /\b(atomic|blitz|standard|lightning|untimed|wild|suicide|losers|bughouse|crazyhouse)\b/i.exec(descriptor)?.[1]?.toLowerCase() || 'unknown';
+    return { gameId: parseInt(m[1], 10), white: m[2], black: m[3], variant, supported: isSupportedFicsVariant(variant) };
   }
 
-  detectGameEnd(raw: string): { gameId: number; result: string } | null {
-    const m = /\{Game (\d+) \([^)]+\)[^}]*\}\s*(1-0|0-1|1\/2-1\/2|\*)/i.exec(raw);
-    return m ? { gameId: parseInt(m[1], 10), result: m[2] } : null;
+  detectGameEnd(raw: string): { gameId: number; result: string; reason: string; reasonText: string; isRatedResult: boolean } | null {
+    const m = /\{Game (\d+) \([^)]+\)([^}]*)\}\s*(1-0|0-1|1\/2-1\/2|\*)/i.exec(raw);
+    if (!m) return null;
+    const reasonText = (m[2] || '').trim().replace(/^[:\-\s]+/, '') || raw.trim();
+    const lower = raw.toLowerCase();
+    let reason = 'unknown';
+    if (/abort|aborted|courtesyaborted/.test(lower)) reason = 'aborted';
+    else if (/adjourn/.test(lower)) reason = 'adjourned';
+    else if (/forfeit[s]? on time|forfeit[s]?.*time|time|flag/.test(lower)) reason = 'timeout';
+    else if (/disconnect/.test(lower)) reason = 'disconnected';
+    else if (/resign/.test(lower)) reason = 'resignation';
+    else if (/checkmate|mate/.test(lower)) reason = 'checkmate';
+    else if (/draw|stalemate|repetition|material/.test(lower) || m[3] === '1/2-1/2') reason = 'draw';
+    return {
+      gameId: parseInt(m[1], 10),
+      result: m[3],
+      reason,
+      reasonText,
+      isRatedResult: m[3] !== '*' && reason !== 'aborted' && reason !== 'adjourned'
+    };
   }
 
   parseGameRow(raw: string): FicsGameRow | null {
@@ -86,7 +114,8 @@ export class FicsProtocolParser {
         rated: variantCode.length >= 2 && variantCode[1] === 'r',
         variant: variantCode,
         rawLine: raw,
-        parsedReliably: true
+        parsedReliably: true,
+        supported: isSupportedFicsVariant(variantCode)
       };
     }
 
@@ -106,7 +135,8 @@ export class FicsProtocolParser {
         rated: variantCode.length >= 2 && variantCode[1] === 'r',
         variant: variantCode,
         rawLine: raw,
-        parsedReliably: true
+        parsedReliably: true,
+        supported: isSupportedFicsVariant(variantCode)
       };
     }
 
@@ -125,7 +155,8 @@ export class FicsProtocolParser {
       rated: variantCode.length >= 2 && variantCode[1] === 'r',
       variant: variantCode,
       rawLine: raw,
-      parsedReliably: false
+      parsedReliably: false,
+      supported: isSupportedFicsVariant(variantCode)
     };
   }
 
@@ -153,7 +184,8 @@ export class FicsProtocolParser {
         color,
         variant: list[7].toLowerCase(),
         rawLine: raw,
-        parsedReliably: true
+        parsedReliably: true,
+        supported: isSupportedFicsVariant(list[7].toLowerCase())
       };
     }
 
@@ -171,7 +203,8 @@ export class FicsProtocolParser {
         color: (announcement[7]?.toLowerCase() as FicsSeekRow['color']) || 'auto',
         variant: announcement[6].toLowerCase(),
         rawLine: raw,
-        parsedReliably: true
+        parsedReliably: true,
+        supported: isSupportedFicsVariant(announcement[6].toLowerCase())
       };
     }
 
@@ -194,7 +227,8 @@ export class FicsProtocolParser {
         color,
         variant,
         rawLine: raw,
-        parsedReliably: true
+        parsedReliably: true,
+        supported: isSupportedFicsVariant(variant)
       };
     }
 
@@ -209,9 +243,10 @@ export class FicsProtocolParser {
       incrementSeconds: parseInt(loose[5], 10),
       rated: /\brated\b/i.test(cleaned) && !/\bunrated\b/i.test(cleaned),
       color: /\[white\]|\s+w\s*$/i.test(cleaned) ? 'white' : /\[black\]|\s+b\s*$/i.test(cleaned) ? 'black' : 'auto',
-      variant: (/\b(lightning|blitz|standard|wild|bughouse)\b/i.exec(cleaned)?.[1] || 'unknown').toLowerCase(),
+      variant: (/\b(lightning|blitz|standard|atomic|wild|bughouse|crazyhouse)\b/i.exec(cleaned)?.[1] || 'unknown').toLowerCase(),
       rawLine: raw,
-      parsedReliably: false
+      parsedReliably: false,
+      supported: isSupportedFicsVariant((/\b(lightning|blitz|standard|atomic|wild|bughouse|crazyhouse)\b/i.exec(cleaned)?.[1] || 'unknown').toLowerCase())
     };
   }
 

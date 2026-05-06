@@ -8,17 +8,17 @@ const StatsView: React.FC = () => {
   const turn = gameState.turn === 'w' ? 'White' : 'Black';
 
   return (
-    <div className="view-container">
-      <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        <div className="stat-card">
+    <div className="view-container cu-view-shell">
+      <div className="stats-grid cu-control-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div className="stat-card cu-panel-card">
           <label>Moves</label>
           <div className="stat-value">{moveCount}</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card cu-panel-card">
           <label>Turn</label>
           <div className="stat-value">{turn}</div>
         </div>
-        <div className="stat-card stat-card-wide">
+        <div className="stat-card stat-card-wide cu-panel-card">
           <label>Status</label>
           <div className="stat-value">{gameState.isCheck ? 'CHECK' : 'Normal'}</div>
         </div>

@@ -322,93 +322,81 @@ const EventBuilderView: React.FC = () => {
     toggleView('sound-editor');
   };
 
-  const commonFieldStyle: React.CSSProperties = { padding: 8, border: '1px solid #d0d7de', borderRadius: 6 };
-  const layerButtonStyle = (layer: typeof activeLayer): React.CSSProperties => ({
-    flex: '1 1 90px',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: activeLayer === layer ? '1px solid #2c3e50' : '1px solid #d0d7de',
-    background: activeLayer === layer ? '#2c3e50' : '#fff',
-    color: activeLayer === layer ? '#fff' : '#2c3e50',
-    cursor: 'pointer',
-    fontWeight: 800
-  });
-
   const conditionGrid = (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+    <div className="cu-form-grid cu-form-grid-two">
+      <label className="cu-field">
         Piece Type
-        <select value={draft.conditions.pieceType ?? 'any'} onChange={(event) => updateConditions({ pieceType: event.target.value })} style={commonFieldStyle}>
+        <select value={draft.conditions.pieceType ?? 'any'} onChange={(event) => updateConditions({ pieceType: event.target.value })} className="cu-field-input">
           {PIECES.map(piece => <option key={piece} value={piece}>{piece}</option>)}
         </select>
       </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <label className="cu-field">
         Team
-        <select value={draft.conditions.team ?? 'any'} onChange={(event) => updateConditions({ team: event.target.value })} style={commonFieldStyle}>
+        <select value={draft.conditions.team ?? 'any'} onChange={(event) => updateConditions({ team: event.target.value })} className="cu-field-input">
           {TEAMS.map(team => <option key={team} value={team}>{team}</option>)}
         </select>
       </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <label className="cu-field">
         From Square
-        <input value={draft.conditions.fromSquare ?? ''} onChange={(event) => updateConditions({ fromSquare: event.target.value })} placeholder="e2" style={commonFieldStyle} />
+        <input value={draft.conditions.fromSquare ?? ''} onChange={(event) => updateConditions({ fromSquare: event.target.value })} placeholder="e2" className="cu-field-input" />
       </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <label className="cu-field">
         To Square / Target Square
-        <input value={draft.conditions.toSquare ?? ''} onChange={(event) => updateConditions({ toSquare: event.target.value })} placeholder="e4" style={commonFieldStyle} />
+        <input value={draft.conditions.toSquare ?? ''} onChange={(event) => updateConditions({ toSquare: event.target.value })} placeholder="e4" className="cu-field-input" />
       </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <label className="cu-field">
         Captured / Attacked Piece
-        <input value={draft.conditions.capturedPiece ?? ''} onChange={(event) => updateConditions({ capturedPiece: event.target.value })} placeholder="any, queen, custom id" style={commonFieldStyle} />
+        <input value={draft.conditions.capturedPiece ?? ''} onChange={(event) => updateConditions({ capturedPiece: event.target.value })} placeholder="any, queen, custom id" className="cu-field-input" />
       </label>
-      <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <label className="cu-field">
         Panel / View ID
-        <input value={draft.conditions.panelViewId ?? ''} onChange={(event) => updateConditions({ panelViewId: event.target.value })} placeholder="sound-editor" style={commonFieldStyle} />
+        <input value={draft.conditions.panelViewId ?? ''} onChange={(event) => updateConditions({ panelViewId: event.target.value })} placeholder="sound-editor" className="cu-field-input" />
       </label>
     </div>
   );
 
   return (
-    <div className="view-container cu-themed-embedded-view cu-event-builder-view" style={{ display: 'flex', flexDirection: 'column', gap: 12, height: '100%', background: 'rgba(255, 255, 255, 0.96)', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: 10, boxShadow: '0 14px 40px rgba(15, 23, 42, 0.18)', padding: 14, boxSizing: 'border-box', color: '#1f2937', overflow: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <button type="button" onClick={() => setActiveLayer('simple')} style={layerButtonStyle('simple')}>Simple</button>
-          <button type="button" onClick={() => setActiveLayer('advanced')} style={layerButtonStyle('advanced')}>Advanced</button>
-          <button type="button" onClick={() => setActiveLayer('system')} style={layerButtonStyle('system')}>System</button>
+    <div className="view-container cu-themed-embedded-view cu-view-shell cu-event-builder-view cu-scroll-area">
+      <div className="cu-toolbar-row">
+        <div className="cu-pill-row">
+          <button type="button" onClick={() => setActiveLayer('simple')} className={`cu-tab-button ${activeLayer === 'simple' ? 'is-active' : ''}`}>Simple</button>
+          <button type="button" onClick={() => setActiveLayer('advanced')} className={`cu-tab-button ${activeLayer === 'advanced' ? 'is-active' : ''}`}>Advanced</button>
+          <button type="button" onClick={() => setActiveLayer('system')} className={`cu-tab-button ${activeLayer === 'system' ? 'is-active' : ''}`}>System</button>
         </div>
-        <button type="button" onClick={() => toggleView('event-builder')} style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', cursor: 'pointer', fontWeight: 800 }}>
+        <button type="button" onClick={() => toggleView('event-builder')} className="cu-inline-button">
           Close
         </button>
       </div>
 
       {activeLayer === 'simple' && (
         <>
-      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
-        <div style={{ fontWeight: 900, color: '#2c3e50', marginBottom: 4 }}>1. Choose Event Type</div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
+      <section className="cu-panel-card cu-event-section">
+        <div className="cu-section-title">1. Choose Event Type</div>
+        <div className="cu-section-helper">
           Start with a common event, then rename it and add only the filters you need.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {EVENT_TEMPLATES.map(template => (
-            <button key={template.label} type="button" onClick={() => useTemplate(template.event)} style={{ padding: '7px 10px', borderRadius: 999, border: '1px solid #d0d7de', background: '#f8fafc', color: '#2c3e50', cursor: 'pointer', fontSize: '0.74rem', fontWeight: 700 }}>
+            <button key={template.label} type="button" onClick={() => useTemplate(template.event)} className="cu-chip-button">
               {template.label}
             </button>
           ))}
         </div>
       </section>
 
-      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+      <section className="cu-panel-card cu-event-section">
+        <div className="cu-section-header-row">
           <div>
-            <div style={{ fontWeight: 900, color: '#2c3e50' }}>2. Name Event</div>
-            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>This is the name shown in Sound Rules and the Event Log.</div>
+            <div className="cu-section-title">2. Name Event</div>
+            <div className="cu-section-helper">This is the name shown in Sound Rules and the Event Log.</div>
           </div>
-          <button type="button" onClick={beginCreate} style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>
+          <button type="button" onClick={beginCreate} className="cu-inline-button">
             New Event
           </button>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+        <div className="cu-form-grid cu-form-grid-two">
+          <label className="cu-field">
             Event Name
             <input
               value={draft.name}
@@ -416,16 +404,16 @@ const EventBuilderView: React.FC = () => {
                 const name = event.target.value;
                 setDraft({ ...draft, name, eventId: editingId || draft.eventId ? draft.eventId : createEventId(name) });
               }}
-              style={commonFieldStyle}
+              className="cu-field-input"
             />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+          <label className="cu-field">
             Category
-            <input value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} style={commonFieldStyle} />
+            <input value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} className="cu-field-input" />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+          <label className="cu-field">
             Base Trigger
-            <select value={draft.baseTrigger} onChange={(event) => setDraft({ ...draft, baseTrigger: event.target.value as CustomEventBaseTrigger })} style={commonFieldStyle}>
+            <select value={draft.baseTrigger} onChange={(event) => setDraft({ ...draft, baseTrigger: event.target.value as CustomEventBaseTrigger })} className="cu-field-input">
               <option value="">Choose trigger</option>
               {BASE_TRIGGERS.map(trigger => <option key={trigger.id} value={trigger.id}>{trigger.label}</option>)}
             </select>
@@ -433,9 +421,9 @@ const EventBuilderView: React.FC = () => {
         </div>
       </section>
 
-      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#f8fafc' }}>
-        <div style={{ fontWeight: 900, color: '#2c3e50', marginBottom: 4 }}>3. Choose Common Filters</div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
+      <section className="cu-panel-card cu-event-section">
+        <div className="cu-section-title">3. Choose Common Filters</div>
+        <div className="cu-section-helper">
           Leave fields as any or blank when the event should match broadly.
         </div>
         {conditionGrid}
@@ -445,44 +433,44 @@ const EventBuilderView: React.FC = () => {
 
       {activeLayer === 'advanced' && (
         <>
-      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
-        <div style={{ fontWeight: 900, color: '#2c3e50', marginBottom: 4 }}>Condition Builder</div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
+      <section className="cu-panel-card cu-event-section">
+        <div className="cu-section-title">Condition Builder</div>
+        <div className="cu-section-helper">
           Choose whether every active condition must pass, or whether any one condition is enough.
         </div>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: '0.75rem', color: '#475569', marginBottom: 10 }}>
+        <label className="cu-field cu-field-spaced">
           Condition Group
-          <select value={draft.conditionMode ?? 'all'} onChange={(event) => setDraft({ ...draft, conditionMode: event.target.value as 'all' | 'any' })} style={commonFieldStyle}>
+          <select value={draft.conditionMode ?? 'all'} onChange={(event) => setDraft({ ...draft, conditionMode: event.target.value as 'all' | 'any' })} className="cu-field-input">
             <option value="all">ALL conditions match</option>
             <option value="any">ANY condition matches</option>
           </select>
         </label>
         {conditionGrid}
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontWeight: 800, color: '#2c3e50', fontSize: '0.78rem' }}>
+        <div className="cu-stack-sm cu-mt-sm">
+          <div className="cu-subsection-title">
             Active condition summary ({draft.conditionMode === 'any' ? 'ANY can match' : 'ALL must match'})
           </div>
           {draftConditionSummaries.length > 0 ? draftConditionSummaries.map(summary => (
-            <div key={summary.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: '6px 8px', border: '1px solid #e2e8f0', borderRadius: 6, background: '#f8fafc', fontSize: '0.72rem' }}>
+            <div key={summary.key} className="cu-summary-row">
               <span>{summary.text}</span>
               <button type="button" onClick={() => clearCondition(summary.key)} style={{ padding: '3px 7px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer', fontSize: '0.65rem' }}>
                 Remove
               </button>
             </div>
           )) : (
-            <div style={{ padding: '6px 8px', border: '1px dashed #cbd5e1', borderRadius: 6, color: '#64748b', fontSize: '0.72rem' }}>
+            <div className="cu-empty-note">
               No extra conditions. This event matches any payload with the selected base trigger.
             </div>
           )}
         </div>
-        <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: 8 }}>
+        <div className="cu-section-note cu-mt-sm">
           Trigger type is controlled by Base Trigger in the Simple layer. Supported condition fields are evaluated by the current runtime.
         </div>
       </section>
 
-      <section style={{ padding: 12, border: '1px dashed #f59e0b', borderRadius: 8, background: '#fffbeb', color: '#92400e' }}>
+      <section className="cu-panel-card cu-event-section cu-notice cu-notice-warning">
         <div style={{ fontWeight: 900, marginBottom: 6 }}>Future Tactical Conditions</div>
-        <select value={draft.conditions.complexCondition ?? ''} onChange={(event) => updateConditions({ complexCondition: event.target.value as CustomEventComplexCondition | '' })} style={{ padding: 8, border: '1px solid #fcd34d', borderRadius: 6, width: '100%' }}>
+        <select value={draft.conditions.complexCondition ?? ''} onChange={(event) => updateConditions({ complexCondition: event.target.value as CustomEventComplexCondition | '' })} className="cu-field-input">
           <option value="">None</option>
           {COMPLEX_CONDITIONS.map(condition => <option key={condition.id} value={condition.id} disabled={!['pieceAttacked', 'fork'].includes(condition.id)}>{condition.label}{['pieceAttacked', 'fork'].includes(condition.id) ? ' - Active' : ' - Future detection'}</option>)}
         </select>
@@ -493,13 +481,13 @@ const EventBuilderView: React.FC = () => {
       )}
 
       {activeLayer === 'system' && (
-        <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <section className="cu-panel-card cu-event-section">
+          <div className="cu-section-header-row">
             <div>
-              <div style={{ fontWeight: 900, color: '#2c3e50' }}>System Preview</div>
-              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Raw event definition, runtime status, diagnostics, and test payload details.</div>
+              <div className="cu-section-title">System Preview</div>
+              <div className="cu-section-helper">Raw event definition, runtime status, diagnostics, and test payload details.</div>
             </div>
-            <button type="button" onClick={copyEventJson} style={{ padding: '7px 10px', borderRadius: 6, border: '1px solid #d0d7de', background: '#fff', cursor: 'pointer' }}>
+            <button type="button" onClick={copyEventJson} className="cu-inline-button">
               Copy Event JSON
             </button>
           </div>
@@ -521,57 +509,57 @@ const EventBuilderView: React.FC = () => {
               <div>{selectedSampleId === 'auto' ? 'Generated from current definition.' : SAMPLE_EVENTS.find(sample => sample.id === selectedSampleId)?.label}</div>
             </div>
           </div>
-          <div style={{ marginBottom: 8, padding: 8, borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '0.72rem', color: '#475569' }}>
+          <div className="cu-panel-card-muted cu-section-note">
             Raw editing is read-only here. Use Simple and Advanced to change the event definition safely.
           </div>
-          <pre style={{ margin: 0, padding: 10, maxHeight: 260, overflow: 'auto', borderRadius: 6, background: '#0f172a', color: '#e2e8f0', fontSize: '0.68rem' }}>
+          <pre className="cu-code-preview cu-scroll-area">
             {JSON.stringify(draft, null, 2)}
           </pre>
         </section>
       )}
 
-      {message && <div style={{ color: validation.length ? '#b42318' : '#166534', fontSize: '0.78rem' }}>{message}</div>}
+      {message && <div className={`cu-notice ${validation.length ? 'cu-notice-error' : 'cu-notice-success'}`}>{message}</div>}
       {testResult && (
-        <div style={{ padding: '8px 10px', borderRadius: 6, border: `1px solid ${testResult.startsWith('Matched') ? '#bbf7d0' : '#fde68a'}`, background: testResult.startsWith('Matched') ? '#f0fdf4' : '#fffbeb', color: testResult.startsWith('Matched') ? '#166534' : '#92400e', fontSize: '0.78rem' }}>
+        <div className={`cu-notice ${testResult.startsWith('Matched') ? 'cu-notice-success' : 'cu-notice-warning'}`}>
           {testResult}
         </div>
       )}
       {validation.length > 0 && (
-        <ul style={{ margin: 0, paddingLeft: 18, color: '#b42318', fontSize: '0.75rem' }}>
+        <ul className="cu-validation-list">
           {validation.map(item => <li key={item}>{item}</li>)}
         </ul>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 3, fontSize: '0.75rem', color: '#475569' }}>
+      <div className="cu-form-grid cu-form-grid-two">
+        <label className="cu-field">
           Test Sample
-          <select value={selectedSampleId} onChange={(event) => setSelectedSampleId(event.target.value)} style={{ padding: 8, border: '1px solid #d0d7de', borderRadius: 6 }}>
+          <select value={selectedSampleId} onChange={(event) => setSelectedSampleId(event.target.value)} className="cu-field-input">
             {SAMPLE_EVENTS.map(sample => <option key={sample.id} value={sample.id}>{sample.label}</option>)}
           </select>
         </label>
-        <button type="button" onClick={saveEvent} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: '#2c3e50', color: '#fff', cursor: 'pointer', fontWeight: 900 }}>
+        <button type="button" onClick={saveEvent} className="cu-primary-button">
           {editingId ? 'Save Custom Event' : 'Create Event'}
         </button>
       </div>
-      <button type="button" onClick={testEvent} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #d0d7de', background: '#fff', color: '#2c3e50', cursor: 'pointer', fontWeight: 900 }}>
+      <button type="button" onClick={testEvent} className="cu-secondary-button">
         Test Event
       </button>
 
-      <section style={{ padding: 12, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff' }}>
-        <div style={{ fontWeight: 900, color: '#2c3e50', marginBottom: 4 }}>Attach Animation</div>
-        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: 8 }}>
+      <section className="cu-panel-card cu-event-section">
+        <div className="cu-section-title">Attach Animation</div>
+        <div className="cu-section-helper">
           Active events can call named Animation Builder definitions. Future-only or invalid events are blocked.
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-          <select value={attachAnimationId} onChange={(event) => setAttachAnimationId(event.target.value)} style={commonFieldStyle}>
+        <div className="cu-form-grid cu-form-grid-three">
+          <select value={attachAnimationId} onChange={(event) => setAttachAnimationId(event.target.value)} className="cu-field-input">
             {settings.animationDefinitions.filter(animation => animation.enabled).map(animation => (
               <option key={animation.id} value={animation.id}>{animation.name}</option>
             ))}
           </select>
-          <select value={attachTarget} onChange={(event) => setAttachTarget(event.target.value as AnimationEventTarget)} style={commonFieldStyle}>
+          <select value={attachTarget} onChange={(event) => setAttachTarget(event.target.value as AnimationEventTarget)} className="cu-field-input">
             {ANIMATION_TARGETS.map(target => <option key={target.id} value={target.id}>{target.label}</option>)}
           </select>
-          <select value={attachScope} onChange={(event) => setAttachScope(event.target.value as AnimationRuleScope)} style={commonFieldStyle}>
+          <select value={attachScope} onChange={(event) => setAttachScope(event.target.value as AnimationRuleScope)} className="cu-field-input">
             {ANIMATION_SCOPES.map(scope => <option key={scope.id} value={scope.id}>{scope.label}</option>)}
           </select>
         </div>
@@ -597,18 +585,18 @@ const EventBuilderView: React.FC = () => {
         </button>
       </section>
 
-      <section style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <div style={{ fontWeight: 900, color: '#2c3e50' }}>Custom Events</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 0.8fr 0.8fr 0.8fr', gap: 6 }}>
-          <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search events" style={{ padding: 7, border: '1px solid #d0d7de', borderRadius: 6 }} />
-          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} style={{ padding: 7, border: '1px solid #d0d7de', borderRadius: 6 }}>
+      <section className="cu-event-section cu-event-list-section">
+        <div className="cu-section-title">Custom Events</div>
+        <div className="cu-form-grid cu-event-filter-grid">
+          <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder="Search events" className="cu-field-input" />
+          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="cu-field-input">
             {categories.map(category => <option key={category} value={category}>{category}</option>)}
           </select>
-          <select value={triggerFilter} onChange={(event) => setTriggerFilter(event.target.value)} style={{ padding: 7, border: '1px solid #d0d7de', borderRadius: 6 }}>
+          <select value={triggerFilter} onChange={(event) => setTriggerFilter(event.target.value)} className="cu-field-input">
             <option value="All">All triggers</option>
             {BASE_TRIGGERS.map(trigger => <option key={trigger.id} value={trigger.id}>{trigger.label}</option>)}
           </select>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} style={{ padding: 7, border: '1px solid #d0d7de', borderRadius: 6 }}>
+          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="cu-field-input">
             {['All', 'Active', 'Invalid', 'Future-only'].map(status => <option key={status} value={status}>{status}</option>)}
           </select>
         </div>
@@ -617,14 +605,14 @@ const EventBuilderView: React.FC = () => {
           const attachedAnimationRules = settings.animationRules.filter(rule => rule.eventId === eventDefinition.eventId);
           const attachedSoundRules = soundRules.filter(rule => rule.event === eventDefinition.eventId);
           return (
-          <div key={eventDefinition.id} style={{ padding: 10, border: '1px solid #d0d7de', borderRadius: 8, background: '#fff', display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center' }}>
+          <div key={eventDefinition.id} className="cu-event-list-card">
             <div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 800, color: '#2c3e50' }}>{eventDefinition.name}</span>
+              <div className="cu-pill-row cu-align-center">
+                <span className="cu-item-title">{eventDefinition.name}</span>
                 <span style={getStatusStyle(status)}>{status}</span>
               </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{eventDefinition.category} - {eventDefinition.baseTrigger || 'No trigger'} - {eventDefinition.eventId}</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
+              <div className="cu-item-meta">{eventDefinition.category} - {eventDefinition.baseTrigger || 'No trigger'} - {eventDefinition.eventId}</div>
+              <div className="cu-pill-row cu-mt-xs">
                 <span style={{ padding: '2px 6px', borderRadius: 999, background: '#eff6ff', color: '#1d4ed8', fontSize: '0.68rem', fontWeight: 800 }}>
                   {attachedSoundRules.length} sound rule{attachedSoundRules.length === 1 ? '' : 's'}
                 </span>
@@ -638,7 +626,7 @@ const EventBuilderView: React.FC = () => {
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            <div className="cu-action-row">
               <button type="button" disabled={status !== 'Active'} onClick={() => attachSoundToEvent(eventDefinition)} title={status === 'Active' ? 'Open Sound Editor for this event' : 'Only active events can attach working sound rules'} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: status === 'Active' ? '#fff' : '#f1f5f9', cursor: status === 'Active' ? 'pointer' : 'not-allowed' }}>Attach Sound</button>
               <button type="button" disabled={status !== 'Active'} onClick={() => attachAnimationToEvent(eventDefinition)} style={{ padding: '6px 9px', borderRadius: 6, border: '1px solid #d0d7de', background: status === 'Active' ? '#fff' : '#f1f5f9', cursor: status === 'Active' ? 'pointer' : 'not-allowed' }}>Attach Animation</button>
               <button type="button" onClick={() => {
@@ -672,7 +660,7 @@ const EventBuilderView: React.FC = () => {
             )}
           </div>
         );})}
-        {!visibleEvents.length && <div style={{ padding: 10, border: '1px dashed #cbd5e1', borderRadius: 8, color: '#64748b', fontSize: '0.8rem' }}>No custom events match this filter.</div>}
+        {!visibleEvents.length && <div className="cu-empty-note">No custom events match this filter.</div>}
       </section>
     </div>
   );

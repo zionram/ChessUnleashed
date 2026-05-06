@@ -3,13 +3,16 @@ import { useGame } from '../context/GameContext';
 import { useSettings } from '../context/SettingsContext';
 
 const HistoryView: React.FC = () => {
-  const { gameState, historyIndex, navigateToHistory, isViewingCurrent, undoMove, multiplayer } = useGame();
+  const { gameState, historyIndex, navigateToHistory, isViewingCurrent, undoMove, multiplayer, ficsGame, ficsMoveHistory } = useGame();
   const { settings } = useSettings();
   const { localProfile } = settings;
 
-  const canUndo = (gameState.history?.length || 0) > 0;
+  const isFicsHistory = !!ficsGame;
+  const activeHistory = isFicsHistory ? ficsMoveHistory : (gameState.history || []);
+  const canUndo = !isFicsHistory && (gameState.history?.length || 0) > 0;
 
   const getPlayerName = (color: 'w' | 'b') => {
+    if (ficsGame) return color === 'w' ? ficsGame.whiteName : ficsGame.blackName;
     if (multiplayer.vsComputer) {
       if (color === multiplayer.computerSide) return multiplayer.opponentProfile.name;
       return localProfile.displayName || 'Guest Player';
@@ -23,6 +26,9 @@ const HistoryView: React.FC = () => {
   };
 
   const getPlayerAvatar = (color: 'w' | 'b') => {
+    if (ficsGame) {
+      return <div style={{ width: 24, height: 24, borderRadius: '50%', background: color === 'w' ? '#fff' : '#111827', border: '1px solid #94a3b8' }} />;
+    }
     if (multiplayer.vsComputer) {
       if (color === multiplayer.computerSide) return <span style={{ fontSize: '1.2rem' }}>{multiplayer.opponentProfile.avatar}</span>;
       return localProfile.profileImage ? <img src={localProfile.profileImage} alt="" style={{ width: 24, height: 24, borderRadius: '50%' }} /> : <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#e0e7ff', display: 'grid', placeItems: 'center', fontSize: '0.7rem', fontWeight: 'bold' }}>{(localProfile.displayName || 'G')[0].toUpperCase()}</div>;
@@ -34,7 +40,7 @@ const HistoryView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '15px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
@@ -55,7 +61,7 @@ const HistoryView: React.FC = () => {
           disabled={!canUndo}
           style={{ fontSize: '0.8rem', padding: '2px 10px', cursor: canUndo ? 'pointer' : 'not-allowed' }}
         >
-          Undo Move
+          {isFicsHistory ? 'FICS history is server-authoritative' : 'Undo Move'}
         </button>
       </div>
 
@@ -68,16 +74,21 @@ const HistoryView: React.FC = () => {
       </div>
 
       <div className="history-list" style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '5px' }}>
-        {(gameState.history?.length || 0) === 0 && <div>No moves yet</div>}
+        {activeHistory.length === 0 && <div>{isFicsHistory ? 'No FICS moves received yet' : 'No moves yet'}</div>}
+        {isFicsHistory && ficsGame && (
+          <div style={{ gridColumn: '1 / -1', marginBottom: 6, fontSize: '0.72rem', color: '#94a3b8' }}>
+            FICS #{ficsGame.gameId} · {ficsGame.whiteName} vs {ficsGame.blackName}
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px' }}>
-          {(gameState.history || []).map((move, i) => (
+          {activeHistory.map((move, i) => (
             <div
               key={i}
-              onClick={() => navigateToHistory(i + 1)}
+              onClick={() => { if (!isFicsHistory) navigateToHistory(i + 1); }}
               style={{
-                cursor: 'pointer',
+                cursor: isFicsHistory ? 'default' : 'pointer',
                 padding: '2px 5px',
-                backgroundColor: (historyIndex === i + 1) ? '#ffeb3b' : 'transparent',
+                backgroundColor: (!isFicsHistory && historyIndex === i + 1) ? '#ffeb3b' : 'transparent',
                 borderRadius: '3px'
               }}
             >
@@ -87,7 +98,7 @@ const HistoryView: React.FC = () => {
         </div>
       </div>
       
-      {!isViewingCurrent && (
+      {!isFicsHistory && !isViewingCurrent && (
         <div style={{ marginTop: '10px', color: '#f44336', fontSize: '0.8rem', fontWeight: 'bold' }}>
           Viewing Past State
         </div>

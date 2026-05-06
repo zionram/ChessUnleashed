@@ -44,14 +44,15 @@ const TimerView: React.FC<TimerViewProps> = ({ displayMode = 'panel' }) => {
   });
 
   return (
-    <div className="view-container" style={displayMode === 'panel' ? undefined : { alignItems: 'center', width: '100%' }}>
-      <div style={clockStyle}>
+    <div className="view-container cu-view-shell cu-timer-view" style={displayMode === 'panel' ? undefined : { alignItems: 'center', width: '100%' }}>
+      <div className="cu-panel-card cu-timer-clock" style={clockStyle}>
         <span style={getTimeStyle('w')}>White {formatTime(displayWhiteSeconds)}</span>
         <span style={getTimeStyle('b')}>Black {formatTime(displayBlackSeconds)}</span>
       </div>
       {showClockButton && (
         <button
           onClick={pressClock}
+          className="cu-inline-button"
           style={{
             fontFamily: timerAppearance.fontFamily,
             fontSize: timerAppearance.fontSize,

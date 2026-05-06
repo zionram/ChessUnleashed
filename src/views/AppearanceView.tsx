@@ -105,7 +105,7 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
 
   if (showConfirm) {
     return (
-      <div className="view-container" style={{ textAlign: 'center', padding: '20px 0' }}>
+      <div className="view-container cu-view-shell" style={{ textAlign: 'center', padding: '20px 0' }}>
         <h3>Unsaved Changes</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '20px' }}>
           <button onClick={applyChanges} style={{ padding: '10px', background: '#4caf50', color: 'white', border: 'none', borderRadius: '4px', fontWeight: 'bold' }}>Apply & Close</button>
@@ -127,7 +127,7 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
     };
 
     return (
-      <div className="view-container">
+      <div className="view-container cu-view-shell">
         <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2c3e50', marginBottom: '8px' }}>
           {isImport ? 'Load / Save Sets' : 'Load / Save Sets'}
         </div>
@@ -162,7 +162,7 @@ const AppearanceView: React.FC<AppearanceViewProps> = ({ registerCloseAttempt, c
   }
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
         <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#2c3e50' }}>Theme Packages</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

@@ -122,7 +122,6 @@ const FicsOnlineView: React.FC = () => {
   const [gameRows, setGameRows] = useState<FicsGameRow[]>(adapter.gameRows);
   const [seekRows, setSeekRows] = useState<FicsSeekRow[]>(adapter.seekRows);
   const [errorMsg, setErrorMsg] = useState("");
-  const lastLoginStatusRef = React.useRef<FicsLoginStatus>(adapter.loginStatus);
 
   const [loginMode, setLoginMode] = useState<FicsLoginMode>("guest");
   const [username, setUsername] = useState("");
@@ -161,8 +160,6 @@ const FicsOnlineView: React.FC = () => {
   useEffect(() => {
     const unsubs = [
       adapter.onLoginStatus((s) => {
-        const previousStatus = lastLoginStatusRef.current;
-        lastLoginStatusRef.current = s;
         setLoginStatus(s);
         setHandle(adapter.handle);
         if (s === "login-failed")
@@ -170,10 +167,9 @@ const FicsOnlineView: React.FC = () => {
         if (s === "logged-in") {
           setErrorMsg("");
           setSeeking(false);
-          if (previousStatus !== "logged-in") {
-            adapter.requestSought();
-            adapter.requestGames();
-          }
+          setActiveTab("playable");
+          adapter.requestSought();
+          adapter.requestGames();
         }
         if (s === "disconnected" || s === "error") {
           setSeeking(false);
@@ -216,9 +212,10 @@ const FicsOnlineView: React.FC = () => {
 
   useEffect(() => {
     if (!isLoggedIn) return;
-    if (activeTab === "playable") adapter.requestSought();
-    if (activeTab === "watch") adapter.requestGames();
-  }, [activeTab, isLoggedIn]);
+    if (activeTab === "playable" && seekRows.length === 0)
+      adapter.requestSought();
+    if (activeTab === "watch" && gameRows.length === 0) adapter.requestGames();
+  }, [activeTab, isLoggedIn, seekRows.length, gameRows.length]);
 
   const handleConnect = async () => {
     setErrorMsg("");
@@ -263,22 +260,10 @@ const FicsOnlineView: React.FC = () => {
     setChatInput("");
   };
 
-  const selectOnlineTab = (tabId: FicsOnlineTab) => {
-    setActiveTab(tabId);
-    if (loginStatus !== "logged-in") return;
-    if (tabId === "playable") adapter.requestSought();
-    if (tabId === "watch") adapter.requestGames();
-  };
-
   const ActiveTabButton = ({ tab }: { tab: (typeof tabLabels)[number] }) => (
     <button
       type="button"
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        selectOnlineTab(tab.id);
-      }}
+      onClick={() => setActiveTab(tab.id)}
       style={{
         ...btnStyle(activeTab === tab.id),
         flex: "1 1 150px",
@@ -648,26 +633,12 @@ const FicsOnlineView: React.FC = () => {
         {gameRows.length === 0 ? (
           <div
             style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              fontSize: "0.88rem",
-              color: "#94a3b8",
+              fontSize: "0.86rem",
+              color: "#64748b",
+              fontStyle: "italic",
             }}
           >
-            <div>
-              {isLoggedIn
-                ? "No watch matches loaded yet. Use Refresh now to load observable games."
-                : "Log in to see watch matches."}
-            </div>
-            <button
-              type="button"
-              style={{ ...btnStyle(false, !isLoggedIn), alignSelf: "flex-start" }}
-              onClick={() => adapter.requestGames()}
-              disabled={!isLoggedIn}
-            >
-              Load Watch Match List
-            </button>
+            {isLoggedIn ? "No games loaded yet." : "Log in to see live games."}
           </div>
         ) : (
           <div
@@ -755,9 +726,6 @@ const FicsOnlineView: React.FC = () => {
           </div>
         )}
       </section>
-      <div style={{ fontSize: "0.8rem", color: "#64748b", lineHeight: 1.35 }}>
-        Watch Match results stay cached while you switch tabs. Refresh updates the list in place.
-      </div>
       <section className="cu-panel-card" style={sectionStyle}>
         <div className="cu-section-label" style={labelStyle}>
           Observe by Game ID / Player

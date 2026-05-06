@@ -293,7 +293,7 @@ const MultiplayerView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       {!multiplayer.isConnected ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { useGame, type AIDifficulty } from '../context/GameContext';
 import { useSettings, type BotChatTrigger, type BotPersonality, type BotPersonalityProfile, type BotSettings, type EngineId } from '../context/SettingsContext';
 import type { EngineCapabilities } from '../engines/EngineAdapter';
@@ -14,7 +14,7 @@ const DEFAULT_ENGINE_CAPABILITIES: EngineCapabilities = {
 const AVATARS = ['\u{1F916}', '\u{1F9E0}', '\u{2699}\u{FE0F}', '\u{1F47E}', '\u{265F}\u{FE0F}', '\u{265B}', '\u{265A}', '\u{1F9D9}', '\u{1F480}', '\u{1F642}'];
 
 const ComputerOpponentView: React.FC = () => {
-  const { engine, multiplayer, setAIDifficulty, startVsComputer, setOpponentProfile, gameStartError, botRuntimeStatus } = useGame();
+  const { engine, multiplayer, ficsGame, setAIDifficulty, startVsComputer, setOpponentProfile, gameStartError, botRuntimeStatus } = useGame();
   const { settings, updateBotSettings, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId } = useSettings();
   const { opponentProfile: op } = multiplayer;
   const { botSettings } = settings;
@@ -24,6 +24,7 @@ const ComputerOpponentView: React.FC = () => {
   const traitEntries = Object.entries(profileSettings.personalityTraits) as [keyof BotSettings['personalityTraits'], number][];
   const chatTriggers: BotChatTrigger[] = ['gameStart', 'botCapture', 'botCaptured', 'check', 'checkmate', 'draw'];
   const [isEditingPersonality, setIsEditingPersonality] = useState(false);
+  const isOnlineGameActive = !!ficsGame || multiplayer.isConnected || !!multiplayer.roomId;
 
   const difficulties: AIDifficulty[] = [
     'Easy', 'Casual', 'Intermediate', 'Advanced', 'Expert', 'Master', 'Grandmaster'
@@ -85,7 +86,7 @@ const ComputerOpponentView: React.FC = () => {
   };
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ marginBottom: '15px', padding: '15px', background: '#2c3e50', borderRadius: '10px', color: 'white', textAlign: 'center', boxShadow: '0 4px 10px rgba(0,0,0,0.2)' }}>
         <div style={{ fontSize: '3rem', marginBottom: '5px' }}>{op.avatar || '\u{1F916}'}</div>
         <div style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>{op.name}</div>
@@ -94,18 +95,25 @@ const ComputerOpponentView: React.FC = () => {
       </div>
 
       {!multiplayer.vsComputer ? (
-        <div style={{ marginBottom: '20px', padding: '15px', background: '#e3f2fd', borderRadius: '8px', border: '1px solid #2196f3' }}>
-          <h4 style={{ margin: '0 0 10px 0', color: '#1976d2', textAlign: 'center' }}>Start New Match</h4>
+        <div style={{ marginBottom: '20px', padding: '15px', background: isOnlineGameActive ? '#f8fafc' : '#e3f2fd', borderRadius: '8px', border: isOnlineGameActive ? '1px solid #94a3b8' : '1px solid #2196f3' }}>
+          <h4 style={{ margin: '0 0 10px 0', color: isOnlineGameActive ? '#475569' : '#1976d2', textAlign: 'center' }}>Start New Match</h4>
+          {isOnlineGameActive && (
+            <div style={{ marginBottom: '10px', color: '#475569', fontSize: '0.75rem', textAlign: 'center' }}>
+              Computer opponent is disabled during online games.
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               onClick={() => startVsComputer('w')}
-              style={{ flex: 1, padding: '10px', background: '#fff', border: '2px solid #2c3e50', color: '#2c3e50', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              disabled={isOnlineGameActive}
+              style={{ flex: 1, padding: '10px', background: '#fff', border: '2px solid #2c3e50', color: '#2c3e50', borderRadius: '4px', cursor: isOnlineGameActive ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isOnlineGameActive ? 0.55 : 1 }}
             >
               Play as White
             </button>
             <button
               onClick={() => startVsComputer('b')}
-              style={{ flex: 1, padding: '10px', background: '#2c3e50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
+              disabled={isOnlineGameActive}
+              style={{ flex: 1, padding: '10px', background: '#2c3e50', color: 'white', border: 'none', borderRadius: '4px', cursor: isOnlineGameActive ? 'not-allowed' : 'pointer', fontWeight: 'bold', opacity: isOnlineGameActive ? 0.55 : 1 }}
             >
               Play as Black
             </button>

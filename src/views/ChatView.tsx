@@ -90,7 +90,7 @@ const ChatView: React.FC<ChatViewProps> = ({ standalone }) => {
 
   return (
     <div
-      className={standalone ? "chat-view chat-view-standalone" : "view-container chat-view"}
+      className={standalone ? "chat-view chat-view-standalone cu-view-shell" : "view-container chat-view cu-view-shell"}
       style={{
         display: 'flex',
         flexDirection: 'column',

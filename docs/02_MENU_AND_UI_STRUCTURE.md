@@ -1,6 +1,6 @@
 # Menu And UI Structure
 
-Status: Current
+Status: Current, with active windowing/theming polish.
 
 The current menu structure is defined in `src/config/menuSchema.ts`. Views are registered and positioned in `src/App.tsx`.
 
@@ -11,7 +11,29 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
 3. Tools
 4. Advanced
 
+## Let’s Play
+
+Let’s Play is the user-facing entry point for starting or joining games.
+
+Current opponent/setup directions:
+
+- Local Player
+- Play vs Bot
+- LAN
+- Online
+
+Online currently includes FICS as the first real internet chess provider:
+
+- Let’s Play -> Online -> Open FICS
+- Opens one normal dockable FICS floating window with:
+  - Online tab
+  - Console tab
+
+FICS should remain reachable from the gameplay flow. Do not hide FICS login/play controls only in global settings.
+
 ## Environment
+
+Current Look/Sound/Platform direction:
 
 - Look
   - Pieces
@@ -22,15 +44,19 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
   - Themes
   - Animation
   - Platform UI
+  - Background planned as a higher-level Look tab, not buried under Board/Layers controls.
 - Sound
   - Audio Settings
-- Load / Save Sets
-  - Opens the Package/Appearance workflow depending on current view wiring.
+  - Sound Editor / Sound Rules / Sound Library where currently wired.
+- Load / Save Sets opens the Package/Appearance workflow depending on current view wiring.
 
 ## Tools
 
+Current and/or registered tools include:
+
 - Chat
 - Bots
+- FICS Online
 - Import / Export
 - Rule Builder
 - History
@@ -40,7 +66,10 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
 
 ## Advanced
 
+Current and/or registered advanced areas include:
+
 - Gaming
+- FICS Console
 - Sound Editor
 - Event Builder
 - Animation Builder
@@ -50,61 +79,45 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
 - Validation
 - Settings Builder
 - Reset System
+- AI Package Builder / Active Template Audit where currently wired.
+
+## Floating Windows And Docking
+
+Current verified direction:
+
+- Launcher submenu items open in floating windows with real controls, not placeholder “Open this tool” cards.
+- Multiple launcher windows can be open simultaneously.
+- Floating windows are draggable, resizable, closeable, and click-to-front.
+- Outer tabs can detach into floating windows and dock back into compatible launcher tab rows.
+- Nested tabs can detach into floating windows and dock back into compatible nested tab rows.
+- Drag feedback/ghosting exists while dragging tabs/windows.
+- Floating windows can dock into the right workspace.
+- Docked workspace panels stack visibly instead of hiding behind flat tabs.
+- Docked panels have minimize/close controls.
+- Undock option for docked workspace panels is planned.
+
+## Lower HUD / Status Strips
+
+The lower HUD/status-control strips are movable and optional:
+
+- Activity / turn / active tools panel
+- Board / Timer / Scale controls panel
+
+Desired polish still pending:
+
+- right-side theming alignment
+- text centered instead of left-aligned
+- text/content should shift cleanly when hover-only close button appears
 
 ## Panel Placement
 
-Verified in `src/App.tsx`:
+Verified/expected patterns:
 
-- Sound Editor opens as a center workflow.
+- Sound Editor opens as a center or wide workflow where currently wired.
 - Animation Builder opens as a center workflow.
 - Custom Game runtime renders in the center when an active custom ruleset is started.
-- Registered views include profile, bots, multiplayer, rule builder, event builder, event log, troubleshooter, audio, platform appearance, animation settings, and animation builder.
-
-## Floating Launcher / Tool Palette
-
-Current verified UI direction:
-
-- The left Tool Palette floats over the background instead of behaving like a fixed side panel.
-- The Tool Palette is draggable by its header.
-- The Tool Palette is resizable horizontally and vertically.
-- Collapsed mode becomes a clean icon-only rail.
-- Selected launcher icons must remain visible.
-- Redundant launcher side arrows should not return. When removing them, do not accidentally hide SVG internals.
-- The launcher should behave like a floating control surface, not a static navigation list.
-
-## Let’s Play Overlay
-
-Current verified behavior:
-
-- The Let’s Play overlay opens centered and above the background from both the New button and the left palette.
-- The Let’s Play overlay uses the restored dark/glass theme.
-- The Let’s Play overlay scrollbar matches the dark/glass UI style.
-
-## Workspace Cleanup
-
-Current verified cleanup:
-
-- Redundant right workspace quick buttons for History, Layers, and Squares were removed.
-- The inner redundant Workspace button/tab was removed.
-
-## Board Glass Shell Movement
-
-Current verified behavior:
-
-- The chessboard glass shell is draggable by grabbing the glass around the board.
-- Double-clicking the board glass shell resets the board position.
-- Board dragging must not interfere with dragging pieces or squares.
-
-## Floating Tool Control Panel Direction
-
-Current next task / known UI gap:
-
-- Environment launcher tabs currently show “Open” cards for tools like Pieces.
-- Desired behavior: Environment → Look → Pieces should render the actual Pieces controls inside the floating launcher window.
-- The same pattern should apply to Board, Animation, Platform UI, Sound, Packages, and similar tool areas.
-- “Dock” should be a small secondary option inside the tool interface, not the main action.
-- The tab should not just say “Open this workspace tool.”
-- Do not add fake controls. If the interface looks functional, it must be wired to real state or real existing actions.
+- FICS Online/Console open as a single FICS hub window from Let’s Play -> Online and also remain usable as registered views/tools.
+- Registered views should render inside shared themed wrappers where possible.
 
 ## Rules For Future UI Work
 
@@ -112,5 +125,5 @@ Current next task / known UI gap:
 - Use links/buttons from related settings pages instead of duplicate menu items.
 - Keep complex workflows out of cramped side panels when they require table/edit/preview layouts.
 - Preserve existing action IDs unless the task explicitly requires a migration.
-- Prefer floating glass panels, compact icon rails, dark/glass styling, and real controls in floating windows.
-- Reduce fixed side-panel clutter where a floating tool panel can use the existing architecture cleanly.
+- Do not create one-off popups when the floating launcher/docked panel system can handle it.
+- Registered views should use shared classes/wrappers instead of broad CSS fishing-net selectors.

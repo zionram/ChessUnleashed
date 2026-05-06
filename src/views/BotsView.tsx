@@ -430,7 +430,7 @@ const BotsView: React.FC = () => {
   );
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       {layer === 'simple' && renderSimple()}
       {layer === 'advanced' && renderAdvanced()}
       {layer === 'system' && renderSystem()}

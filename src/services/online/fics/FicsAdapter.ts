@@ -2,7 +2,7 @@ import type { OnlineServiceAdapter, OnlineCredentials, ConnectionStatus } from '
 import type {
   FicsSeekRequest, FicsGameControlAction, FicsServerMessage,
   FicsLoginStatus, FicsChallenge, FicsGameState, Style12Data,
-  FicsGameRow, FicsSeekRow
+  FicsGameRow, FicsSeekRow, FicsGameEndState
 } from './FicsTypes';
 import { FicsProtocolParser } from './FicsProtocolParser';
 import { translateFicsCommand, type MatchPlayerCommandPayload, type SeekGameCommandPayload, type StandardOnlineCommandId } from './FicsGameTranslator';
@@ -39,11 +39,14 @@ export class FicsAdapter implements OnlineServiceAdapter {
   private _observedGameId: string | null = null;
   private _gameRows: FicsGameRow[] = [];
   private _seekRows: FicsSeekRow[] = [];
+  private _lastGameEnd: FicsGameEndState | null = null;
   private _gameListBuffer: FicsGameRow[] = [];
   private _seekListBuffer: FicsSeekRow[] = [];
   private _collectingGames = false;
   private _collectingSought = false;
   private _myRelation = 0;
+  private _activeVariant: string | null = null;
+  private _activeVariantSupported = true;
 
   private _loginBuffer = '';
   private _lineBuffer = '';
@@ -61,6 +64,7 @@ export class FicsAdapter implements OnlineServiceAdapter {
   private readonly _observeListeners = new Set<(gameId: string | null) => void>();
   private readonly _gamesListeners = new Set<(rows: FicsGameRow[]) => void>();
   private readonly _soughtListeners = new Set<(rows: FicsSeekRow[]) => void>();
+  private readonly _gameEndListeners = new Set<(state: FicsGameEndState) => void>();
   private readonly _unsubBridge: Array<() => void> = [];
 
   constructor() {
@@ -89,6 +93,7 @@ export class FicsAdapter implements OnlineServiceAdapter {
   get observedGameId(): string | null { return this._observedGameId; }
   get gameRows(): FicsGameRow[] { return [...this._gameRows]; }
   get seekRows(): FicsSeekRow[] { return [...this._seekRows]; }
+  get lastGameEnd(): FicsGameEndState | null { return this._lastGameEnd; }
   get myRelation(): number { return this._myRelation; }
   get bridgeAvailable(): boolean { return !!window.chessUnleashedFics; }
 
@@ -135,6 +140,10 @@ export class FicsAdapter implements OnlineServiceAdapter {
   onSoughtUpdated(cb: (rows: FicsSeekRow[]) => void): () => void {
     this._soughtListeners.add(cb);
     return () => this._soughtListeners.delete(cb);
+  }
+  onGameEnd(cb: (state: FicsGameEndState) => void): () => void {
+    this._gameEndListeners.add(cb);
+    return () => this._gameEndListeners.delete(cb);
   }
 
   // --- Commands ---
@@ -401,6 +410,8 @@ export class FicsAdapter implements OnlineServiceAdapter {
         active: Math.abs(s12.myRelation) === 1,
         whitePlayer: s12.whiteName,
         blackPlayer: s12.blackName,
+        variant: this._activeVariant ?? 'standard',
+        supportedVariant: this._activeVariantSupported,
         whiteTimeMs: s12.whiteClock * 1000,
         blackTimeMs: s12.blackClock * 1000,
         moveNumber: s12.moveNumber,
@@ -439,11 +450,15 @@ export class FicsAdapter implements OnlineServiceAdapter {
           active: true,
           whitePlayer: start.white,
           blackPlayer: start.black,
+          variant: start.variant,
+          supportedVariant: start.supported,
           whiteTimeMs: 0,
           blackTimeMs: 0,
           moveNumber: 0,
           turn: 'white'
         };
+        this._activeVariant = start.variant;
+        this._activeVariantSupported = start.supported;
         this._gameState = newState;
         this._challenges = [];
         this._gameStateListeners.forEach(cb => cb(newState));
@@ -451,11 +466,39 @@ export class FicsAdapter implements OnlineServiceAdapter {
       }
 
       const end = this._parser.detectGameEnd(msg.raw);
-      if (end && this._gameState?.gameId === String(end.gameId)) {
-        this._gameState = null;
-        this._gameStateListeners.forEach(cb => cb(null));
+      if (end) {
+        const gameEnd = this._buildGameEndState(end, msg.raw);
+        this._lastGameEnd = gameEnd;
+        this._gameEndListeners.forEach(cb => cb(gameEnd));
+        if (this._gameState?.gameId === String(end.gameId)) {
+          this._gameState = null;
+          this._gameStateListeners.forEach(cb => cb(null));
+        }
       }
     }
+  }
+
+  private _buildGameEndState(end: { gameId: number; result: string; reason: string; reasonText: string; isRatedResult: boolean }, rawText: string): FicsGameEndState {
+    const gameId = String(end.gameId);
+    const active = this._gameState?.gameId === gameId ? this._gameState : null;
+    const row = this._gameRows.find(item => String(item.gameId) === gameId);
+    const latest = this._latestStyle12 && String(this._latestStyle12.gameId) === gameId ? this._latestStyle12 : null;
+    return {
+      gameId,
+      result: end.result as FicsGameEndState['result'],
+      reason: end.reason as FicsGameEndState['reason'],
+      reasonText: end.reasonText,
+      isRatedResult: end.isRatedResult,
+      whitePlayer: active?.whitePlayer ?? latest?.whiteName ?? row?.white ?? 'White',
+      blackPlayer: active?.blackPlayer ?? latest?.blackName ?? row?.black ?? 'Black',
+      variant: active?.variant ?? this._activeVariant ?? row?.variant ?? 'unknown',
+      supportedVariant: active?.supportedVariant ?? this._activeVariantSupported,
+      whiteRating: row?.whiteRating,
+      blackRating: row?.blackRating,
+      myRelation: latest?.myRelation ?? this._myRelation,
+      myHandle: this._handle,
+      rawText
+    };
   }
 
   private _processLoginFlow(): void {
@@ -529,11 +572,14 @@ export class FicsAdapter implements OnlineServiceAdapter {
     this._credentials = null;
     this._gameRows = [];
     this._seekRows = [];
+    this._lastGameEnd = null;
     this._gameListBuffer = [];
     this._seekListBuffer = [];
     this._collectingGames = false;
     this._collectingSought = false;
     this._myRelation = 0;
+    this._activeVariant = null;
+    this._activeVariantSupported = true;
     this._gamesListeners.forEach(cb => cb([]));
     this._soughtListeners.forEach(cb => cb([]));
     this._observeListeners.forEach(cb => cb(null));

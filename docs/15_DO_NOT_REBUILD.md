@@ -1,6 +1,6 @@
 # Do Not Rebuild
 
-Status: Active project rule, updated with Chat 7 workflow constraints
+Status: Active project rule.
 
 Chess Unleashed is existing functioning software. Future work should be small, scoped, and compatible with current ownership boundaries.
 
@@ -16,8 +16,7 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Documentation-only changes do not require a build unless docs are part of the build.
 - Use in-app panels/modals instead of browser/window prompts.
 - Do not add duplicate panel titles.
-- Use center/floating-panel tools for complex workflows.
-- Do not add fake UI/functionality. If it looks functional, it must be wired to real state/action.
+- Use center-panel tools for complex workflows.
 
 ## Ownership Boundaries
 
@@ -35,6 +34,7 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Animation Builder manages reusable named animations.
 - Animation Rules connect events to animations.
 - Sound Rules connect events to sounds.
+- Online service adapters/translators own provider-specific command/state translation.
 
 ## Systems Not To Replace
 
@@ -44,15 +44,20 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - ExperiencePackage format and category routing.
 - Electron packaging from scratch.
 - UCI worker adapter / bot architecture.
+- FICS adapter/translator architecture.
+- Floating window / launcher / docked workspace architecture.
 - Sound Editor and AudioContext architecture.
 - Event Builder and CustomEventRuntime architecture.
 - Animation Builder and movement animation path.
 - Theme/Piece template data model.
-- FloatingWindow and Overlay infrastructure unless the task explicitly targets window shell behavior.
 
-## Chat 7 UI Safety Rule
+## FICS / Online Rules
 
-When hiding launcher arrows or selected states, do not hide SVG internals or `aria-hidden` nodes inside icons. Selected icons must remain visible.
+- Do not change `ChessBoard.tsx` to match FICS syntax. The board sends generic move intent.
+- FICS command syntax belongs in `FicsGameTranslator.ts`.
+- FICS socket/session handling belongs in `FicsAdapter.ts` and Electron IPC/preload boundaries.
+- FICS must not own visuals, templates, pieces, or package/theme systems.
+- Browser mode cannot use raw FICS TCP unless a future relay server is added.
 
 ## Package Rule
 

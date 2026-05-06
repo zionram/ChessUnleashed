@@ -279,11 +279,11 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
   };
 
   return (
-    <div className="view-container" style={{ color: '#cbd5e1' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <section style={setupSectionStyle}>
+    <div className="view-container cu-view-shell cu-lets-play-setup-view" style={{ color: '#cbd5e1' }}>
+      <div className="cu-stack" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <section className="cu-panel-card cu-setup-section" style={setupSectionStyle}>
           <h4 style={sectionTitleStyle}>Game Mode</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"
               onClick={() => {
@@ -318,7 +318,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
                 </div>
               ) : (
                 <>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+                  <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                     <span>Approved Custom Game</span>
                     <select
                       value={selectedCustomRuleset?.id ?? ''}
@@ -334,7 +334,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
                     </select>
                   </label>
                   {selectedCustomRuleset && (
-                    <div style={{ padding: '10px', borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(15, 23, 42, 0.72)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div className="cu-panel-card-muted cu-setup-nested-card" style={{ padding: '10px', borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(15, 23, 42, 0.72)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       {(() => {
                         const status = getCustomGameStatus(selectedCustomRuleset);
                         return (
@@ -364,9 +364,9 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
           )}
         </section>
 
-        <section style={setupSectionStyle}>
+        <section className="cu-panel-card cu-setup-section" style={setupSectionStyle}>
           <h4 style={sectionTitleStyle}>Opponent</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"
               onClick={activateLocalPlayer}
@@ -382,7 +382,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
               Play vs Bot
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"
               onClick={() => activateSetupView('multiplayer', 'computer-opponent')}
@@ -399,12 +399,12 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
             </button>
           </div>
           {botSetupActive && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(15, 23, 42, 0.72)' }}>
+            <div className="cu-panel-card-muted cu-setup-nested-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', borderRadius: 8, border: '1px solid rgba(148, 163, 184, 0.18)', background: 'rgba(15, 23, 42, 0.72)' }}>
               <div>
                 <div style={{ fontSize: '0.82rem', color: '#dbeafe', fontWeight: 700 }}>Bot Setup</div>
                 <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Choose your computer opponent and side before starting.</div>
               </div>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+              <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                 <span>Computer Opponent</span>
                 <select
                   value={settings.activeEngineId}
@@ -428,7 +428,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
               )}
               <div>
                 <div style={{ fontSize: '0.74rem', color: 'rgba(148, 163, 184, 0.28)', fontWeight: 700, marginBottom: '6px' }}>Choose your side</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -463,7 +463,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
           )}
           {multiplayerSetupActive && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '4px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={() => updateMultiplayerServer({ mode: 'home' })}
@@ -487,7 +487,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
               >
                 Official Online - Coming Later
               </button>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+              <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                 <span>{serverLabel}</span>
                 <input
                   type="text"
@@ -501,7 +501,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
                   style={{ padding: '6px', fontSize: '0.8rem', background: 'rgba(15, 23, 42, 0.72)', color: '#dbeafe', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: 6 }}
                 />
               </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+              <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                 <span>Invite Code</span>
                 <input
                   type="text"
@@ -523,21 +523,18 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
             </div>
           )}
           {onlineSetupActive && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.24)', background: 'rgba(15, 23, 42, 0.72)' }}>
+            <div className="cu-panel-card-muted cu-setup-nested-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px', borderRadius: 8, border: '1px solid rgba(56, 189, 248, 0.24)', background: 'rgba(15, 23, 42, 0.72)' }}>
               <div>
                 <div style={{ fontSize: '0.82rem', color: '#dbeafe', fontWeight: 700 }}>FICS Online</div>
-                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Open one dockable FICS window with Online and Console tabs.</div>
+                <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>The main action below opens one dockable FICS window with Online and Console tabs.</div>
               </div>
-              <button type="button" onClick={openFicsWindow} style={getSetupButtonStyle()}>
-                Open FICS
-              </button>
             </div>
           )}
         </section>
 
-        <section style={setupSectionStyle}>
+        <section className="cu-panel-card cu-setup-section" style={setupSectionStyle}>
           <h4 style={sectionTitleStyle}>Timer</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
               type="button"
               onClick={() => {
@@ -561,8 +558,8 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
           </div>
           {settings.timeControl.enabled && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+              <div className="cu-control-grid cu-two-column-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                   <span>Minutes</span>
                   <input
                     type="number"
@@ -574,7 +571,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
                     style={{ padding: '6px', fontSize: '0.8rem', background: 'rgba(15, 23, 42, 0.72)', color: '#dbeafe', border: '1px solid rgba(148, 163, 184, 0.24)', borderRadius: 6 }}
                   />
                 </label>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
+                <label className="cu-field" style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '0.7rem', color: '#94a3b8' }}>
                   <span>Seconds</span>
                   <input
                     type="number"
@@ -609,7 +606,7 @@ const LetsPlaySetupView: React.FC<LetsPlaySetupViewProps> = ({ closeOverlay, onO
           )}
         </section>
 
-        <section style={{ ...setupSectionStyle, gap: '4px' }}>
+        <section className="cu-panel-card cu-setup-section" style={{ ...setupSectionStyle, gap: '4px' }}>
           <h4 style={sectionTitleStyle}>Current Setup</h4>
           <div style={{ fontSize: '0.8rem', color: '#b6c6d8' }}>Mode: {modeSummary}</div>
           {customGameSelected && selectedCustomRuleset && (

@@ -854,7 +854,7 @@ const SettingsPanelShellView: React.FC = () => {
   );
 
   return (
-    <div className="view-container">
+    <div className="view-container cu-view-shell">
       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button

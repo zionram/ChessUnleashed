@@ -247,7 +247,7 @@ const AnimationBuilderView: React.FC = () => {
   );
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#071120', color: '#dbeafe', padding: 14, boxSizing: 'border-box', gap: 12 }}>
+    <div className="cu-view-shell cu-themed-embedded-view cu-animation-builder-view" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#071120', color: '#dbeafe', padding: 14, boxSizing: 'border-box', gap: 12 }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'auto auto 1fr auto', gap: 8, alignItems: 'center' }}>
         <button type="button" onClick={openNew} style={{ padding: '10px 12px', borderRadius: 8, border: '1px solid #2c3e50', background: 'rgba(14, 116, 144, 0.42)', color: '#fff', cursor: 'pointer', fontWeight: 800 }}>
           Add Animation

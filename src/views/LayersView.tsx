@@ -2,6 +2,69 @@ import React, { useEffect, useState } from 'react';
 import { useSettings } from '../context/SettingsContext';
 import { type LayerConfig, type Template } from '../templates';
 
+const BACKGROUND_MAX_SIZE = 20 * 1024 * 1024;
+
+const REPEAT_OPTIONS = [
+  ['no-repeat', 'No Repeat'],
+  ['centered', 'Centered'],
+  ['repeat', 'Repeat'],
+  ['space', 'Space'],
+  ['round', 'Round']
+] as const;
+
+const LAYER_SIZE_OPTIONS = [
+  ['cover', 'Mode: Cover'],
+  ['contain', 'Mode: Contain'],
+  ['auto', 'Mode: Auto'],
+  ['50%', 'Mode: 50%'],
+  ['10%', 'Mode: 10%']
+] as const;
+
+const ANCHOR_OPTIONS = [
+  ['center', 'Center'],
+  ['top-left', 'Top Left'],
+  ['top', 'Top'],
+  ['top-right', 'Top Right'],
+  ['left', 'Left'],
+  ['right', 'Right'],
+  ['bottom-left', 'Bottom Left'],
+  ['bottom', 'Bottom'],
+  ['bottom-right', 'Bottom Right']
+] as const;
+
+const OVERLAY_SIZE_OPTIONS = [
+  ['cover', 'Cover board'],
+  ['contain', 'Contain in board'],
+  ['100% 100%', 'Stretch to board'],
+  ['auto', 'Original size']
+] as const;
+
+const BLEND_MODE_OPTIONS = [
+  'normal',
+  'multiply',
+  'screen',
+  'overlay',
+  'soft-light',
+  'hard-light',
+  'darken',
+  'lighten',
+  'color-dodge',
+  'color-burn',
+  'difference',
+  'luminosity'
+] as const;
+
+const FRAME_SIZE_OPTIONS: Array<[NonNullable<LayerConfig['frameSizeMode']>, string]> = [
+  ['responsive', 'Responsive to center panel'],
+  ['match-board', 'Match board / lock to board'],
+  ['fixed', 'Fixed size']
+];
+
+const hiddenInputStyle: React.CSSProperties = { display: 'none' };
+const colorInputStyle: React.CSSProperties = { width: '44px', height: '26px', padding: 0, border: 'none', background: 'none' };
+const smallColorInputStyle: React.CSSProperties = { width: '24px', height: '24px', padding: 0, background: 'transparent' };
+const fullRangeStyle: React.CSSProperties = { flex: 1, width: '100%' };
+
 interface ImageInputProps {
   label: string;
   imageValue: string;
@@ -9,7 +72,6 @@ interface ImageInputProps {
   onClear: () => void;
   inputId: string;
   maxSize?: number;
-  isGlass?: boolean;
 }
 
 const ImageInput: React.FC<ImageInputProps> = ({
@@ -18,8 +80,7 @@ const ImageInput: React.FC<ImageInputProps> = ({
   onImageChange,
   onClear,
   inputId,
-  maxSize = 3 * 1024 * 1024,
-  isGlass = false
+  maxSize = 3 * 1024 * 1024
 }) => {
   const [status, setStatus] = useState<{ name: string; loading: boolean }>({ name: '', loading: false });
 
@@ -32,6 +93,7 @@ const ImageInput: React.FC<ImageInputProps> = ({
       alert(`Invalid file: Must be an image < ${mb}MB.`);
       return;
     }
+
     setStatus({ name: file.name, loading: true });
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -42,45 +104,26 @@ const ImageInput: React.FC<ImageInputProps> = ({
     e.target.value = '';
   };
 
-  const buttonStyle: React.CSSProperties = {
-    fontSize: '0.65rem',
-    padding: '1px 5px',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.35)' : undefined,
-    background: isGlass ? 'rgba(8, 17, 34, 0.85)' : undefined,
-    color: isGlass ? '#e6f4ff' : undefined,
-    boxShadow: isGlass ? 'inset 0 0 0 1px rgba(255,255,255,0.03)' : undefined
+  const clearImage = () => {
+    onClear();
+    setStatus({ name: '', loading: false });
   };
 
   return (
-    <div className="image-input-container" style={{ marginTop: '5px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-        <span style={{ fontSize: '0.8rem', fontWeight: 600, color: isGlass ? '#dbeafe' : undefined }}>{label}</span>
-        <div style={{ display: 'flex', gap: '5px' }}>
-          <button onClick={() => document.getElementById(inputId)?.click()} style={buttonStyle}>Select</button>
-          <button onClick={() => { onClear(); setStatus({ name: '', loading: false }); }} style={{ ...buttonStyle, color: isGlass ? '#fda4af' : '#f44336' }}>Clear</button>
+    <div className="cu-image-input">
+      <div className="cu-control-row cu-image-input-header">
+        <span className="cu-layer-field-label">{label}</span>
+        <div className="cu-control-row cu-image-input-actions">
+          <label className="cu-inline-button cu-layer-button" htmlFor={inputId}>Select</label>
+          <button className="cu-inline-button cu-layer-button cu-layer-danger-action" onClick={clearImage}>Clear</button>
         </div>
-        <input id={inputId} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+        <input id={inputId} type="file" accept="image/*" onChange={handleFile} style={hiddenInputStyle} />
       </div>
 
-      {status.loading && <div style={{ fontSize: '0.65rem', color: isGlass ? '#38bdf8' : '#2196f3' }}>Loading...</div>}
+      {status.loading && <div className="cu-layer-status">Loading...</div>}
       {imageValue && (
-        <div
-          style={{
-            margin: '8px 0',
-            border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #ddd',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            height: '50px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: isGlass ? 'rgba(9, 18, 34, 0.88)' : '#eee',
-            boxShadow: isGlass ? 'inset 0 0 0 1px rgba(255,255,255,0.02)' : undefined
-          }}
-        >
-          <img src={imageValue} alt="Preview" style={{ height: '100%', width: 'auto', maxWidth: '100%', objectFit: 'contain' }} />
+        <div className="cu-image-preview">
+          <img src={imageValue} alt="Preview" />
         </div>
       )}
     </div>
@@ -95,7 +138,6 @@ interface LayerEditorProps {
   showColor?: boolean;
   maxSize?: number;
   showLockToBoard?: boolean;
-  isGlass?: boolean;
 }
 
 const LayerEditor: React.FC<LayerEditorProps> = ({
@@ -105,134 +147,87 @@ const LayerEditor: React.FC<LayerEditorProps> = ({
   inputId,
   showColor = true,
   maxSize,
-  showLockToBoard = false,
-  isGlass = false
+  showLockToBoard = false
 }) => {
   const displayColor = config.color === 'transparent' ? '#ffffff' : config.color;
-  const cardBg = isGlass ? 'rgba(10, 20, 38, 0.88)' : '#fafafa';
-  const cardBorder = isGlass ? '1px solid rgba(56, 189, 248, 0.24)' : '1px solid #eee';
-  const subCardBg = isGlass ? 'rgba(6, 14, 28, 0.92)' : 'white';
-  const subCardBorder = isGlass ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid #eee';
-  const controlText = isGlass ? '#dbeafe' : undefined;
-  const mutedText = isGlass ? '#94a3b8' : '#888';
-
-  const controlSurfaceStyle: React.CSSProperties = {
-    width: '100%',
-    fontSize: '0.7rem',
-    padding: '2px',
-    background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined,
-    color: isGlass ? '#e2e8f0' : undefined,
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined,
-    borderRadius: isGlass ? '4px' : undefined
-  };
-
-  const smallInputStyle: React.CSSProperties = {
-    fontSize: '0.7rem',
-    padding: '1px',
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : '1px solid #ddd',
-    borderRadius: '2px',
-    background: isGlass ? 'rgba(8, 17, 34, 0.9)' : '#fff',
-    color: isGlass ? '#e2e8f0' : undefined
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    fontSize: '0.6rem',
-    padding: '1px 4px',
-    cursor: 'pointer',
-    borderRadius: '4px',
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.3)' : undefined,
-    background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined,
-    color: isGlass ? '#dbeafe' : undefined,
-    opacity: 0.9
-  };
+  const frameSizeMode = config.frameSizeMode ?? (config.lockToBoard ? 'match-board' : 'responsive');
 
   return (
-    <div className="cu-layer-editor-card" style={{ marginTop: '12px', padding: '12px', border: cardBorder, borderRadius: '8px', background: cardBg }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-        <h5 style={{ margin: 0, fontSize: '0.85rem', color: controlText }}>{label}</h5>
-        <button onClick={() => onUpdate({ xOffset: 0, yOffset: 0, scale: 100 })} style={buttonStyle}>Reset</button>
+    <section className="cu-panel-card cu-layer-editor-card">
+      <div className="cu-control-row cu-layer-editor-header">
+        <h5>{label}</h5>
+        <button className="cu-inline-button cu-layer-button" onClick={() => onUpdate({ xOffset: 0, yOffset: 0, scale: 100 })}>Reset</button>
       </div>
 
-      <ImageInput label="Texture" imageValue={config.image} inputId={inputId} onImageChange={(img) => onUpdate({ image: img })} onClear={() => onUpdate({ image: '' })} maxSize={maxSize} isGlass={isGlass} />
+      <ImageInput label="Texture" imageValue={config.image} inputId={inputId} onImageChange={(img) => onUpdate({ image: img })} onClear={() => onUpdate({ image: '' })} maxSize={maxSize} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: showColor ? 'minmax(120px, max-content) minmax(180px, 1fr)' : '1fr', gap: '14px', alignItems: 'center', marginTop: '10px' }}>
+      <div className="cu-layer-control-grid" data-has-color={showColor ? 'true' : 'false'}>
         {showColor && (
-          <div className="setting-item cu-compact-setting-item" style={{ flex: 1, alignItems: 'flex-start' }}>
-            <span style={{ fontSize: '0.75rem', color: controlText }}>Color</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input type="color" value={displayColor} onChange={(e) => onUpdate({ color: e.target.value })} style={{ width: '24px', height: '24px', padding: 0, background: 'transparent' }} />
-              <button onClick={() => onUpdate({ color: 'transparent' })} style={buttonStyle}>None</button>
+          <div className="setting-item cu-compact-setting-item">
+            <span className="cu-layer-field-label">Color</span>
+            <div className="cu-control-row cu-layer-color-row">
+              <input type="color" value={displayColor} onChange={(e) => onUpdate({ color: e.target.value })} style={smallColorInputStyle} />
+              <button className="cu-inline-button cu-layer-button" onClick={() => onUpdate({ color: 'transparent' })}>None</button>
             </div>
           </div>
         )}
-        <div className="setting-item cu-compact-setting-item" style={{ flex: showColor ? 2 : 1 }}>
-          <span style={{ fontSize: '0.75rem', color: controlText }}>Alpha</span>
-          <input type="range" min="0" max="1" step="0.1" value={config.opacity} onChange={(e) => onUpdate({ opacity: parseFloat(e.target.value) })} style={{ flex: 1, width: '100%' }} />
+        <div className="setting-item cu-compact-setting-item">
+          <span className="cu-layer-field-label">Alpha</span>
+          <input type="range" min="0" max="1" step="0.1" value={config.opacity} onChange={(e) => onUpdate({ opacity: parseFloat(e.target.value) })} style={fullRangeStyle} />
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: '10px', background: subCardBg, padding: '4px 6px', borderRadius: '4px', border: subCardBorder, width: 'fit-content', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-          <span style={{ fontSize: '0.55rem', color: mutedText, fontWeight: 'bold' }}>X</span>
-          <input type="number" value={config.xOffset || 0} onChange={(e) => onUpdate({ xOffset: parseInt(e.target.value) || 0 })} style={{ ...smallInputStyle, width: '32px' }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-          <span style={{ fontSize: '0.55rem', color: mutedText, fontWeight: 'bold' }}>Y</span>
-          <input type="number" value={config.yOffset || 0} onChange={(e) => onUpdate({ yOffset: parseInt(e.target.value) || 0 })} style={{ ...smallInputStyle, width: '32px' }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-          <span style={{ fontSize: '0.55rem', color: mutedText, fontWeight: 'bold' }}>Scale</span>
-          <input type="number" value={config.scale || 100} onChange={(e) => onUpdate({ scale: parseInt(e.target.value) || 100 })} style={{ ...smallInputStyle, width: '36px' }} />
-          <span style={{ fontSize: '0.6rem', color: mutedText }}>%</span>
-        </div>
+      <div className="cu-panel-card-muted cu-layer-offset-row">
+        <label className="cu-layer-offset-control">
+          <span>X</span>
+          <input type="number" value={config.xOffset || 0} onChange={(e) => onUpdate({ xOffset: parseInt(e.target.value, 10) || 0 })} />
+        </label>
+        <label className="cu-layer-offset-control">
+          <span>Y</span>
+          <input type="number" value={config.yOffset || 0} onChange={(e) => onUpdate({ yOffset: parseInt(e.target.value, 10) || 0 })} />
+        </label>
+        <label className="cu-layer-offset-control">
+          <span>Scale</span>
+          <input type="number" value={config.scale || 100} onChange={(e) => onUpdate({ scale: parseInt(e.target.value, 10) || 100 })} />
+          <span>%</span>
+        </label>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px', marginTop: '8px' }}>
-        <select value={config.repeat} onChange={(e) => onUpdate({ repeat: e.target.value as any })} style={controlSurfaceStyle}>
-          <option value="no-repeat">No Repeat</option>
-          <option value="centered">Centered</option>
-          <option value="repeat">Repeat</option>
-          <option value="space">Space</option>
-          <option value="round">Round</option>
+      <div className="cu-control-grid cu-layer-select-grid">
+        <select value={config.repeat} onChange={(e) => onUpdate({ repeat: e.target.value as LayerConfig['repeat'] })}>
+          {REPEAT_OPTIONS.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
         </select>
-        <select value={config.size} onChange={(e) => onUpdate({ size: e.target.value })} style={controlSurfaceStyle}>
-          <option value="cover">Mode: Cover</option>
-          <option value="contain">Mode: Contain</option>
-          <option value="auto">Mode: Auto</option>
-          <option value="50%">Mode: 50%</option>
-          <option value="10%">Mode: 10%</option>
+        <select value={config.size} onChange={(e) => onUpdate({ size: e.target.value })}>
+          {LAYER_SIZE_OPTIONS.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
         </select>
       </div>
 
       {showLockToBoard && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="cu-layer-field-stack">
+          <label className="cu-layer-field">
             Frame size mode
             <select
-              value={config.frameSizeMode ?? (config.lockToBoard ? 'match-board' : 'responsive')}
+              value={frameSizeMode}
               onChange={(e) => onUpdate({ frameSizeMode: e.target.value as LayerConfig['frameSizeMode'], lockToBoard: e.target.value === 'match-board' })}
-              style={{ ...controlSurfaceStyle, padding: '4px', fontSize: '0.72rem' }}
             >
-              <option value="responsive">Responsive to center panel</option>
-              <option value="match-board">Match board / lock to board</option>
-              <option value="fixed">Fixed size</option>
+              {FRAME_SIZE_OPTIONS.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
             </select>
           </label>
-          {(config.frameSizeMode ?? (config.lockToBoard ? 'match-board' : 'responsive')) === 'fixed' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
-              <label>
+          {frameSizeMode === 'fixed' && (
+            <div className="cu-control-grid cu-layer-select-grid">
+              <label className="cu-layer-field">
                 Width
-                <input type="number" min="100" value={config.fixedWidth || 560} onChange={(e) => onUpdate({ fixedWidth: parseInt(e.target.value, 10) || 560 })} style={{ ...controlSurfaceStyle, boxSizing: 'border-box' }} />
+                <input type="number" min="100" value={config.fixedWidth || 560} onChange={(e) => onUpdate({ fixedWidth: parseInt(e.target.value, 10) || 560 })} />
               </label>
-              <label>
+              <label className="cu-layer-field">
                 Height
-                <input type="number" min="100" value={config.fixedHeight || 560} onChange={(e) => onUpdate({ fixedHeight: parseInt(e.target.value, 10) || 560 })} style={{ ...controlSurfaceStyle, boxSizing: 'border-box' }} />
+                <input type="number" min="100" value={config.fixedHeight || 560} onChange={(e) => onUpdate({ fixedHeight: parseInt(e.target.value, 10) || 560 })} />
               </label>
             </div>
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 };
 
@@ -243,8 +238,6 @@ const LayersView: React.FC = () => {
   const [lastCommitted, setLastCommitted] = useState<Template>(JSON.parse(JSON.stringify(activeTemplate)));
   const { background, frameLayer, boardOverlay } = draft;
   const hasUnappliedChanges = JSON.stringify(draft) !== JSON.stringify(lastCommitted);
-  const BACKGROUND_MAX_SIZE = 20 * 1024 * 1024;
-  const isGlass = settings.uiAppearance.sidebarStyle === 'glass';
 
   useEffect(() => {
     if (settings.themeDraft) updateThemeDraft({
@@ -260,10 +253,7 @@ const LayersView: React.FC = () => {
   }, [draft]);
 
   const updateLayer = (key: keyof Template, updates: any) => {
-    setDraft(prev => {
-      const next = { ...prev, [key]: { ...(prev as any)[key], ...updates } };
-      return next;
-    });
+    setDraft(prev => ({ ...prev, [key]: { ...(prev as any)[key], ...updates } }));
   };
 
   const applyLayerChanges = () => {
@@ -295,130 +285,80 @@ const LayersView: React.FC = () => {
     });
   };
 
-  const primaryButtonStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '8px',
-    background: hasUnappliedChanges ? (isGlass ? 'linear-gradient(180deg, rgba(14, 165, 233, 0.28), rgba(8, 47, 73, 0.92))' : '#27ae60') : '#ccc',
-    color: 'white',
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.35)' : 'none',
-    borderRadius: '4px',
-    cursor: hasUnappliedChanges ? 'pointer' : 'not-allowed',
-    fontWeight: 700,
-    boxShadow: isGlass ? 'inset 0 0 0 1px rgba(255,255,255,0.03)' : undefined
-  };
-
-  const secondaryButtonStyle: React.CSSProperties = {
-    flex: 1,
-    padding: '8px',
-    background: isGlass ? 'rgba(8, 17, 34, 0.88)' : '#f8f9fa',
-    color: isGlass ? '#e2e8f0' : undefined,
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.22)' : '1px solid #ddd',
-    borderRadius: '4px',
-    cursor: hasUnappliedChanges ? 'pointer' : 'not-allowed'
-  };
-
-  const sectionStyle: React.CSSProperties = {
-    marginTop: '12px',
-    padding: '12px',
-    border: isGlass ? '1px solid rgba(56, 189, 248, 0.24)' : '1px solid #eee',
-    borderRadius: '6px',
-    background: isGlass ? 'rgba(10, 20, 38, 0.88)' : '#fafafa'
-  };
-
   return (
     <div className="view-container cu-layers-view">
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px', alignItems: 'center' }}>
-        <button onClick={applyLayerChanges} disabled={!hasUnappliedChanges} style={primaryButtonStyle}>
+      <div className="cu-control-row cu-layer-action-row">
+        <button className="cu-inline-button cu-layer-primary-action" onClick={applyLayerChanges} disabled={!hasUnappliedChanges}>
           Apply Layers
         </button>
-        <button onClick={discardLayerChanges} disabled={!hasUnappliedChanges} style={secondaryButtonStyle}>
+        <button className="cu-inline-button cu-layer-secondary-action" onClick={discardLayerChanges} disabled={!hasUnappliedChanges}>
           Discard
         </button>
       </div>
+
       {hasUnappliedChanges && (
-        <div style={{ marginBottom: '10px', fontSize: '0.7rem', color: isGlass ? '#fbbf24' : '#8a5a00' }}>
+        <div className="cu-layer-notice">
           Layer changes are previewing on the board. Press Apply Layers to keep them.
         </div>
       )}
-      <section style={sectionStyle}>
-        <h4 style={{ fontSize: '0.85rem', color: isGlass ? '#e2e8f0' : undefined }}>Board Overlay</h4>
-        <div className="setting-item" style={{ gap: '10px' }}>
-          <input type="range" min="0" max="1" step="0.1" value={boardOverlay.opacity} onChange={(e) => updateLayer('boardOverlay', { opacity: parseFloat(e.target.value) })} style={{ flex: 1 }} />
-          <span style={{ fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Opacity</span>
+
+      <section className="cu-panel-card cu-layer-editor-card">
+        <h4>Board Overlay</h4>
+        <div className="setting-item cu-layer-setting-row">
+          <input type="range" min="0" max="1" step="0.1" value={boardOverlay.opacity} onChange={(e) => updateLayer('boardOverlay', { opacity: parseFloat(e.target.value) })} style={fullRangeStyle} />
+          <span className="cu-layer-field-label">Opacity</span>
         </div>
-        <ImageInput label="Texture" imageValue={boardOverlay.image} inputId="overlay-img" onImageChange={(img) => updateLayer('boardOverlay', { image: img })} onClear={() => updateLayer('boardOverlay', { image: '' })} maxSize={BACKGROUND_MAX_SIZE} isGlass={isGlass} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '8px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+
+        <ImageInput label="Texture" imageValue={boardOverlay.image} inputId="overlay-img" onImageChange={(img) => updateLayer('boardOverlay', { image: img })} onClear={() => updateLayer('boardOverlay', { image: '' })} maxSize={BACKGROUND_MAX_SIZE} />
+
+        <div className="cu-control-grid cu-layer-select-grid">
+          <label className="cu-layer-field">
             Snap image to
             <select
               value={(boardOverlay as any).anchor || 'center'}
               onChange={(e) => updateLayer('boardOverlay', { anchor: e.target.value, repeat: 'no-repeat' })}
-              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
             >
-              <option value="center">Center</option>
-              <option value="top-left">Top Left</option>
-              <option value="top">Top</option>
-              <option value="top-right">Top Right</option>
-              <option value="left">Left</option>
-              <option value="right">Right</option>
-              <option value="bottom-left">Bottom Left</option>
-              <option value="bottom">Bottom</option>
-              <option value="bottom-right">Bottom Right</option>
+              {ANCHOR_OPTIONS.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
             </select>
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
+          <label className="cu-layer-field">
             Image fit
             <select
               value={(boardOverlay as any).size || 'cover'}
               onChange={(e) => updateLayer('boardOverlay', { size: e.target.value, repeat: 'no-repeat', scale: 100 })}
-              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
             >
-              <option value="cover">Cover board</option>
-              <option value="contain">Contain in board</option>
-              <option value="100% 100%">Stretch to board</option>
-              <option value="auto">Original size</option>
+              {OVERLAY_SIZE_OPTIONS.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
             </select>
           </label>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', marginTop: '8px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
-            Blend mode
-            <select
-              value={(boardOverlay as any).blendMode || 'normal'}
-              onChange={(e) => updateLayer('boardOverlay', { blendMode: e.target.value })}
-              style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }}
-            >
-              <option value="normal">Normal</option>
-              <option value="multiply">Multiply</option>
-              <option value="screen">Screen</option>
-              <option value="overlay">Overlay</option>
-              <option value="soft-light">Soft Light</option>
-              <option value="hard-light">Hard Light</option>
-              <option value="darken">Darken</option>
-              <option value="lighten">Lighten</option>
-              <option value="color-dodge">Color Dodge</option>
-              <option value="color-burn">Color Burn</option>
-              <option value="difference">Difference</option>
-              <option value="luminosity">Luminosity</option>
-            </select>
-          </label>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : '#334155' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+
+        <label className="cu-layer-field cu-layer-field-full">
+          Blend mode
+          <select
+            value={(boardOverlay as any).blendMode || 'normal'}
+            onChange={(e) => updateLayer('boardOverlay', { blendMode: e.target.value })}
+          >
+            {BLEND_MODE_OPTIONS.map(value => <option key={value} value={value}>{value.replace('-', ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>)}
+          </select>
+        </label>
+
+        <div className="cu-control-grid cu-layer-select-grid cu-layer-three-grid">
+          <label className="cu-layer-field">
             X offset
-            <input type="number" value={(boardOverlay as any).xOffset || 0} onChange={(e) => updateLayer('boardOverlay', { xOffset: parseInt(e.target.value, 10) || 0 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+            <input type="number" value={(boardOverlay as any).xOffset || 0} onChange={(e) => updateLayer('boardOverlay', { xOffset: parseInt(e.target.value, 10) || 0 })} />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label className="cu-layer-field">
             Y offset
-            <input type="number" value={(boardOverlay as any).yOffset || 0} onChange={(e) => updateLayer('boardOverlay', { yOffset: parseInt(e.target.value, 10) || 0 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+            <input type="number" value={(boardOverlay as any).yOffset || 0} onChange={(e) => updateLayer('boardOverlay', { yOffset: parseInt(e.target.value, 10) || 0 })} />
           </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <label className="cu-layer-field">
             Scale %
-            <input type="number" min="1" value={(boardOverlay as any).scale || 100} onChange={(e) => updateLayer('boardOverlay', { scale: parseInt(e.target.value, 10) || 100 })} style={{ fontSize: '0.72rem', padding: '4px', background: isGlass ? 'rgba(8, 17, 34, 0.9)' : undefined, color: isGlass ? '#e2e8f0' : undefined, border: isGlass ? '1px solid rgba(56, 189, 248, 0.25)' : undefined, borderRadius: isGlass ? '4px' : undefined }} />
+            <input type="number" min="1" value={(boardOverlay as any).scale || 100} onChange={(e) => updateLayer('boardOverlay', { scale: parseInt(e.target.value, 10) || 100 })} />
           </label>
         </div>
-        <div className="setting-item" style={{ gap: '10px', marginTop: '6px' }}>
-          <label style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+
+        <div className="setting-item cu-layer-setting-row">
+          <label className="cu-control-row cu-layer-checkbox-label">
             <input
               type="checkbox"
               checked={!!boardOverlay.colorEnabled}
@@ -427,22 +367,23 @@ const LayersView: React.FC = () => {
             Color Layer
           </label>
         </div>
+
         {boardOverlay.colorEnabled && (
           <>
-            <div className="setting-item">
-              <span style={{ fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Color</span>
-              <input type="color" value={boardOverlay.color || '#4169e1'} onChange={(e) => updateLayer('boardOverlay', { color: e.target.value })} style={{ width: '44px', height: '26px', padding: 0, border: 'none', background: 'none' }} />
+            <div className="setting-item cu-layer-setting-row">
+              <span className="cu-layer-field-label">Color</span>
+              <input type="color" value={boardOverlay.color || '#4169e1'} onChange={(e) => updateLayer('boardOverlay', { color: e.target.value })} style={colorInputStyle} />
             </div>
-            <div className="setting-item" style={{ gap: '10px' }}>
-              <input type="range" min="0" max="1" step="0.05" value={boardOverlay.colorOpacity ?? 0.25} onChange={(e) => updateLayer('boardOverlay', { colorOpacity: parseFloat(e.target.value) })} style={{ flex: 1 }} />
-              <span style={{ fontSize: '0.75rem', color: isGlass ? '#dbeafe' : undefined }}>Color Opacity</span>
+            <div className="setting-item cu-layer-setting-row">
+              <input type="range" min="0" max="1" step="0.05" value={boardOverlay.colorOpacity ?? 0.25} onChange={(e) => updateLayer('boardOverlay', { colorOpacity: parseFloat(e.target.value) })} style={fullRangeStyle} />
+              <span className="cu-layer-field-label">Color Opacity</span>
             </div>
           </>
         )}
       </section>
 
-      <LayerEditor label="Frame Layer" config={frameLayer} onUpdate={(u) => updateLayer('frameLayer', u)} inputId="frame-img" showColor={false} maxSize={BACKGROUND_MAX_SIZE} showLockToBoard isGlass={isGlass} />
-      <LayerEditor label="Background" config={background} onUpdate={(u) => updateLayer('background', u)} inputId="bg-img" showColor={true} maxSize={BACKGROUND_MAX_SIZE} isGlass={isGlass} />
+      <LayerEditor label="Frame Layer" config={frameLayer} onUpdate={(u) => updateLayer('frameLayer', u)} inputId="frame-img" showColor={false} maxSize={BACKGROUND_MAX_SIZE} showLockToBoard />
+      <LayerEditor label="Background" config={background} onUpdate={(u) => updateLayer('background', u)} inputId="bg-img" showColor={true} maxSize={BACKGROUND_MAX_SIZE} />
     </div>
   );
 };

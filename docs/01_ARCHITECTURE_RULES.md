@@ -17,6 +17,8 @@ Chess Unleashed must be treated as a live, working codebase. New work should be 
 - Do not add duplicate panel titles.
 - Do not inspect unrelated files unless necessary.
 - Preserve user and generated changes in a dirty worktree.
+- Never patch `App.tsx` or another source file from an older/generated copy when the user has a newer current file in play.
+- When a registry or source-of-truth file exists, preserve it and extend it instead of reintroducing inline mappings.
 
 ## Ownership Boundaries
 
@@ -24,7 +26,8 @@ Chess Unleashed must be treated as a live, working codebase. New work should be 
 - Settings registry files own metadata only.
 - `SettingsTemplateRegistry` owns layout/navigation metadata only.
 - Config validation owns validation only.
-- Template/theme system owns game visuals only.
+- Template/theme system owns game visuals and template-owned visual layout defaults.
+- `WorkspaceActionRegistry` owns actionId -> workspace view/component mapping and registration.
 - `ExperiencePackage` owns reusable setup/config/assets/rules/events/sounds.
 - Game Snapshot owns live game-in-progress state.
 - Event Log records gameplay/system actions.
@@ -34,14 +37,25 @@ Chess Unleashed must be treated as a live, working codebase. New work should be 
 - Animation Builder manages reusable named animations.
 - Animation Rules connect events to animations.
 - Sound Rules connect events to sounds.
+- Floating/docked window shell behavior belongs to shared window/layout code, not individual views.
+
+## Source-of-Truth Rules
+
+- Built-in theme defaults should come from the theme folder source, especially `src/assets/default-themes/<theme-id>/experience.json`.
+- Loader files such as `obsidianDefaultTheme.ts` may normalize and validate theme data, but must not define a competing theme by hardcoding unrelated fallback visuals.
+- LocalStorage/saved settings must not silently overwrite built-in reset/default theme values during a default reset.
+- App shell CSS must not own placement truth for template-controlled HUD/window defaults.
+- App shell code must not duplicate workspace action/component mappings already defined in `WorkspaceActionRegistry`.
 
 ## UI Rules
 
 - Panel shell/menu registry owns the main panel title.
 - Views should not render duplicate top-level titles matching the panel title.
 - Complex editors should use center-panel workflows where possible.
-- Simple/Advanced/System layering is used for tools that expose both friendly and technical controls.
+- Simple/Advanced/System layering is used for tools that expose both friendly and technical controls, but the "Do Something Cool" Event Builder workflow should ask only enough information for the next choice.
 - Browser prompts should not be used for destructive in-app actions when center modal/panel patterns exist.
+- Docked panels should have a consistent Undock control.
+- Dock/Close/Undock button events should not bubble into drag/focus/tab routing.
 
 ## Persistence Rules
 
@@ -49,4 +63,3 @@ Chess Unleashed must be treated as a live, working codebase. New work should be 
 - Runtime game persistence belongs in Game Snapshot helpers.
 - ExperiencePackage must not include live game-in-progress state.
 - Imported binary media should not be stored as giant JSON/base64 strings.
-

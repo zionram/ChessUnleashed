@@ -22,13 +22,47 @@ Expected release flow:
 3. Smoke test the packaged executable.
 4. Upload the portable `.exe` through GitHub Releases.
 
-Do not commit `dist/`, `release/`, `node_modules/`, or large `.exe` files.
+Do not commit generated/runtime folders:
+
+- `dist/`
+- `release/`
+- `node_modules/`
+- build/out folders
+- large `.exe` files
+
+`win-unpacked` is an unpacked build output for testing. It can be deleted and regenerated. It should not be committed.
+
+## Electron Size Reality
+
+Electron packaged apps include Chromium/Node/Electron runtime files. A large packaged executable does not necessarily mean the app source is large.
+
+Known large Electron/runtime files may include:
+
+- Electron executable
+- Chromium resources
+- graphics/DirectX DLLs
+- locale `.pak` files
+- ICU data
+
+Do not remove Electron runtime files manually unless the build tool supports that pruning safely.
+
+## Stockfish
+
+The default browser-worker Stockfish path is:
+
+```text
+/engines/stockfish/stockfish-18-lite-single.js
+```
+
+The matching `.wasm` file must be present beside it when required by the worker. The app does not download Stockfish automatically at runtime. Do not commit Stockfish Windows `.exe` binaries.
+
+Browser-worker JS/WASM assets belong in public assets if they are part of the beta package. Do not package multiple huge Stockfish variants unless the app actually loads them.
 
 ## Electron Loading
 
-Development Electron may load the Vite dev server. Production/package builds must load the built `dist/index.html` with relative asset paths.
+Development Electron may load the Vite dev server. Production/package builds must load the built `dist/index.html` with relative asset paths. Vite base/path behavior is important for packaged Electron.
 
-Vite base/path behavior is important for packaged Electron. A blank packaged window usually means the renderer, assets, or base paths did not load correctly.
+A blank packaged window usually means the renderer, assets, or base paths did not load correctly.
 
 ## Startup Splash Screen
 
@@ -42,16 +76,6 @@ Splash-related files:
 - optional artwork at `public/splash/chess-unleashed-splash.png`
 
 The app should avoid multiple confusing startup windows. Single-instance behavior should focus the existing app/splash when practical.
-
-## Stockfish
-
-The default browser-worker Stockfish path is:
-
-`/engines/stockfish/stockfish-18-lite-single.js`
-
-The matching `.wasm` file must be present beside it when required by the worker. The app does not download Stockfish automatically at runtime.
-
-Do not commit Stockfish Windows `.exe` binaries. Browser-worker JS/WASM assets belong in public assets if they are part of the beta package.
 
 ## Local Multiplayer Server
 

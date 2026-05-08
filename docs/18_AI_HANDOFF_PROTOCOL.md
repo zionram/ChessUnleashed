@@ -1,6 +1,6 @@
 # AI Handoff Protocol
 
-Status: Active instructions for future AI/dev work, updated for Chat 7 workflow
+Status: Active instructions for future AI/dev work
 
 Chess Unleashed is a functioning release-candidate project. Treat it as existing software with working systems, not a greenfield rebuild.
 
@@ -21,13 +21,15 @@ Chess Unleashed is a functioning release-candidate project. Treat it as existing
 - Do not inspect unrelated files unless needed to solve the task.
 - Do not use browser/window prompts when an in-app panel/modal is expected.
 - Do not add duplicate panel titles.
-- Do not add fake UI/functionality; if it looks functional, wire it to real state/action.
 - Do not mix Game Snapshot runtime state into ExperiencePackage exports by default.
 - Do not store media binaries as giant JSON/base64/localStorage strings.
 - Preserve Standard Chess behavior unless the task explicitly targets it.
 - Preserve Stockfish/worker bot support when touching bots.
 - Preserve Package Manager real-file zip behavior when touching packages.
 - Preserve Sound Rules and Animation Rules when touching Event Builder.
+- Preserve `WorkspaceActionRegistry` when touching launcher/workspace/view embedding.
+- Never generate a replacement file from a stale generated copy if the user has a newer current file.
+- Verify current file content before patching recurrent regression areas.
 
 ## Current Release-Candidate Watch Areas
 
@@ -36,13 +38,13 @@ Chess Unleashed is a functioning release-candidate project. Treat it as existing
 - Electron splash and packaged app loading must not regress.
 - Local/player movement animation and bot delay timing must not regress.
 - Check/in-check sound rules must pause/resume background music correctly.
-- Event Builder, Sound Editor, and Animation Builder are complex center/floating tools.
+- Event Builder, Sound Editor, and Animation Builder are complex center-panel tools.
 - Piece Set and Layer edits must merge into the same theme draft without overwriting each other.
 - Frame sizing/lock and welcome sidebar color controls should work in packaged Electron, not only browser mode.
-- Left floating rail drag/resize/collapse behavior must not regress.
-- Selected launcher icons must stay visible; do not hide SVG internals while hiding arrow triangles.
-- Let’s Play overlay must open centered/on top from both New and the left launcher.
-- Board glass dragging must not interfere with piece/square dragging.
+- Obsidian built-in default reset should load from `src/assets/default-themes/obsidian/experience.json` and not stale localStorage layer values.
+- Floating launcher windows should embed registered controls, not generic "Open" cards, when a registry config exists.
+- Docked panels should retain Dock/Undock/Close behavior across App/window patches.
+- Move Assist board-side overlay visibility should be controlled by Move Assist settings and consumed by `ChessBoard.tsx`.
 
 ## Build Expectations
 
@@ -59,16 +61,6 @@ npm.cmd run dist:portable
 ```
 
 Docs-only changes do not require a build unless docs become part of the build.
-
-## User Workflow Preferences
-
-- If a change is fewer than 4 files, ask/list the specific files needed.
-- If a change is more than 4 files, give a PowerShell zip command to collect them.
-- If the assistant just created the latest iteration of a file and the user did not say it changed, do not ask for it again.
-- When returning replacement files, provide target path and exact build/test action.
-- Keep responses brief and step-focused.
-- Do not explain line-by-line changes unless asked.
-- If a sandbox zip link fails, retry with individual file links when possible.
 
 ## Handoff Format
 

@@ -2,7 +2,7 @@
 
 Status: Current
 
-The visuals/template system owns game appearance only. It must not own gameplay rules or runtime snapshots.
+The visuals/template system owns game appearance and template-owned visual layout defaults. It must not own gameplay rules or runtime snapshots.
 
 ## Theme And Piece Set Workflow
 
@@ -26,9 +26,49 @@ Current behavior:
 
 Important rule: Apply to Draft updates draft/board preview but does not leave Arrange or clear the assignment preview. Finalize is the only action that moves to the final step.
 
+## Built-In Obsidian Theme
+
+The built-in Obsidian theme should be a bundled default-theme folder, not just a zip loaded at runtime:
+
+```txt
+src/assets/default-themes/obsidian/
+  experience.json
+  manifest.json
+  images/
+  music/
+```
+
+Rules:
+
+- `src/assets/default-themes/obsidian/experience.json` is the source of truth for the built-in Obsidian default.
+- `src/assets/default-themes/obsidianDefaultTheme.ts` loads and normalizes that source.
+- The loader must not define a competing theme through unrelated hardcoded visual fallbacks.
+- Already-correct `/src/assets/default-themes/obsidian/...` paths must not be rewritten into doubled paths.
+- Built-in reset/default behavior should not let stale localStorage layer values override Obsidian's source-of-truth template.
+
+Current intended Obsidian defaults include:
+
+- Background image from `images/backgrounds/background.png`.
+- Board overlay from `images/boards/board75.png`.
+- No unwanted frame layer unless explicitly specified by the template.
+
+## Workspace Chrome As Template-Owned Visual Default
+
+Visual layout defaults that are part of the app's look should be template-owned where supported:
+
+- HUD safe areas and default positions.
+- Board controls HUD default placement.
+- Activity/status HUD default placement.
+- Side palette/workspace safe margins.
+- Launcher/window default sizes and offsets, if represented in the template.
+
+`App.tsx` may hold live drag state, but it should not be the long-term source of truth for visual defaults that belong to the active template.
+
+CSS should style the HUD/window surfaces, not override template-owned placement with `left/right/bottom !important`.
+
 ## Visual Areas
 
-Environment → Look includes:
+Environment -> Look includes:
 
 - Pieces
 - Board
@@ -36,28 +76,9 @@ Environment → Look includes:
 - Paths
 - Layers
 - Themes
+- Background
 - Animation
 - Platform UI
-
-## Current Floating Visual-Control Direction
-
-The visual/tool UI should move toward the current mockup direction:
-
-- floating glass panels
-- compact icon rail
-- dark/glass theme
-- controls inside floating windows
-- less fixed side-panel clutter
-- real functionality only
-
-Current known gap:
-
-- Environment → Look → Pieces currently behaves like an “Open this workspace tool” card in the launcher tab.
-- Desired behavior is for the actual Pieces controls to render directly inside the floating launcher window.
-- This pattern should be reused for Board, Animation, Platform UI, Sound, Packages, and similar visual/config tools where existing real controls can be embedded.
-- “Dock” should become a small secondary option inside the tool interface, not the primary card/action.
-
-Do not fake this UI. If controls appear in the floating launcher, they must connect to the existing settings, template draft, package, or view action they represent.
 
 ## Platform UI
 
@@ -66,10 +87,10 @@ Platform appearance settings include UI color/appearance controls. Welcome/tips 
 ## Related Files
 
 - `src/views/ThemeEditorView.tsx`
+- `src/views/BackgroundView.tsx`
+- `src/views/LayersView.tsx`
 - `src/views/PlatformAppearanceView.tsx`
 - `src/context/SettingsContext.tsx`
 - `src/config/menuSchema.ts`
-- `src/components/menu/DynamicMenu.tsx`
-- `src/components/layout/FloatingWindow.tsx`
-- `src/components/layout/Overlay.tsx`
-- `src/views/SettingsPanelShellView.tsx`
+- `src/assets/default-themes/obsidian/experience.json`
+- `src/assets/default-themes/obsidianDefaultTheme.ts`

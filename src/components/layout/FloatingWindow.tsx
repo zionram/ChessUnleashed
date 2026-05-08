@@ -206,7 +206,15 @@ const FloatingWindow: React.FC<FloatingWindowProps> = ({
         </div>
         {onDock && (
           <button
-            onClick={onDock}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onDock();
+            }}
             title="Dock to workspace panel"
             style={{ padding: '3px 9px', fontSize: '0.7rem', borderRadius: buttonRadius, flexShrink: 0, opacity: 0.82 }}
           >
@@ -215,7 +223,15 @@ const FloatingWindow: React.FC<FloatingWindowProps> = ({
         )}
         {onClose && (
           <button
-            onClick={onClose}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onClose();
+            }}
             title="Close window"
             style={{ padding: '3px 9px', fontSize: '0.75rem', borderRadius: buttonRadius, flexShrink: 0 }}
           >

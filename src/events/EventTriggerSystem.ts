@@ -1,11 +1,8 @@
 import { eventBus } from './EventBus';
 import type { GameEvent } from './types';
+import { doesTriggerGroupMatch, legacyTriggerToGroup, type LegacyTriggerDefinition } from './TriggerGroups';
 
-export interface TriggerDefinition {
-  event: string;
-  actions: (string | { type: string; key: string; [key: string]: any })[];
-  enabled?: boolean;
-}
+export type TriggerDefinition = LegacyTriggerDefinition;
 
 const triggers: TriggerDefinition[] = [
   { 
@@ -32,19 +29,18 @@ class EventTriggerSystem {
   }
 
   private handleEvent(event: GameEvent) {
-    const matches = triggers.filter(t => t.event === event.type && t.enabled !== false);
-    
+    const matches = triggers
+      .map((trigger, index) => legacyTriggerToGroup(trigger, index))
+      .filter(group => doesTriggerGroupMatch(group, event));
+
     for (const trigger of matches) {
-      for (const action of trigger.actions) {
-        const normalizedAction = typeof action === "string" 
-          ? { type: action.split('.')[0], key: action.split('.')[1] }
-          : action;
-        
+      for (const normalizedAction of trigger.actions.filter(action => action.enabled !== false)) {
         const { type, key } = normalizedAction;
         
         if (type === "audio") {
           if (this.onAudioTrigger) {
-            this.onAudioTrigger(key, event.payload, { volume: normalizedAction.volume });
+            const volume = typeof normalizedAction.volume === "number" ? normalizedAction.volume : undefined;
+            this.onAudioTrigger(key, event.payload, { volume });
           }
         } else {
           // TODO: future action types

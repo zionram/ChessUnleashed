@@ -9,30 +9,7 @@ This file summarizes recent verified prompts so future AI/dev handoffs understan
 - DOCS-002_CODEX_AUDIT: Created current codebase intake.
 - DOCS-005_PROJECT_DOCUMENTATION_REFRESH: Refreshed project documentation after major system changes.
 - DOCS-006_FINAL_RELEASE_DOC_REFRESH: Refreshed release-candidate docs and added v1.0 release notes.
-
-## UI Shell / Floating Launcher / Workspace Cleanup
-
-Recent Chat #6 / Chat #7 verified UI state:
-
-- Left Tool Palette now floats over the background.
-- Left Tool Palette is draggable by its header.
-- Left Tool Palette is resizable left/right and up/down.
-- Collapsed left rail becomes a clean icon-only mode.
-- Selected launcher icons stay visible.
-- Redundant launcher side arrows were targeted for removal; future changes must not hide SVG internals.
-- Let’s Play overlay opens centered and above the background from both the New button and the left palette.
-- Let’s Play overlay dark theming has been restored.
-- Let’s Play overlay scrollbar matches the dark/glass style.
-- Right workspace redundant History/Layers/Squares quick buttons were removed.
-- Inner redundant Workspace button/tab was removed.
-- Chessboard glass shell was made draggable by grabbing the glass around the board.
-- Board can be double-clicked on the glass shell to reset position.
-- Board drag must not interfere with dragging pieces/squares.
-
-Current next task:
-
-- Environment launcher tabs should render actual controls inside the floating launcher window instead of showing “Open this workspace tool” cards.
-- “Dock” should become a small option inside the real tool interface, not the main action.
+- CHAT-8_DOC_REFRESH: Updated documentation after Obsidian default-theme source-of-truth work, WorkspaceActionRegistry/windowing fixes, Move Assist toggle work, and Event Builder workflow planning. This was a session documentation update, not a numbered implementation prompt.
 
 ## Packaging / Electron / Package Manager
 
@@ -55,6 +32,20 @@ Current next task:
 - C.4.P-233_FIX: Preserved Arrange Draft preview after Apply to Draft.
 - C.4.P-295_310_BATCH: Fixed Piece Set reset/staging/save zip behavior and Piece/Layer draft merge issues.
 - C.4.P-311_318_BATCH: Added welcome sidebar container color controls and frame sizing/lock modes.
+- CHAT-8_OBSIDIAN_DEFAULT_THEME: Converted Obsidian into a bundled default theme folder source. `experience.json` should be treated as the source of truth; loader files normalize but do not define competing visuals.
+- CHAT-8_WORKSPACE_CHROME_TEMPLATE: Added/clarified template-owned workspace chrome defaults such as HUD safe areas and launcher/window defaults. Needs verification against current code after future App/window changes.
+
+## Workspace / Windowing / Launcher
+
+- CHAT-8_WORKSPACE_ACTION_REGISTRY: Introduced `src/registry/WorkspaceActionRegistry.tsx` as the actionId -> view/component registration source for launcher/workspace embedding.
+- CHAT-8_FLOATING_WINDOWS: Restored launcher tab embedding so registered tools show controls in floating windows instead of generic "Open" cards.
+- CHAT-8_DOCK_UNDOCK: Docked workspace panels should provide an Undock control that recreates the floating window state. Needs build/runtime verification after final patch application.
+- CHAT-8_CLOSE_ROUTING: Close/Dock/Undock controls should not bubble into drag/focus routing or spawn views into the center workspace. Needs verification after any App/FloatingWindow edits.
+
+## Move Assist / Analysis
+
+- CHAT-8_MOVE_ASSIST_TOGGLE: Added intended separate setting/control for showing the board-side Black/White Assist window independently from move badges. `ChessBoard.tsx` must read `settings.moveAssistSettings.showEngineAssistPanel` for the overlay condition.
+- CHAT-8_ANALYSIS_MOVE_ASSIST_SPLIT: Analysis remains deeper engine/evaluation UI; Move Assist is the user-facing control area for board assist/hover helpers.
 
 ## Events / Sound / Animation
 
@@ -78,6 +69,7 @@ Current next task:
 - C.4.P-311_318_BATCH: Moved Event Builder to readable center panel and added close behavior.
 - C.4.P-319_328_BATCH: Fixed local-player movement animation and stateful check/in-check audio pause/resume.
 - C.4.P-329_FIX: Delayed bot/opponent response until player movement animation completes.
+- CHAT-8_DO_SOMETHING_COOL: Planned/refined Event Builder UX around What/When/Why/Where/Save, featured buttons, Something Else, consistent reusable list/add flows, and progressive disclosure.
 
 ## Bots
 

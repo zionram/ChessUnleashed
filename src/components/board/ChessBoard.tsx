@@ -690,7 +690,7 @@ const ChessBoard: React.FC<ChessBoardProps> = ({
         @keyframes event-animation-board-flash { 0%, 100% { background: rgba(250,204,21,0); } 50% { background: rgba(250,204,21,0.32); } }
       `}</style>
       {/* Engine Assist UI Overlay */}
-      {settings.trainingWheels && !settings.isThemeEditorMode && (
+      {settings.trainingWheels && (settings.moveAssistSettings.showEngineAssistPanel ?? true) && !settings.isThemeEditorMode && (
         <div className="cu-board-assist-overlay">
           <div className="cu-board-assist-title">{perspectiveLabel} Assist</div>
           <div className="cu-board-assist-score-row">

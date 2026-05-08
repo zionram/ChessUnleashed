@@ -1,8 +1,8 @@
 # Menu And UI Structure
 
-Status: Current, with active windowing/theming polish.
+Status: Current
 
-The current menu structure is defined in `src/config/menuSchema.ts`. Views are registered and positioned in `src/App.tsx`.
+The current menu structure is defined in `src/config/menuSchema.ts`. Workspace action/view registration is centralized in `src/registry/WorkspaceActionRegistry.tsx`. App shell rendering in `src/App.tsx` should consume registry results instead of duplicating actionId -> view/component mappings.
 
 ## Top-Level Menu Order
 
@@ -11,29 +11,7 @@ The current menu structure is defined in `src/config/menuSchema.ts`. Views are r
 3. Tools
 4. Advanced
 
-## Let’s Play
-
-Let’s Play is the user-facing entry point for starting or joining games.
-
-Current opponent/setup directions:
-
-- Local Player
-- Play vs Bot
-- LAN
-- Online
-
-Online currently includes FICS as the first real internet chess provider:
-
-- Let’s Play -> Online -> Open FICS
-- Opens one normal dockable FICS floating window with:
-  - Online tab
-  - Console tab
-
-FICS should remain reachable from the gameplay flow. Do not hide FICS login/play controls only in global settings.
-
 ## Environment
-
-Current Look/Sound/Platform direction:
 
 - Look
   - Pieces
@@ -42,82 +20,71 @@ Current Look/Sound/Platform direction:
   - Paths
   - Layers
   - Themes
+  - Background
   - Animation
   - Platform UI
-  - Background planned as a higher-level Look tab, not buried under Board/Layers controls.
 - Sound
   - Audio Settings
-  - Sound Editor / Sound Rules / Sound Library where currently wired.
-- Load / Save Sets opens the Package/Appearance workflow depending on current view wiring.
+- Packages
+  - Load / Save Sets
+  - Package/Appearance workflow depending on current view wiring
 
 ## Tools
 
-Current and/or registered tools include:
-
 - Chat
 - Bots
-- FICS Online
-- Import / Export
+- Package Manager / Import Export
 - Rule Builder
 - History
 - Stats
 - Analysis
 - Move Assist
+- FICS Online
 
 ## Advanced
 
-Current and/or registered advanced areas include:
-
 - Gaming
-- FICS Console
-- Sound Editor
-- Event Builder
-- Animation Builder
-- Event Log
+  - Sound Editor
+  - Event Builder
+  - Animation Builder
+  - Event Log
+  - FICS Console
+  - AI Package Builder
 - System
-- Troubleshooter
-- Validation
-- Settings Builder
-- Reset System
-- AI Package Builder / Active Template Audit where currently wired.
-
-## Floating Windows And Docking
-
-Current verified direction:
-
-- Launcher submenu items open in floating windows with real controls, not placeholder “Open this tool” cards.
-- Multiple launcher windows can be open simultaneously.
-- Floating windows are draggable, resizable, closeable, and click-to-front.
-- Outer tabs can detach into floating windows and dock back into compatible launcher tab rows.
-- Nested tabs can detach into floating windows and dock back into compatible nested tab rows.
-- Drag feedback/ghosting exists while dragging tabs/windows.
-- Floating windows can dock into the right workspace.
-- Docked workspace panels stack visibly instead of hiding behind flat tabs.
-- Docked panels have minimize/close controls.
-- Undock option for docked workspace panels is planned.
-
-## Lower HUD / Status Strips
-
-The lower HUD/status-control strips are movable and optional:
-
-- Activity / turn / active tools panel
-- Board / Timer / Scale controls panel
-
-Desired polish still pending:
-
-- right-side theming alignment
-- text centered instead of left-aligned
-- text/content should shift cleanly when hover-only close button appears
+  - Troubleshooter
+  - Validation
+  - Settings Builder
+  - Reset System
 
 ## Panel Placement
 
-Verified/expected patterns:
+Verified/expected from current architecture:
 
-- Sound Editor opens as a center or wide workflow where currently wired.
-- Animation Builder opens as a center workflow.
+- Sound Editor opens as a center/embedded workflow when active.
+- Event Builder opens as a center/embedded workflow.
+- Animation Builder opens as a center/embedded workflow.
 - Custom Game runtime renders in the center when an active custom ruleset is started.
-- FICS Online/Console open as a single FICS hub window from Let’s Play -> Online and also remain usable as registered views/tools.
-- Registered views should render inside shared themed wrappers where possible.
+- Floating launcher windows should render actual controls for registered workspace actions, not just "Open" cards.
+- Dockable floating windows should dock into the right workspace panel and docked panels should provide an Undock control.
+- Docked panel Undock should be icon-only in the header, with tooltip/aria label preserving meaning.
+- Workspace HUD/status strips should default to safe visible positions and not load under the side workspace/palette.
+
+## Workspace Action Registry
+
+`src/registry/WorkspaceActionRegistry.tsx` is the source of truth for launcher/workspace embedding:
+
+- actionId -> viewId
+- actionId -> component
+- default registration metadata
+- workspace view registration
+
+`App.tsx` must not maintain a separate action-to-view list. If a launcher tab shows an "Open" card for a registered tool, first verify `WorkspaceActionRegistry` and the render path before adding new mappings.
+
+## Move Assist / Analysis Relationship
+
+- Move Assist is the user-facing control area for board assistance, pressure badges, hover identity helpers, and the board-side assist window toggle.
+- Analysis remains the deeper evaluation panel.
+- If future UI consolidation happens, preserve existing Analysis behavior unless explicitly migrating it into Move Assist.
 
 ## Rules For Future UI Work
 
@@ -125,5 +92,4 @@ Verified/expected patterns:
 - Use links/buttons from related settings pages instead of duplicate menu items.
 - Keep complex workflows out of cramped side panels when they require table/edit/preview layouts.
 - Preserve existing action IDs unless the task explicitly requires a migration.
-- Do not create one-off popups when the floating launcher/docked panel system can handle it.
-- Registered views should use shared classes/wrappers instead of broad CSS fishing-net selectors.
+- Do not add a view-specific Dock/Undock implementation when a shared floating/docked window shell can own it.

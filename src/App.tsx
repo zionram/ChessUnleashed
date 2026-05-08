@@ -5,35 +5,13 @@ import { AudioProvider } from './context/AudioContext';
 import ChessBoard from './components/board/ChessBoard';
 import DynamicMenu from './components/menu/DynamicMenu';
 import ViewManager from './components/layout/ViewManager';
-import { registerView, getRegisteredViews } from './registry/ViewRegistry';
-import HistoryView from './views/HistoryView';
-import StatsView from './views/StatsView';
+import {
+  getWorkspaceActionViewConfig,
+  getWorkspaceViewId as getRegisteredWorkspaceViewId,
+  registerWorkspaceActionViews
+} from './registry/WorkspaceActionRegistry';
 import WelcomeView from './views/WelcomeView';
-import ThemeEditorView from './views/ThemeEditorView';
-import MultiplayerView from './views/MultiplayerView';
-import AnalysisView from './views/AnalysisView';
-import MoveAssistView from './views/MoveAssistView';
-import ComputerOpponentView from './views/ComputerOpponentView';
-import SquaresView from './views/SquaresView';
-import PathsView from './views/PathsView';
-import LayersView from './views/LayersView';
-import AudioView from './views/AudioView';
-import SoundEditorView from './views/SoundEditorView';
-import EventLogView from './views/EventLogView';
-import EventBuilderView from './views/EventBuilderView';
-import TroubleshooterView from './views/TroubleshooterView';
-import ChatSettingsView from './views/ChatSettingsView';
-import BotsView from './views/BotsView';
-import TimerSettingsView from './views/TimerSettingsView';
 import TimerView from './views/TimerView';
-import PlatformAppearanceView from './views/PlatformAppearanceView';
-import AnimationSettingsView from './views/AnimationSettingsView';
-import AnimationBuilderView from './views/AnimationBuilderView';
-import AboutSupportView from './views/AboutSupportView';
-import ProfileView from './views/ProfileView';
-import FicsOnlineView from './views/FicsOnlineView';
-import FicsConsoleView from './views/FicsConsoleView';
-import RuleBuilderView from './views/RuleBuilderView';
 import CustomGameRuntimeView from './views/CustomGameRuntimeView';
 import LetsPlaySetupView from './views/LetsPlaySetupView';
 import ChatContainer from './components/layout/ChatContainer';
@@ -49,46 +27,7 @@ import { SETTINGS_STORAGE_KEY } from './context/SettingsContext';
 import { clearGameSnapshot, readGameSnapshot } from './runtime/GameSnapshot';
 import './App.css';
 
-const ChatRight = () => {
-  const { settings } = useSettings();
-  if (settings.chatSettings.position !== 'right') return null;
-  return <ChatContainer requiredPosition="right" />;
-};
-
-const TimerRight = () => {
-  const { settings } = useSettings();
-  if (!settings.timeControl.enabled || settings.timeControl.placement !== 'right-panel') return null;
-  return <TimerView />;
-};
-
-registerView({ id: 'welcome', name: 'Welcome', component: WelcomeView, defaultEnabled: true, position: 'left' });
-registerView({ id: 'history', name: 'History', component: HistoryView, defaultEnabled: true, position: 'right' });
-registerView({ id: 'chat', name: 'Chat', component: ChatRight, defaultEnabled: false, position: 'right' });
-registerView({ id: 'chat-settings', name: 'Chat Settings', component: ChatSettingsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'bots', name: 'Bots Management', component: BotsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'profile', name: 'Profile', component: ProfileView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'rule-builder', name: 'Rule Builder', component: RuleBuilderView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'timer', name: 'Timer', component: TimerRight, defaultEnabled: false, position: 'right' });
-registerView({ id: 'timer-settings', name: 'Timer Settings', component: TimerSettingsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'event-log', name: 'Event Log', component: EventLogView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'event-builder', name: 'Event Builder', component: EventBuilderView, defaultEnabled: false, position: 'center' });
-registerView({ id: 'troubleshooter', name: 'Troubleshooter', component: TroubleshooterView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'stats', name: 'Stats', component: StatsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'theme-editor', name: 'Piece Editor', component: ThemeEditorView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'multiplayer', name: 'Multiplayer', component: MultiplayerView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'analysis', name: 'Analysis', component: AnalysisView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'move-assist', name: 'Move Assist', component: MoveAssistView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'computer-opponent', name: 'Computer Opponent', component: ComputerOpponentView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'squares', name: 'Squares', component: SquaresView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'paths', name: 'Paths', component: PathsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'layers', name: 'Layers', component: LayersView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'audio', name: 'Audio Settings', component: AudioView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'platform-appearance', name: 'Platform UI', component: PlatformAppearanceView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'animation-settings', name: 'Animation', component: AnimationSettingsView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'animation-builder', name: 'Animation Builder', component: AnimationBuilderView, defaultEnabled: false, position: 'center' });
-registerView({ id: 'about-support', name: 'About / Support', component: AboutSupportView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'fics-online', name: 'FICS Online', component: FicsOnlineView, defaultEnabled: false, position: 'right' });
-registerView({ id: 'fics-console', name: 'FICS Console', component: FicsConsoleView, defaultEnabled: false, position: 'right' });
+registerWorkspaceActionViews();
 
 type LauncherWindowEntry = {
   item: MenuItem;
@@ -139,19 +78,15 @@ type TabDragPreviewState = {
   y: number;
 } | null;
 
-const WORKSPACE_VIEW_ID_OVERRIDES: Record<string, string | null> = {
-  'toggle-piece-editor': 'theme-editor',
-  'toggle-computer': 'computer-opponent',
-  'toggle-wheels': 'move-assist',
-  'reset-system': null,
-  'upload-rules': null,
-  'set-mode-standard': null
-};
+const NON_WORKSPACE_ACTION_IDS = new Set([
+  'reset-system',
+  'upload-rules',
+  'set-mode-standard'
+]);
 
 const getWorkspaceViewId = (actionId: string): string | null => {
-  if (actionId in WORKSPACE_VIEW_ID_OVERRIDES) return WORKSPACE_VIEW_ID_OVERRIDES[actionId];
-  const match = actionId.match(/^toggle-(.+)$/);
-  return match ? match[1] : null;
+  if (NON_WORKSPACE_ACTION_IDS.has(actionId)) return null;
+  return getRegisteredWorkspaceViewId(actionId);
 };
 
 const canDockToWorkspace = (item: MenuItem): boolean => {
@@ -171,18 +106,195 @@ const FICS_LAUNCHER_ITEM: MenuItem = {
   ]
 };
 
+
+type WorkspaceChromeConfig = {
+  zIndex: {
+    hud: number;
+    sidePanels: number;
+    launcherBase: number;
+    launcherDragPreview: number;
+    overlay: number;
+  };
+  safeAreas: {
+    outerMargin: number;
+    panelGap: number;
+    bottomInset: number;
+  };
+  leftPanel: {
+    defaultPosition: { x: number; y: number };
+    defaultWidth: number;
+    collapsedWidth: number;
+    minWidth: number;
+    maxWidth: number;
+    defaultHeight: number;
+    minHeight: number;
+  };
+  rightPanel: {
+    defaultWidth: number;
+    minWidth: number;
+    maxWidth: number;
+  };
+  board: {
+    defaultScale: number;
+    minScale: number;
+    maxScale: number;
+    scaleStep: number;
+    defaultOffset: { x: number; y: number };
+  };
+  hud: {
+    activity: { visible: boolean; anchor: 'bottom-left'; offset: { x: number; y: number } };
+    meta: { visible: boolean; anchor: 'bottom-right'; offset: { x: number; y: number } };
+  };
+  launcher: {
+    defaultSize: { width: number; height: number };
+    spawnOffset: { x: number; y: number };
+    cascadeOffset: { x: number; y: number };
+  };
+};
+
+const DEFAULT_WORKSPACE_CHROME: WorkspaceChromeConfig = {
+  zIndex: {
+    hud: 320,
+    sidePanels: 200,
+    launcherBase: 2600,
+    launcherDragPreview: 9999,
+    overlay: 3000
+  },
+  safeAreas: {
+    outerMargin: 18,
+    panelGap: 14,
+    bottomInset: 72
+  },
+  leftPanel: {
+    defaultPosition: { x: 12, y: 12 },
+    defaultWidth: 280,
+    collapsedWidth: 72,
+    minWidth: 120,
+    maxWidth: 320,
+    defaultHeight: 520,
+    minHeight: 240
+  },
+  rightPanel: {
+    defaultWidth: 320,
+    minWidth: 250,
+    maxWidth: 600
+  },
+  board: {
+    defaultScale: 100,
+    minScale: 75,
+    maxScale: 125,
+    scaleStep: 5,
+    defaultOffset: { x: 0, y: 0 }
+  },
+  hud: {
+    activity: { visible: true, anchor: 'bottom-left', offset: { x: 0, y: 0 } },
+    meta: { visible: true, anchor: 'bottom-right', offset: { x: 0, y: 0 } }
+  },
+  launcher: {
+    defaultSize: { width: 520, height: 420 },
+    spawnOffset: { x: 14, y: 42 },
+    cascadeOffset: { x: 0, y: 24 }
+  }
+};
+
+const numberOr = (value: unknown, fallback: number) =>
+  typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+
+const boolOr = (value: unknown, fallback: boolean) =>
+  typeof value === 'boolean' ? value : fallback;
+
+const readPoint = (value: unknown, fallback: { x: number; y: number }) => {
+  if (!value || typeof value !== 'object') return fallback;
+  const point = value as { x?: unknown; y?: unknown };
+  return { x: numberOr(point.x, fallback.x), y: numberOr(point.y, fallback.y) };
+};
+
+const readSize = (value: unknown, fallback: { width: number; height: number }) => {
+  if (!value || typeof value !== 'object') return fallback;
+  const size = value as { width?: unknown; height?: unknown };
+  return { width: numberOr(size.width, fallback.width), height: numberOr(size.height, fallback.height) };
+};
+
+const getWorkspaceChrome = (template: unknown): WorkspaceChromeConfig => {
+  const source = ((template as { workspaceChrome?: unknown })?.workspaceChrome ?? {}) as Record<string, any>;
+  const zIndex = source.zIndex ?? {};
+  const safeAreas = source.safeAreas ?? {};
+  const leftPanel = source.leftPanel ?? {};
+  const rightPanel = source.rightPanel ?? {};
+  const board = source.board ?? {};
+  const hud = source.hud ?? {};
+  const activity = hud.activity ?? {};
+  const meta = hud.meta ?? {};
+  const launcher = source.launcher ?? {};
+
+  return {
+    zIndex: {
+      hud: numberOr(zIndex.hud, DEFAULT_WORKSPACE_CHROME.zIndex.hud),
+      sidePanels: numberOr(zIndex.sidePanels, DEFAULT_WORKSPACE_CHROME.zIndex.sidePanels),
+      launcherBase: numberOr(zIndex.launcherBase, DEFAULT_WORKSPACE_CHROME.zIndex.launcherBase),
+      launcherDragPreview: numberOr(zIndex.launcherDragPreview, DEFAULT_WORKSPACE_CHROME.zIndex.launcherDragPreview),
+      overlay: numberOr(zIndex.overlay, DEFAULT_WORKSPACE_CHROME.zIndex.overlay)
+    },
+    safeAreas: {
+      outerMargin: numberOr(safeAreas.outerMargin, DEFAULT_WORKSPACE_CHROME.safeAreas.outerMargin),
+      panelGap: numberOr(safeAreas.panelGap, DEFAULT_WORKSPACE_CHROME.safeAreas.panelGap),
+      bottomInset: numberOr(safeAreas.bottomInset, DEFAULT_WORKSPACE_CHROME.safeAreas.bottomInset)
+    },
+    leftPanel: {
+      defaultPosition: readPoint(leftPanel.defaultPosition, DEFAULT_WORKSPACE_CHROME.leftPanel.defaultPosition),
+      defaultWidth: numberOr(leftPanel.defaultWidth, DEFAULT_WORKSPACE_CHROME.leftPanel.defaultWidth),
+      collapsedWidth: numberOr(leftPanel.collapsedWidth, DEFAULT_WORKSPACE_CHROME.leftPanel.collapsedWidth),
+      minWidth: numberOr(leftPanel.minWidth, DEFAULT_WORKSPACE_CHROME.leftPanel.minWidth),
+      maxWidth: numberOr(leftPanel.maxWidth, DEFAULT_WORKSPACE_CHROME.leftPanel.maxWidth),
+      defaultHeight: numberOr(leftPanel.defaultHeight, DEFAULT_WORKSPACE_CHROME.leftPanel.defaultHeight),
+      minHeight: numberOr(leftPanel.minHeight, DEFAULT_WORKSPACE_CHROME.leftPanel.minHeight)
+    },
+    rightPanel: {
+      defaultWidth: numberOr(rightPanel.defaultWidth, DEFAULT_WORKSPACE_CHROME.rightPanel.defaultWidth),
+      minWidth: numberOr(rightPanel.minWidth, DEFAULT_WORKSPACE_CHROME.rightPanel.minWidth),
+      maxWidth: numberOr(rightPanel.maxWidth, DEFAULT_WORKSPACE_CHROME.rightPanel.maxWidth)
+    },
+    board: {
+      defaultScale: numberOr(board.defaultScale, DEFAULT_WORKSPACE_CHROME.board.defaultScale),
+      minScale: numberOr(board.minScale, DEFAULT_WORKSPACE_CHROME.board.minScale),
+      maxScale: numberOr(board.maxScale, DEFAULT_WORKSPACE_CHROME.board.maxScale),
+      scaleStep: numberOr(board.scaleStep, DEFAULT_WORKSPACE_CHROME.board.scaleStep),
+      defaultOffset: readPoint(board.defaultOffset, DEFAULT_WORKSPACE_CHROME.board.defaultOffset)
+    },
+    hud: {
+      activity: {
+        visible: boolOr(activity.visible, DEFAULT_WORKSPACE_CHROME.hud.activity.visible),
+        anchor: 'bottom-left',
+        offset: readPoint(activity.offset, DEFAULT_WORKSPACE_CHROME.hud.activity.offset)
+      },
+      meta: {
+        visible: boolOr(meta.visible, DEFAULT_WORKSPACE_CHROME.hud.meta.visible),
+        anchor: 'bottom-right',
+        offset: readPoint(meta.offset, DEFAULT_WORKSPACE_CHROME.hud.meta.offset)
+      }
+    },
+    launcher: {
+      defaultSize: readSize(launcher.defaultSize, DEFAULT_WORKSPACE_CHROME.launcher.defaultSize),
+      spawnOffset: readPoint(launcher.spawnOffset, DEFAULT_WORKSPACE_CHROME.launcher.spawnOffset),
+      cascadeOffset: readPoint(launcher.cascadeOffset, DEFAULT_WORKSPACE_CHROME.launcher.cascadeOffset)
+    }
+  };
+};
+
 function MainLayout() {
-  const { settings, toggleView, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
+  const { settings, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode, updateTimeControl } = useSettings();
   const { gameState, multiplayer, timeoutResult, resignationResult, resetGame, resignGame, ficsGame } = useGame();
   const { localProfile } = settings;
+  const activeTemplate = settings.themeDraft ?? settings.template;
+  const workspaceChrome = getWorkspaceChrome(activeTemplate);
 
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [activeMobileSection, setActiveMobileSection] = useState<string | null>(null);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
-  const [leftPanelPosition, setLeftPanelPosition] = useState({ x: 12, y: 12 });
+  const [leftPanelPosition, setLeftPanelPosition] = useState(() => workspaceChrome.leftPanel.defaultPosition);
   const isDraggingLeftPanel = useRef(false);
   const leftPanelDragOffset = useRef({ x: 0, y: 0 });
-  const [leftPanelHeight, setLeftPanelHeight] = useState(() => Math.max(360, Math.min(720, window.innerHeight - 120)));
+  const [leftPanelHeight, setLeftPanelHeight] = useState(() => Math.max(workspaceChrome.leftPanel.minHeight, Math.min(workspaceChrome.leftPanel.defaultHeight, window.innerHeight - 120)));
   const isResizingLeftPanel = useRef(false);
   const isResizingLeftPanelHeight = useRef(false);
   const leftPanelResizeStart = useRef({ x: 0, width: 150 });
@@ -191,6 +303,9 @@ function MainLayout() {
   const [resetConfirmationOpen, setResetConfirmationOpen] = useState(false);
   const [newGameOverlayOpen, setNewGameOverlayOpen] = useState(false);
   const [packageManagerOpen, setPackageManagerOpen] = useState(false);
+  const [packageManagerMode, setPackageManagerMode] = useState<'landing' | 'import' | 'export' | 'extract'>('landing');
+  const [packageManagerAction, setPackageManagerAction] = useState<'load' | 'save' | null>(null);
+  const [packageManagerActionId, setPackageManagerActionId] = useState(0);
   const [activeCustomRulesetId, setActiveCustomRulesetId] = useState<string | null>(() => {
     const snapshot = readGameSnapshot();
     return snapshot?.gameType === 'custom' ? snapshot.selectedCustomRulesetId : null;
@@ -199,7 +314,7 @@ function MainLayout() {
   const [activeLauncherOverlay, setActiveLauncherOverlay] = useState<MenuItem | null>(null);
   const [launcherOverlayCloseRequest, setLauncherOverlayCloseRequest] = useState<(() => void) | null>(null);
   const [openLauncherWindows, setOpenLauncherWindows] = useState<Map<string, LauncherWindowEntry>>(() => new Map());
-  const launcherTopZRef = useRef(2600);
+  const launcherTopZRef = useRef(workspaceChrome.zIndex.launcherBase);
   const launcherWindowCountRef = useRef(0);
   const launcherWindowBoundsRef = useRef<Map<string, LauncherWindowBounds>>(new Map());
   const tabDragRef = useRef<TabDragState | null>(null);
@@ -208,8 +323,8 @@ function MainLayout() {
   const tabRowRefs = useRef<Map<string, LauncherDockTarget>>(new Map());
   const rightPanelRef = useRef<HTMLElement | null>(null);
   const [dockedPanels, setDockedPanels] = useState<DockedPanel[]>([]);
-  const [leftWidth, setLeftWidth] = useState(280);
-  const [collapsedLeftWidth, setCollapsedLeftWidth] = useState(72);
+  const [leftWidth, setLeftWidth] = useState(workspaceChrome.leftPanel.defaultWidth);
+  const [collapsedLeftWidth, setCollapsedLeftWidth] = useState(workspaceChrome.leftPanel.collapsedWidth);
   const collapsedLauncherItemCount = MENU_SCHEMA.length;
   const collapsedLauncherColumns = Math.max(1, Math.floor(Math.max(72, collapsedLeftWidth - 16) / 64));
   const collapsedLauncherRows = Math.ceil(collapsedLauncherItemCount / collapsedLauncherColumns);
@@ -217,7 +332,7 @@ function MainLayout() {
   const effectiveLeftPanelHeight = leftPanelCollapsed
     ? Math.max(leftPanelHeight, collapsedRequiredHeight)
     : leftPanelHeight;
-  const [rightWidth, setRightWidth] = useState(320);
+  const [rightWidth, setRightWidth] = useState(workspaceChrome.rightPanel.defaultWidth);
   const [dismissedGameEndOverlay, setDismissedGameEndOverlay] = useState(false);
   const isDraggingLeft = useRef(false);
   const isDraggingRight = useRef(false);
@@ -229,15 +344,14 @@ function MainLayout() {
   const [isTimerDragging, setIsTimerDragging] = useState(false);
   const [frameAnchor, setFrameAnchor] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [topbarTipIndex, setTopbarTipIndex] = useState(0);
-  const [workspaceScale, setWorkspaceScale] = useState(100);
-  const [workspaceActivityVisible, setWorkspaceActivityVisible] = useState(true);
-  const [workspaceMetaVisible, setWorkspaceMetaVisible] = useState(true);
-  const [workspaceActivityPosition, setWorkspaceActivityPosition] = useState({ x: 0, y: 0 });
-  const [workspaceMetaPosition, setWorkspaceMetaPosition] = useState({ x: 0, y: 0 });
-  const workspaceMetaDefaultRight = rightPanelCollapsed ? 18 : rightWidth + 36;
+  const [workspaceScale, setWorkspaceScale] = useState(workspaceChrome.board.defaultScale);
+  const [workspaceActivityVisible, setWorkspaceActivityVisible] = useState(workspaceChrome.hud.activity.visible);
+  const [workspaceMetaVisible, setWorkspaceMetaVisible] = useState(workspaceChrome.hud.meta.visible);
+  const [workspaceActivityPosition, setWorkspaceActivityPosition] = useState(workspaceChrome.hud.activity.offset);
+  const [workspaceMetaPosition, setWorkspaceMetaPosition] = useState(workspaceChrome.hud.meta.offset);
   const [workspaceHudHover, setWorkspaceHudHover] = useState<'activity' | 'meta' | null>(null);
   const workspaceHudDragRef = useRef<{ panel: 'activity' | 'meta'; x: number; y: number; startX: number; startY: number } | null>(null);
-  const [boardDragPosition, setBoardDragPosition] = useState({ x: 0, y: 0 });
+  const [boardDragPosition, setBoardDragPosition] = useState(workspaceChrome.board.defaultOffset);
   const isDraggingBoardShell = useRef(false);
   const boardShellDragOffset = useRef({ x: 0, y: 0 });
 
@@ -282,8 +396,8 @@ function MainLayout() {
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (window.innerWidth <= 768) return;
-      if (isDraggingLeft.current) setLeftWidth(Math.max(120, Math.min(280, e.clientX - leftPanelPosition.x)));
-      if (isDraggingRight.current) setRightWidth(Math.max(250, Math.min(600, window.innerWidth - e.clientX)));
+      if (isDraggingLeft.current) setLeftWidth(Math.max(workspaceChrome.leftPanel.minWidth, Math.min(workspaceChrome.leftPanel.maxWidth, e.clientX - leftPanelPosition.x)));
+      if (isDraggingRight.current) setRightWidth(Math.max(workspaceChrome.rightPanel.minWidth, Math.min(workspaceChrome.rightPanel.maxWidth, window.innerWidth - e.clientX)));
     };
     const handleMouseUp = () => {
       isDraggingLeft.current = false;
@@ -304,7 +418,9 @@ function MainLayout() {
       if (!drag) return;
       const nextPosition = {
         x: drag.startX + event.clientX - drag.x,
-        y: drag.startY + event.clientY - drag.y
+        // HUD panels are bottom-anchored. Positive Y moves them below the visible workspace,
+        // so clamp to 0 and let the active template's safeAreas.bottomInset control bottom spacing.
+        y: Math.min(0, drag.startY + event.clientY - drag.y)
       };
       if (drag.panel === 'activity') setWorkspaceActivityPosition(nextPosition);
       else setWorkspaceMetaPosition(nextPosition);
@@ -331,12 +447,13 @@ function MainLayout() {
       const panelHeight = leftPanelCollapsed ? Math.max(leftPanelHeight, collapsedRequiredHeight) : leftPanelHeight;
       const nextX = e.clientX - leftPanelDragOffset.current.x;
       const nextY = e.clientY - leftPanelDragOffset.current.y;
-      const maxX = Math.max(8, window.innerWidth - panelWidth - 8);
-      const maxY = Math.max(8, window.innerHeight - panelHeight - 8);
+      const margin = workspaceChrome.safeAreas.outerMargin;
+      const maxX = Math.max(margin, window.innerWidth - panelWidth - margin);
+      const maxY = Math.max(margin, window.innerHeight - panelHeight - margin);
 
       setLeftPanelPosition({
-        x: Math.max(8, Math.min(maxX, nextX)),
-        y: Math.max(8, Math.min(maxY, nextY))
+        x: Math.max(margin, Math.min(maxX, nextX)),
+        y: Math.max(margin, Math.min(maxY, nextY))
       });
     };
 
@@ -360,8 +477,8 @@ function MainLayout() {
       if (!isResizingLeftPanel.current) return;
 
       const delta = e.clientX - leftPanelResizeStart.current.x;
-      const minWidth = leftPanelCollapsed ? 72 : 120;
-      const maxWidth = Math.min(leftPanelCollapsed ? 160 : 320, window.innerWidth - leftPanelPosition.x - 24);
+      const minWidth = leftPanelCollapsed ? workspaceChrome.leftPanel.collapsedWidth : workspaceChrome.leftPanel.minWidth;
+      const maxWidth = Math.min(leftPanelCollapsed ? workspaceChrome.leftPanel.collapsedWidth : workspaceChrome.leftPanel.maxWidth, window.innerWidth - leftPanelPosition.x - workspaceChrome.safeAreas.outerMargin);
       const nextWidth = Math.max(minWidth, Math.min(maxWidth, leftPanelResizeStart.current.width + delta));
       if (leftPanelCollapsed) setCollapsedLeftWidth(nextWidth);
       else setLeftWidth(nextWidth);
@@ -387,8 +504,8 @@ function MainLayout() {
       if (!isResizingLeftPanelHeight.current) return;
 
       const delta = e.clientY - leftPanelHeightResizeStart.current.y;
-      const maxHeight = Math.max(240, window.innerHeight - leftPanelPosition.y - 8);
-      const nextHeight = Math.max(240, Math.min(maxHeight, leftPanelHeightResizeStart.current.height + delta));
+      const maxHeight = Math.max(workspaceChrome.leftPanel.minHeight, window.innerHeight - leftPanelPosition.y - workspaceChrome.safeAreas.outerMargin);
+      const nextHeight = Math.max(workspaceChrome.leftPanel.minHeight, Math.min(maxHeight, leftPanelHeightResizeStart.current.height + delta));
       setLeftPanelHeight(nextHeight);
     };
 
@@ -540,7 +657,7 @@ function MainLayout() {
         setThemeEditorMode(true);
         if (!settings.activeViews.includes('theme-editor')) toggleView('theme-editor');
         break;
-      case 'toggle-wheels': toggleView('move-assist'); break;
+      case 'toggle-wheels': setTrainingWheels(!settings.trainingWheels); break;
       case 'reset-system': setResetConfirmationOpen(true); break;
       case 'upload-rules': alert('Rule Uploading enabled! Please select your .json rule file.'); break;
       case 'set-mode-standard': setGameMode('standard'); break;
@@ -580,11 +697,18 @@ function MainLayout() {
     setNewGameOverlayOpen(true);
   };
 
-  const activeTemplate = settings.themeDraft ?? settings.template;
   const { background, frameLayer } = activeTemplate;
   const isSoundEditorActive = settings.activeViews.includes('sound-editor');
   const isEventBuilderActive = settings.activeViews.includes('event-builder');
   const isAnimationBuilderActive = settings.activeViews.includes('animation-builder');
+  const activeCenterWorkspaceConfig = isSoundEditorActive
+    ? getWorkspaceActionViewConfig('toggle-sound-editor')
+    : isEventBuilderActive
+      ? getWorkspaceActionViewConfig('toggle-event-builder')
+      : isAnimationBuilderActive
+        ? getWorkspaceActionViewConfig('toggle-animation-builder')
+        : null;
+  const ActiveCenterWorkspaceView = activeCenterWorkspaceConfig?.component ?? null;
   const isUnified = multiplayer.isConnected && multiplayer.enforceSharedExp;
   const timerPlacement = settings.timeControl.placement;
   const isFicsClockActive = !!ficsGame;
@@ -734,9 +858,14 @@ function MainLayout() {
 
   const getLauncherSpawnBounds = (index: number): LauncherWindowBounds => {
     const paletteWidth = leftPanelCollapsed ? collapsedLeftWidth : leftWidth;
-    const preferredX = leftPanelPosition.x + paletteWidth + 14;
-    const preferredY = leftPanelPosition.y + 42 + ((index % 5) * 24);
-    return clampLauncherWindowBounds({ x: preferredX, y: preferredY, width: 520, height: 420 });
+    const preferredX = leftPanelPosition.x + paletteWidth + workspaceChrome.launcher.spawnOffset.x;
+    const preferredY = leftPanelPosition.y + workspaceChrome.launcher.spawnOffset.y + ((index % 5) * workspaceChrome.launcher.cascadeOffset.y);
+    return clampLauncherWindowBounds({
+      x: preferredX,
+      y: preferredY,
+      width: workspaceChrome.launcher.defaultSize.width,
+      height: workspaceChrome.launcher.defaultSize.height
+    });
   };
 
 
@@ -853,6 +982,35 @@ function MainLayout() {
 
   const toggleDockedPanelMinimized = (id: string) => {
     setDockedPanels(current => current.map(p => p.id === id ? { ...p, isMinimized: !p.isMinimized } : p));
+  };
+
+  const undockDockedPanel = (panel: DockedPanel) => {
+    const insertionIndex = launcherWindowCountRef.current++;
+    const savedBounds = launcherWindowBoundsRef.current.get(panel.id);
+    const bounds = savedBounds
+      ? clampLauncherWindowBounds(savedBounds)
+      : getLauncherSpawnBounds(insertionIndex);
+
+    rememberLauncherWindowBounds(panel.id, bounds);
+    launcherTopZRef.current += 1;
+
+    setOpenLauncherWindows(current => {
+      const next = new Map(current);
+      next.set(panel.id, {
+        item: panel.item,
+        zIndex: launcherTopZRef.current,
+        nestedTabs: panel.nestedTabs,
+        tabId: panel.tabId ?? panel.item.children?.[0]?.id ?? null,
+        insertionIndex,
+        initialX: bounds.x,
+        initialY: bounds.y,
+        initialWidth: bounds.width,
+        initialHeight: bounds.height
+      });
+      return next;
+    });
+
+    setDockedPanels(current => current.filter(p => p.id !== panel.id));
   };
 
   const handleWindowDragEnd = (windowId: string, mousePos: { x: number; y: number }) => {
@@ -1033,25 +1191,52 @@ function MainLayout() {
     textAlign: 'left'
   });
 
-  // Shared leaf-content renderer for both floating windows and docked panels
+  const openPackageLoadFlow = () => {
+    setPackageManagerMode('import');
+    setPackageManagerAction('load');
+    setPackageManagerActionId(current => current + 1);
+    setPackageManagerOpen(true);
+  };
+
+  const openPackageSaveFlow = () => {
+    setPackageManagerMode('export');
+    setPackageManagerAction('save');
+    setPackageManagerActionId(current => current + 1);
+    setPackageManagerOpen(true);
+  };
+
+  // Shared leaf-content renderer for both floating windows and docked panels.
+  // Registry owns actionId -> view/component mapping. App only embeds what the registry provides.
   const renderLeafItemContent = (menuItem: MenuItem, onClose: () => void): ReactNode => {
+    const handleEmbeddedCloseCapture = (event: React.MouseEvent<HTMLElement>) => {
+      const button = (event.target as HTMLElement).closest('button');
+      if (!button) return;
+      const closeText = button.textContent?.trim().toLowerCase();
+      const closeTitle = button.getAttribute('title')?.trim().toLowerCase();
+      if (closeText !== 'close' && closeTitle !== 'close') return;
+      event.preventDefault();
+      event.stopPropagation();
+      onClose();
+    };
+
     if (menuItem.type === 'overlay' && menuItem.component) {
       const OverlayComp = menuItem.component;
       return (
-        <div className="cu-view-shell cu-themed-embedded-view">
+        <div className="cu-view-shell cu-themed-embedded-view" onClickCapture={handleEmbeddedCloseCapture}>
           <OverlayComp registerCloseAttempt={(_fn: () => void) => {}} closeOverlay={onClose} />
         </div>
       );
     }
+
     if (menuItem.actionId) {
-      const viewId = getWorkspaceViewId(menuItem.actionId);
-      if (viewId) {
-        const vc = getRegisteredViews().find(v => v.id === viewId);
-        if (vc) { const VC = vc.component; return (
-          <div className="cu-view-shell cu-themed-embedded-view">
+      const vc = getWorkspaceActionViewConfig(menuItem.actionId);
+      if (vc) {
+        const VC = vc.component;
+        return (
+          <div className="cu-view-shell cu-themed-embedded-view" onClickCapture={handleEmbeddedCloseCapture}>
             <VC />
           </div>
-        ); }
+        );
       }
       return (
         <div style={{ padding: '12px' }}>
@@ -1070,6 +1255,13 @@ function MainLayout() {
     );
   };
 
+  const activeLeftPanelWidth = leftPanelCollapsed ? collapsedLeftWidth : leftWidth;
+  const activityHudLeft = leftPanelPosition.x + activeLeftPanelWidth + workspaceChrome.safeAreas.panelGap;
+  const metaHudRight = rightPanelCollapsed
+    ? workspaceChrome.safeAreas.outerMargin
+    : rightWidth + workspaceChrome.safeAreas.panelGap;
+  const hudBottom = workspaceChrome.safeAreas.bottomInset;
+
   return (
     <div
       className="App"
@@ -1082,6 +1274,8 @@ function MainLayout() {
         '--cu-accent': settings.uiAppearance.accentColor,
         '--cu-btn-radius': `${getButtonRadius()}px`,
         '--cu-glass-panel-bg': glassPanelBg,
+        '--cu-hud-z': workspaceChrome.zIndex.hud,
+        '--cu-side-panel-z': workspaceChrome.zIndex.sidePanels,
       } as CSSProperties}
     >
       <header className="app-header" style={{ backgroundColor: settings.uiAppearance.toolbarBackgroundColor }}>
@@ -1092,10 +1286,8 @@ function MainLayout() {
           </div>
           <div className="topbar-actions" aria-label="File actions">
             <button type="button" onClick={() => setNewGameOverlayOpen(true)} title="Start a new game"><span>▤</span><span>New</span></button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Open Package Manager"><span>▰</span><span>Open</span></button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Save/export package"><span>▣</span><span>Save</span></button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Export package"><span>⇩</span><span>Export</span></button>
-            <button type="button" onClick={() => setPackageManagerOpen(true)} title="Share package"><span>⌘</span><span>Share</span></button>
+            <button type="button" onClick={openPackageLoadFlow} title="Open a Chess Unleashed package"><span>▰</span><span>Open</span></button>
+            <button type="button" onClick={openPackageSaveFlow} title="Save current setup as a package"><span>▣</span><span>Save</span></button>
           </div>
         </div>
         <div className="topbar-center" aria-label="Current game status">
@@ -1220,7 +1412,12 @@ function MainLayout() {
         onClose={() => setPackageManagerOpen(false)}
         title="Package Manager"
       >
-        <ImportExportView closeOverlay={() => setPackageManagerOpen(false)} />
+        <ImportExportView
+          closeOverlay={() => setPackageManagerOpen(false)}
+          initialMode={packageManagerMode}
+          autoAction={packageManagerAction}
+          actionRequestId={packageManagerActionId}
+        />
       </Overlay>
 
       {activeMobileSection && (
@@ -1272,12 +1469,10 @@ function MainLayout() {
               zIndex: 4
             }}
           >
-            {isSoundEditorActive ? (
-              <SoundEditorView />
-            ) : isEventBuilderActive ? (
-              <EventBuilderView />
-            ) : isAnimationBuilderActive ? (
-              <AnimationBuilderView />
+            {ActiveCenterWorkspaceView ? (
+              <div className="cu-view-shell cu-themed-embedded-view" style={{ width: '100%', height: '100%', overflow: 'auto' }}>
+                <ActiveCenterWorkspaceView />
+              </div>
             ) : (
               <div ref={timerDragBounds} data-layer="outer-wrapper" className="workspace-board-area" style={{ position: 'relative', padding: '28px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', maxWidth: '100%', boxSizing: 'border-box' }}>
                 {/* TODO: future timer behavior modes can add jumping or event-driven placement without changing TimerView. */}
@@ -1332,7 +1527,7 @@ function MainLayout() {
                     }}
                     onDoubleClick={(event) => {
                       if ((event.target as HTMLElement).closest('[data-board-content="true"]')) return;
-                      setBoardDragPosition({ x: 0, y: 0 });
+                      setBoardDragPosition(workspaceChrome.board.defaultOffset);
                     }}
                     style={{
                       position: 'relative',
@@ -1396,9 +1591,12 @@ function MainLayout() {
               }}
               style={{
                 position: 'absolute',
-                left: 18,
-                bottom: 12,
-                zIndex: 8,
+                left: activityHudLeft,
+                right: 'auto',
+                bottom: hudBottom,
+                width: 'auto',
+                maxWidth: 'calc(100vw - 48px)',
+                zIndex: workspaceChrome.zIndex.hud,
                 pointerEvents: 'auto',
                 transform: `translate(${workspaceActivityPosition.x}px, ${workspaceActivityPosition.y}px)`,
                 cursor: 'move'
@@ -1424,9 +1622,11 @@ function MainLayout() {
               title="Show activity status"
               style={{
                 position: 'absolute',
-                left: 18,
-                bottom: 12,
-                zIndex: 8,
+                left: activityHudLeft,
+                right: 'auto',
+                bottom: hudBottom,
+                width: 'auto',
+                zIndex: workspaceChrome.zIndex.hud,
                 pointerEvents: 'auto'
               }}
             >
@@ -1455,22 +1655,24 @@ function MainLayout() {
               }}
               style={{
                 position: 'absolute',
-                right: 18,
-                bottom: 12,
-                zIndex: 8,
+                left: 'auto',
+                right: metaHudRight,
+                bottom: hudBottom,
+                width: 'auto',
+                maxWidth: 'calc(100vw - 48px)',
+                zIndex: workspaceChrome.zIndex.hud,
                 pointerEvents: 'auto',
                 transform: `translate(${workspaceMetaPosition.x}px, ${workspaceMetaPosition.y}px)`,
-                cursor: 'move',
-                ['--workspace-meta-right' as string]: `${workspaceMetaDefaultRight}px`
-              } as CSSProperties}
+                cursor: 'move'
+              }}
             >
               <div className="workspace-bottom-meta">
                 <span>Board: {activeCustomRuleset ? 'Custom' : 'Standard'}</span>
                 <span>Timer: {timerStatusLabel}</span>
                 <span>Scale: {workspaceScale}%</span>
-                <button type="button" onClick={() => setWorkspaceScale(value => Math.max(75, value - 5))} title="Zoom board out">−</button>
-                <button type="button" onClick={() => setWorkspaceScale(100)} title="Reset board zoom">100</button>
-                <button type="button" onClick={() => setWorkspaceScale(value => Math.min(125, value + 5))} title="Zoom board in">+</button>
+                <button type="button" onClick={() => setWorkspaceScale(value => Math.max(workspaceChrome.board.minScale, value - workspaceChrome.board.scaleStep))} title="Zoom board out">−</button>
+                <button type="button" onClick={() => setWorkspaceScale(workspaceChrome.board.defaultScale)} title="Reset board zoom">100</button>
+                <button type="button" onClick={() => setWorkspaceScale(value => Math.min(workspaceChrome.board.maxScale, value + workspaceChrome.board.scaleStep))} title="Zoom board in">+</button>
                 <button
                   type="button"
                   onClick={() => setWorkspaceMetaVisible(false)}
@@ -1487,9 +1689,11 @@ function MainLayout() {
               title="Show board controls"
               style={{
                 position: 'absolute',
-                right: 18,
-                bottom: 12,
-                zIndex: 8,
+                left: 'auto',
+                right: metaHudRight,
+                bottom: hudBottom,
+                width: 'auto',
+                zIndex: workspaceChrome.zIndex.hud,
                 pointerEvents: 'auto'
               }}
             >
@@ -1509,7 +1713,7 @@ function MainLayout() {
             top: leftPanelPosition.y,
             height: effectiveLeftPanelHeight,
             width: `${leftPanelCollapsed ? collapsedLeftWidth : leftWidth}px`,
-            zIndex: 200,
+            zIndex: workspaceChrome.zIndex.sidePanels,
             transition: 'width 0.22s ease, transform 0.22s ease, opacity 0.22s ease',
             display: 'flex',
             flexDirection: 'column',
@@ -1681,7 +1885,7 @@ function MainLayout() {
               title={<><span>{item.icon}</span><strong style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</strong></>}
               onClose={() => closeLauncherWindow(item.id)}
               initialPosition={{ x: initialX ?? getLauncherSpawnBounds(insertionIndex).x, y: initialY ?? getLauncherSpawnBounds(insertionIndex).y }}
-              initialSize={{ width: initialWidth ?? 520, height: initialHeight ?? 420 }}
+              initialSize={{ width: initialWidth ?? workspaceChrome.launcher.defaultSize.width, height: initialHeight ?? workspaceChrome.launcher.defaultSize.height }}
               zIndex={zIndex}
               onFocusRequest={() => focusLauncherWindow(item.id)}
               onBoundsChange={(bounds) => rememberLauncherWindowBounds(item.id, bounds)}
@@ -1781,7 +1985,7 @@ function MainLayout() {
             top: 0,
             height: '100%',
             width: `${rightWidth}px`,
-            zIndex: 200,
+            zIndex: workspaceChrome.zIndex.sidePanels,
             transform: rightPanelCollapsed ? `translateX(${rightWidth}px)` : 'translateX(0)',
             transition: 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
@@ -1859,6 +2063,15 @@ function MainLayout() {
                       <div className="docked-panel-header" style={{ borderTop: `3px solid ${settings.uiAppearance.accentColor}` }}>
                         <span style={{ opacity: 0.72, flexShrink: 0 }}>{item.icon}</span>
                         <strong style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{item.label}</strong>
+                        <button
+                          type="button"
+                          onClick={() => undockDockedPanel(panel)}
+                          title="Undock panel"
+                          aria-label="Undock panel"
+                          style={{ padding: '2px 8px', fontSize: '0.8rem', borderRadius: getButtonRadius(), flexShrink: 0, minWidth: '32px' }}
+                        >
+                          ↗
+                        </button>
                         <button
                           type="button"
                           onClick={() => toggleDockedPanelMinimized(panel.id)}

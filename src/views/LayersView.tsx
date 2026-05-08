@@ -236,18 +236,16 @@ const LayersView: React.FC = () => {
   const activeTemplate = settings.themeDraft ?? settings.template;
   const [draft, setDraft] = useState<Template>(JSON.parse(JSON.stringify(activeTemplate)));
   const [lastCommitted, setLastCommitted] = useState<Template>(JSON.parse(JSON.stringify(activeTemplate)));
-  const { background, frameLayer, boardOverlay } = draft;
+  const { frameLayer, boardOverlay } = draft;
   const hasUnappliedChanges = JSON.stringify(draft) !== JSON.stringify(lastCommitted);
 
   useEffect(() => {
     if (settings.themeDraft) updateThemeDraft({
       boardOverlay: draft.boardOverlay,
-      background: draft.background,
       frameLayer: draft.frameLayer
     });
     else updateTemplate({
       boardOverlay: draft.boardOverlay,
-      background: draft.background,
       frameLayer: draft.frameLayer
     });
   }, [draft]);
@@ -259,12 +257,10 @@ const LayersView: React.FC = () => {
   const applyLayerChanges = () => {
     if (settings.themeDraft) updateThemeDraft({
       boardOverlay: draft.boardOverlay,
-      background: draft.background,
       frameLayer: draft.frameLayer
     });
     else updateTemplate({
       boardOverlay: draft.boardOverlay,
-      background: draft.background,
       frameLayer: draft.frameLayer
     });
     setLastCommitted(JSON.parse(JSON.stringify(draft)));
@@ -275,12 +271,10 @@ const LayersView: React.FC = () => {
     setDraft(restored);
     if (settings.themeDraft) updateThemeDraft({
       boardOverlay: restored.boardOverlay,
-      background: restored.background,
       frameLayer: restored.frameLayer
     });
     else updateTemplate({
       boardOverlay: restored.boardOverlay,
-      background: restored.background,
       frameLayer: restored.frameLayer
     });
   };
@@ -383,7 +377,6 @@ const LayersView: React.FC = () => {
       </section>
 
       <LayerEditor label="Frame Layer" config={frameLayer} onUpdate={(u) => updateLayer('frameLayer', u)} inputId="frame-img" showColor={false} maxSize={BACKGROUND_MAX_SIZE} showLockToBoard />
-      <LayerEditor label="Background" config={background} onUpdate={(u) => updateLayer('background', u)} inputId="bg-img" showColor={true} maxSize={BACKGROUND_MAX_SIZE} />
     </div>
   );
 };

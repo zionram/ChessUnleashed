@@ -11,8 +11,8 @@ const defaultPieceTheme: PieceThemeConfig = {
 };
 
 export const darkTemplate: Template = {
-  id: 'dark-knight',
-  name: 'Dark Knight',
+  id: 'obsidian-workshop',
+  name: 'Obsidian Workshop',
   boardColors: {
     light: '#706677',
     dark: '#392e4a',
@@ -54,7 +54,12 @@ export const darkTemplate: Template = {
     size: 'cover',
     xOffset: 0,
     yOffset: 0,
-    scale: 100
+    scale: 100,
+    category: 'image',
+    slideshowEnabled: false,
+    slideshowImages: [],
+    slideshowIntervalSeconds: 30,
+    slideshowTransition: 'fade'
   },
   frameLayer: {
     color: 'transparent',

@@ -1,0 +1,36 @@
+{
+  "format": "chess-unleashed-experience",
+  "metadata": {
+    "name": "Chess Unleashed Experience",
+    "version": "1.0.0"
+  },
+  "assetManifest": {
+    "version": "1.0.0",
+    "assets": []
+  },
+  "categories": [
+    "template",
+    "uiAppearance",
+    "timeControl",
+    "chatSettings",
+    "rules",
+    "audioSettings",
+    "soundLibrary",
+    "soundRules",
+    "audioPlaylists",
+    "botSettings",
+    "registeredBots",
+    "personalityProfiles",
+    "localProfile",
+    "multiplayerServer",
+    "customEvents",
+    "animationDefinitions",
+    "animationRules",
+    "customRulesets"
+  ],
+  "assetSummary": {
+    "count": 0,
+    "totalBytes": 0,
+    "totalDisplaySize": "0 B"
+  }
+}

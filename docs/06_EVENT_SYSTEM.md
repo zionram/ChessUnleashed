@@ -1,12 +1,26 @@
 # Event System
 
-Status: Current with limited tactical detection
+Status: Current with limited tactical detection and active Event Builder redesign
 
 The event system lets users define reusable custom event definitions, test them, and attach sound or animation actions. Event Log and Troubleshooter remain separate.
 
 ## Event Builder
 
-Event Builder is under Advanced -> Gaming and opens as a center-panel tool. It uses Simple, Advanced, and System layers:
+Event Builder is under Advanced -> Gaming and opens as a center-panel / embedded workspace tool.
+
+Current direction for the user-facing workflow is "Do Something Cool":
+
+- Ask only enough information for the next choice.
+- Keep the question content in the same question window instead of continuously adding new boxes downward.
+- Use Back/Next navigation so the user can return to the previous question.
+- Treat "Something Else" as a peer button with the featured choices, not a separate confusing category.
+- Featured actions should be configurable/reusable button designs for common choices such as Play a sound, Run animation, Show visual media, and Change something existing.
+- Search/list/add flows should be visually consistent across action lists, media lists, preset changes, trigger events, locations, and conditions.
+- Only show media/file/property-change sub-questions when the previous choice requires them.
+- The trigger/rule summary should appear near the review/save stage, not prematurely at the top.
+- The intended mental model is What / When / Why / Where / Save, but exact order may be refined for usability.
+
+Existing technical layers remain useful for advanced/system access:
 
 - Simple: guided templates and common filters.
 - Advanced: condition groups and condition summaries.
@@ -58,6 +72,8 @@ Future-only or invalid events should block or clearly warn before attachment.
 ## Event Log
 
 Event Log records gameplay/system actions, including custom event fires and lightweight sound/animation feedback. It is not for errors.
+
+There should also be a user-accessible way to inspect currently running/active event-driven effects when something annoying or unexpected is happening. This is planned/needed if not yet fully implemented.
 
 ## Troubleshooter
 

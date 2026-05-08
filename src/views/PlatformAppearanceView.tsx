@@ -35,7 +35,16 @@ const PlatformAppearanceView: React.FC = () => {
   };
 
   return (
-    <div className="view-container cu-view-shell">
+    <div
+      className="view-container cu-view-shell cu-platform-ui-view"
+      style={{
+        padding: '14px 16px 16px',
+        boxSizing: 'border-box',
+        width: '100%',
+        minWidth: 0,
+        overflow: 'auto'
+      }}
+    >
       <div style={{ marginBottom: '16px', paddingBottom: '14px', borderBottom: `1px solid ${isGlass ? 'rgba(148,163,184,0.16)' : '#e5e7eb'}` }}>
         <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '8px', color: isGlass ? '#94a3b8' : '#374151' }}>Presets</div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

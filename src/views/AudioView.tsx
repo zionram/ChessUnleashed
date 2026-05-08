@@ -66,6 +66,30 @@ const AudioView: React.FC = () => {
     color: isGlass ? '#e5edf7' : undefined
   };
 
+  const viewStyle: React.CSSProperties = {
+    padding: '16px 18px 18px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+    boxSizing: 'border-box'
+  };
+
+  const sectionStyle: React.CSSProperties = {
+    padding: '14px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    boxSizing: 'border-box'
+  };
+
+  const controllerCardStyle: React.CSSProperties = {
+    padding: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    boxSizing: 'border-box'
+  };
+
   useEffect(() => {
     const handleRulePlayed = (event: GameEvent) => {
       const payload = event.payload as { ruleName?: string; soundName?: string } | undefined;
@@ -150,8 +174,8 @@ const AudioView: React.FC = () => {
   };
 
   return (
-    <div className="view-container cu-view-shell cu-audio-view">
-      <div className="cu-action-row" style={{ justifyContent: 'flex-end', marginBottom: '10px' }}>
+    <div className="view-container cu-view-shell cu-audio-view" style={viewStyle}>
+      <div className="cu-action-row" style={{ justifyContent: 'flex-end', marginBottom: 0 }}>
         <div className="cu-control-row" style={{ gap: '5px' }}>
           <button onClick={saveProfileFile} title="Save profile as JSON" style={{ ...buttonStyle, fontSize: '0.65rem', padding: '2px 8px' }}>Save</button>
           <button onClick={() => document.getElementById('prof-load-in')?.click()} title="Load profile from JSON" style={{ ...buttonStyle, fontSize: '0.65rem', padding: '2px 8px' }}>Load</button>
@@ -159,7 +183,7 @@ const AudioView: React.FC = () => {
         </div>
       </div>
 
-      <section className="cu-panel-card cu-audio-section">
+      <section className="cu-panel-card cu-audio-section" style={sectionStyle}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center', marginBottom: '10px' }}>
           <h4 style={{ fontSize: '0.85rem', margin: 0, color: isGlass ? '#e6f4ff' : undefined }}>Audio Controller</h4>
           <div className="cu-action-row" style={{ gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -177,7 +201,7 @@ const AudioView: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className="cu-panel-card-muted cu-audio-card">
+        <div className="cu-panel-card-muted cu-audio-card" style={controllerCardStyle}>
           <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '2px', color: isGlass ? '#dbeafe' : undefined }}>{trackName}</div>
           <div style={{ fontSize: '0.62rem', ...mutedTextStyle, marginBottom: '8px' }}>Playlist: {activePlaylistName}</div>
           {lastSoundRule && (
@@ -220,7 +244,7 @@ const AudioView: React.FC = () => {
             </select>
           </label>
           {playlist.length > 0 && (
-            <div style={{ marginTop: '10px', borderTop: isGlass ? `1px solid ${accent}22` : '1px solid #e3e8ee', paddingTop: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+            <div style={{ marginTop: '10px', borderTop: isGlass ? `1px solid ${accent}22` : '1px solid #e3e8ee', padding: '8px 4px 0', maxHeight: '150px', overflowY: 'auto' }}>
               {playlist.map((track, index) => (
                 <div key={track.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', marginBottom: '5px', color: isGlass ? '#dbeafe' : undefined }}>
                   <span style={{ flex: 1, fontWeight: index === currentTrackIndex ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -254,13 +278,13 @@ const AudioView: React.FC = () => {
           {showSoundTypes ? 'Hide Advanced' : 'Advanced'}
         </button>
         {showSoundTypes && (
-          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '260px', overflowY: 'auto' }}>
+          <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '260px', overflowY: 'auto', padding: '2px 4px 2px 0' }}>
             {eventTypes.map(eventName => {
               const category = controller.categories[eventName] ?? { enabled: true, volume: 1 };
               const soundName = library.find(sound => sound.id === rules.find(rule => rule.event === eventName)?.soundId)?.name ?? 'No sound';
 
               return (
-                <div key={eventName} className="cu-panel-card-muted cu-audio-sound-type-card">
+                <div key={eventName} className="cu-panel-card-muted cu-audio-sound-type-card" style={{ padding: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'capitalize' }}>
                       <input type="checkbox" checked={category.enabled} onChange={(e) => updateCategory(eventName, { enabled: e.target.checked })} />
@@ -280,7 +304,7 @@ const AudioView: React.FC = () => {
         )}
       </section>
 
-      <section className="cu-panel-card cu-audio-section">
+      <section className="cu-panel-card cu-audio-section" style={sectionStyle}>
         <h4 style={{ fontSize: '0.85rem', margin: '0 0 10px', color: isGlass ? '#e6f4ff' : undefined }}>Controller Theme</h4>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.72rem', color: isGlass ? '#cbd5e1' : undefined }}>
@@ -305,7 +329,7 @@ const AudioView: React.FC = () => {
         </div>
       </section>
 
-      <p style={{ fontSize: '0.65rem', color: isGlass ? '#94a3b8' : '#888', marginTop: '15px', fontStyle: 'italic' }}>
+      <p style={{ fontSize: '0.65rem', color: isGlass ? '#94a3b8' : '#888', margin: '0 2px', fontStyle: 'italic' }}>
         Note: Use the Sound Editor for advanced trigger rules and library management.
       </p>
     </div>

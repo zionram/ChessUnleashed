@@ -10,13 +10,17 @@ Sound Editor is rules-first. It manages what event plays what sound.
 
 Current concepts:
 
-- Sound Library: uploaded sound files.
-- Sound Rules: event-to-sound mappings.
-- Built-in events and Custom Events.
-- Per-rule playback behavior.
-- Preview/Stop controls inside the Add/Edit Sound Rule overlay.
+- Sound Library: uploaded sound files
+- Sound Rules: event-to-sound mappings
+- Built-in events and Custom Events
+- Per-rule playback behavior
+- Preview/Stop controls inside the Add/Edit Sound Rule overlay
 
 Sound files should be referenced by IDs/paths, not duplicated as file blobs in rule data.
+
+## UI Rule
+
+Sound Editor is a complex Advanced → Gaming workflow. It should use the polished table/card layout consistent with Animation Builder. It should not regress to cramped raw rows, run-together text, or unpadded fallback controls.
 
 ## Playback Behavior
 

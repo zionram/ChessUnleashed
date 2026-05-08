@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import JSZip from 'jszip';
 import { useAudio } from '../context/AudioContext';
 import { useSettings } from '../context/SettingsContext';
@@ -21,6 +21,9 @@ import { addErrorLogEntry } from '../utils/ErrorLog';
 
 interface ImportExportViewProps {
   closeOverlay?: () => void;
+  initialMode?: PackageManagerMode;
+  autoAction?: 'load' | 'save' | null;
+  actionRequestId?: number;
 }
 
 type ImportKind = 'experience' | 'theme';
@@ -138,7 +141,7 @@ const getFileText = async (file: File) => {
   return file.text();
 };
 
-const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => {
+const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay, initialMode = 'landing', autoAction = null, actionRequestId = 0 }) => {
   const {
     settings,
     updateTemplate,
@@ -152,7 +155,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
     importSettingsCategories
   } = useSettings();
   const { getCurrentProfile, applyProfile } = useAudio();
-  const [mode, setMode] = useState<PackageManagerMode>('landing');
+  const [mode, setMode] = useState<PackageManagerMode>(initialMode);
   const [message, setMessage] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [selectedImportCategories, setSelectedImportCategories] = useState<string[]>([]);
@@ -170,6 +173,14 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
   const [extractProgress, setExtractProgress] = useState<{ current?: number; total?: number } | null>(null);
   const [isExtractingPackage, setIsExtractingPackage] = useState(false);
   const [preparedExtract, setPreparedExtract] = useState<{ blob: Blob; warnings: string[]; packageName: string; size: number } | null>(null);
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  const handledActionRequestRef = useRef<number>(0);
+  const pendingAutoLoadRef = useRef(false);
+  const pendingAutoSaveRef = useRef(false);
+
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   const importCategoryOptions = useMemo(() => {
     if (!pendingImport) return [];
@@ -458,7 +469,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
         source: 'ImportExportView',
         context: 'prepareExportPackage'
       });
-      setMessage('Package preparation failed. Try fewer categories or smaller media files.');
+      setMessage(`Package preparation failed. Try fewer categories or smaller media files. Details: ${details}`);
     } finally {
       setIsPreparingPackage(false);
     }
@@ -479,6 +490,37 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
     URL.revokeObjectURL(url);
     setMessage('Package saved.');
   };
+
+  useEffect(() => {
+    if (!autoAction || actionRequestId === handledActionRequestRef.current) return;
+    handledActionRequestRef.current = actionRequestId;
+
+    if (autoAction === 'load') {
+      pendingAutoLoadRef.current = true;
+      setMode('import');
+      setMessage('Choose a Chess Unleashed package zip to open.');
+      return;
+    }
+
+    if (autoAction === 'save') {
+      pendingAutoSaveRef.current = true;
+      setMode('export');
+      setMessage('Preparing package for save.');
+      void prepareExportPackage();
+    }
+  }, [autoAction, actionRequestId]);
+
+  useEffect(() => {
+    if (mode !== 'import' || !pendingAutoLoadRef.current) return;
+    pendingAutoLoadRef.current = false;
+    window.setTimeout(() => importFileInputRef.current?.click(), 0);
+  }, [mode]);
+
+  useEffect(() => {
+    if (!pendingAutoSaveRef.current || !preparedPackage || isPreparingPackage) return;
+    pendingAutoSaveRef.current = false;
+    savePreparedPackage();
+  }, [preparedPackage, isPreparingPackage]);
 
   const handleExtractFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
@@ -604,7 +646,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
   );
 
   return (
-    <div className="view-container cu-view-shell cu-import-export-view">
+    <div className="view-container cu-view-shell cu-import-export-view" style={{ padding: 16, boxSizing: 'border-box', minHeight: '100%' }}>
       <div className="cu-view-stack" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {mode === 'landing' && (
           <>
@@ -617,8 +659,8 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
               <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Choose what to include, prepare the zip, then save a shareable package with real media files.</div>
             </button>
             <button type="button" className="cu-panel-card" onClick={() => setMode('extract')} style={{ padding: '12px', cursor: 'pointer', textAlign: 'left', fontWeight: 700 }}>
-              Extract Package
-              <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Unpack a package into readable folders for inspection, editing, or manual sharing.</div>
+              Advanced: Extract Package
+              <div style={{ marginTop: '4px', fontSize: '0.75rem', fontWeight: 400, color: '#64748b' }}>Inspection/developer tool only. Normal Open uses the original package .zip.</div>
             </button>
           </>
         )}
@@ -627,7 +669,7 @@ const ImportExportView: React.FC<ImportExportViewProps> = ({ closeOverlay }) => 
           <>
             <button type="button" className="cu-inline-button" onClick={() => setMode('landing')} style={{ alignSelf: 'flex-start', padding: '6px 10px', cursor: 'pointer' }}>Back</button>
             <h3 style={{ margin: 0, fontSize: '1rem' }}>Load Package</h3>
-            <input type="file" accept=".json,.zip,application/json,application/zip" onChange={handleImportFile} />
+            <input ref={importFileInputRef} type="file" accept=".json,.zip,application/json,application/zip" onChange={handleImportFile} />
             {importStatus && (
               <div className="cu-panel-card" style={{ padding: '8px 10px', borderRadius: 6, border: pendingImport ? '1px solid #d0d7de' : '1px solid #bfdbfe', background: pendingImport ? '#f8fafc' : '#eff6ff', color: '#334155', fontSize: '0.76rem' }}>
                 <strong>{isLoadingPackage ? 'Loading Package' : 'Package Status'}</strong>

@@ -62,6 +62,7 @@ export const MENU_SCHEMA: MenuItem[] = [
           }
             ]
           },
+          { id: 'app-background', label: 'Background', icon: React.createElement(Palette, { size: 16 }), type: 'action', actionId: 'toggle-background' },
           { id: 'app-animation', label: 'Animation', icon: React.createElement(Wand2, { size: 16 }), type: 'action', actionId: 'toggle-animation-settings' },
           { id: 'app-platform-ui', label: 'Platform UI', icon: React.createElement(Palette, { size: 16 }), type: 'action', actionId: 'toggle-platform-appearance' }
         ]

@@ -356,8 +356,102 @@ const SoundEditorView: React.FC = () => {
     setNewCategoryName("");
   };
 
+  const shellStyle: React.CSSProperties = {
+    width: "100%",
+    maxWidth: 1120,
+    margin: "0 auto",
+    padding: 14,
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    color: "#e2e8f0",
+    boxSizing: "border-box",
+  };
+
+  const cardStyle: React.CSSProperties = {
+    border: "1px solid rgba(148, 163, 184, 0.18)",
+    background: "rgba(8, 18, 34, 0.78)",
+    borderRadius: 12,
+    boxShadow: "0 16px 36px rgba(2, 6, 23, 0.22)",
+    padding: 12,
+  };
+
+  const mutedStyle: React.CSSProperties = { color: "#8ea6bf", fontSize: "0.74rem" };
+  const pillStyle = (active = false): React.CSSProperties => ({
+    border: active ? "1px solid rgba(96, 165, 250, 0.65)" : "1px solid rgba(148, 163, 184, 0.18)",
+    background: active ? "rgba(37, 99, 235, 0.34)" : "rgba(15, 23, 42, 0.58)",
+    color: active ? "#dbeafe" : "#9fb3c8",
+    borderRadius: 999,
+    padding: "6px 10px",
+    cursor: "pointer",
+    fontSize: "0.74rem",
+    fontWeight: 800,
+    whiteSpace: "nowrap",
+  });
+
+  const smallButtonStyle: React.CSSProperties = {
+    border: "1px solid rgba(148, 163, 184, 0.22)",
+    background: "rgba(15, 23, 42, 0.72)",
+    color: "#dbeafe",
+    borderRadius: 8,
+    padding: "7px 10px",
+    cursor: "pointer",
+    fontWeight: 800,
+    fontSize: "0.76rem",
+  };
+
+  const primaryButtonStyle: React.CSSProperties = {
+    ...smallButtonStyle,
+    border: "1px solid rgba(96, 165, 250, 0.5)",
+    background: "linear-gradient(135deg, rgba(37, 99, 235, 0.52), rgba(14, 165, 233, 0.28))",
+    color: "#eff6ff",
+  };
+
+  const dangerButtonStyle: React.CSSProperties = {
+    ...smallButtonStyle,
+    border: "1px solid rgba(248, 113, 113, 0.34)",
+    background: "rgba(127, 29, 29, 0.28)",
+    color: "#fecaca",
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    minWidth: 0,
+    boxSizing: "border-box",
+    border: "1px solid rgba(148, 163, 184, 0.2)",
+    background: "rgba(2, 6, 23, 0.45)",
+    color: "#e2e8f0",
+    borderRadius: 8,
+    padding: "8px 9px",
+  };
+
+  const renderRuleCard = (rule: AudioRule) => {
+    const category = normalizeCategory(rule.category || inferCategory(rule.event));
+    const playbackLabels = getPlaybackSummary(rule).split(", ").filter(Boolean);
+    return (
+      <article key={rule.id} style={{ ...cardStyle, padding: 10, display: "flex", flexDirection: "column", gap: 9 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 900, color: "#f8fafc", fontSize: "0.92rem" }}>{getRuleSummary(rule)}</div>
+            <div style={mutedStyle}>{getSoundName(library, rule.soundId)}</div>
+          </div>
+          <span style={{ ...pillStyle(true), padding: "4px 8px", fontSize: "0.66rem" }}>{category}</span>
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {playbackLabels.slice(0, 4).map((label) => (
+            <span key={label} style={{ ...pillStyle(false), padding: "3px 7px", fontSize: "0.66rem" }}>{label}</span>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 7 }}>
+          <button type="button" onClick={() => openEditRule(rule)} style={smallButtonStyle}>Edit</button>
+          <button type="button" onClick={() => removeRule(rule.id)} style={dangerButtonStyle}>Delete</button>
+        </div>
+      </article>
+    );
+  };
+
   return (
-    <div className="cu-view-shell cu-sound-editor-view cu-scroll-area">
+    <div className="cu-view-shell cu-sound-editor-view" style={shellStyle}>
       <input
         ref={fileInputRef}
         type="file"
@@ -366,326 +460,135 @@ const SoundEditorView: React.FC = () => {
         onChange={handleFileUpload}
         style={{ display: "none" }}
       />
-      {uploadMessage && (
-        <div className="cu-warning-note">
-          {uploadMessage}
+
+      <header style={{ ...cardStyle, display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 12, alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: "1.05rem", fontWeight: 950 }}>Sound Editor</div>
+          <div style={mutedStyle}>Assign sounds to moves, captures, UI events, music, and custom events.</div>
         </div>
-      )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <button type="button" onClick={openNewRule} style={primaryButtonStyle}>Add Rule</button>
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={smallButtonStyle}>Add Files</button>
+        </div>
+      </header>
 
-      <div className="cu-action-grid">
-        <button
-          type="button"
-          onClick={openNewRule}
-          className="cu-inline-button cu-primary-action"
-        >
-          Add Sound Rule
-        </button>
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="cu-inline-button"
-        >
-          Add Sound Files
-        </button>
-      </div>
+      {uploadMessage && <div className="cu-warning-note">{uploadMessage}</div>}
 
-      <section className="cu-panel-card cu-control-grid">
-        <label className="cu-field-stack">
+      <section style={{ ...cardStyle, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, fontWeight: 800, fontSize: "0.78rem" }}>
           Master volume
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={masterVolume}
-            onChange={(e) => setMasterVolume(parseFloat(e.target.value))}
-          />
+          <input type="range" min="0" max="1" step="0.05" value={masterVolume} onChange={(e) => setMasterVolume(parseFloat(e.target.value))} />
         </label>
-        <label className="cu-field-stack">
+        <label style={{ display: "flex", flexDirection: "column", gap: 6, fontWeight: 800, fontSize: "0.78rem" }}>
           Sound effects
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={sfxVolume}
-            onChange={(e) => setSfxVolume(parseFloat(e.target.value))}
-          />
+          <input type="range" min="0" max="1" step="0.05" value={sfxVolume} onChange={(e) => setSfxVolume(parseFloat(e.target.value))} />
         </label>
       </section>
 
-      <div className="cu-filter-pills">
+      <nav style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 2 }}>
         {categories.map((category) => (
-          <button
-            key={category}
-            type="button"
-            onClick={() => setSelectedCategory(category)}
-            className={`cu-filter-pill ${selectedCategory === category ? "is-active" : ""}`.trim()}
-          >
+          <button key={category} type="button" onClick={() => setSelectedCategory(category)} style={pillStyle(selectedCategory === category)}>
             {category}
           </button>
         ))}
-      </div>
+      </nav>
 
-      <section className="cu-panel-card cu-sound-rules-table">
-        <div className="cu-sound-rule-row cu-sound-rule-header">
-          <span>Event / Rule</span>
-          <span>Sound</span>
-          <span>Category</span>
-          <span>Playback</span>
-          <span>Edit</span>
-        </div>
-        <div className="cu-scroll-area cu-sound-rule-list">
-          {visibleRules.map((rule) => {
-            const category = normalizeCategory(
-              rule.category || inferCategory(rule.event),
-            );
-            return (
-              <div key={rule.id} className="cu-sound-rule-row">
-                <span className="cu-strong-text">{getRuleSummary(rule)}</span>
-                <span className="cu-muted-text">
-                  {getSoundName(library, rule.soundId)}
-                </span>
-                <span className="cu-muted-text">{category}</span>
-                <span className="cu-muted-text">
-                  {getPlaybackSummary(rule)}
-                </span>
-                <span className="cu-action-row">
-                  <button
-                    type="button"
-                    onClick={() => openEditRule(rule)}
-                    className="cu-inline-button cu-button-compact"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeRule(rule.id)}
-                    className="cu-inline-button cu-danger-action cu-button-compact"
-                  >
-                    Delete
-                  </button>
-                </span>
-              </div>
-            );
-          })}
-          {!visibleRules.length && (
-            <div className="cu-empty-note">
-              No sound rules in this category yet.
+      <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(260px, 340px)", gap: 12, alignItems: "start" }}>
+        <section style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+            <div>
+              <div style={{ fontWeight: 900 }}>Rules</div>
+              <div style={mutedStyle}>{visibleRules.length} shown · {selectedCategory}</div>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 10 }}>
+            {visibleRules.map(renderRuleCard)}
+            {!visibleRules.length && <div style={{ ...cardStyle, color: "#8ea6bf" }}>No sound rules in this category yet.</div>}
+          </div>
+        </section>
+
+        <aside style={{ ...cardStyle, display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <div>
+              <div style={{ fontWeight: 900 }}>Sound Library</div>
+              <div style={mutedStyle}>{library.length} files available</div>
+            </div>
+            <button type="button" onClick={() => setLibraryOpen(!libraryOpen)} style={smallButtonStyle}>{libraryOpen ? "Hide" : "Show"}</button>
+          </div>
+          {libraryOpen && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 360, overflowY: "auto", paddingRight: 2 }}>
+              {library.map((sound) => (
+                <div key={sound.id} style={{ border: "1px solid rgba(148, 163, 184, 0.16)", borderRadius: 10, padding: 8, background: "rgba(15, 23, 42, 0.46)", display: "flex", flexDirection: "column", gap: 7 }}>
+                  <input value={sound.name} onChange={(e) => renameSound(sound.id, e.target.value)} style={inputStyle} />
+                  <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <span style={{ ...pillStyle(false), padding: "3px 7px", fontSize: "0.65rem" }}>{(sound.fileType ?? "audio").toUpperCase()}</span>
+                    <button type="button" onClick={() => playLibrarySound(sound.id)} disabled={sound.fileType === "midi"} style={smallButtonStyle}>{sound.fileType === "midi" ? "MIDI pending" : "Play"}</button>
+                    <button type="button" onClick={() => removeSound(sound.id)} style={dangerButtonStyle}>Remove</button>
+                  </div>
+                </div>
+              ))}
+              {!library.length && <div style={mutedStyle}>No sound files yet. Add files to assign them to rules.</div>}
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="cu-panel-card cu-library-panel">
-        <button
-          type="button"
-          onClick={() => setLibraryOpen(!libraryOpen)}
-          className="cu-panel-toggle"
-        >
-          <span>Sound Library</span>
-          <span>
-            {library.length} files {libraryOpen ? "Hide" : "Show"}
-          </span>
-        </button>
-        {libraryOpen && (
-          <div className="cu-scroll-area cu-sound-library-list">
-            {library.map((sound) => (
-              <div key={sound.id} className="cu-sound-library-row">
-                <input
-                  value={sound.name}
-                  onChange={(e) => renameSound(sound.id, e.target.value)}
-                  className="cu-control-input"
-                />
-                <button
-                  type="button"
-                  onClick={() => playLibrarySound(sound.id)}
-                  disabled={sound.fileType === "midi"}
-                  className="cu-inline-button"
-                >
-                  {sound.fileType === "midi" ? "MIDI pending" : "Play"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => removeSound(sound.id)}
-                  className="cu-inline-button cu-danger-action"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </aside>
+      </div>
 
       {ruleEditorOpen && (
         <div className="cu-modal-backdrop">
           <div className="cu-modal-panel cu-scroll-area">
             <div className="cu-panel-titlebar">
               <div>
-                <div className="cu-modal-title">
-                  {editingRuleId ? "Edit Sound Rule" : "Add Sound Rule"}
-                </div>
-                <div className="cu-muted-text">
-                  Choose the event, target, sound file, and playback behavior.
-                </div>
+                <div className="cu-modal-title">{editingRuleId ? "Edit Sound Rule" : "Add Sound Rule"}</div>
+                <div className="cu-muted-text">Choose the event, target, sound file, and playback behavior.</div>
               </div>
-              <button
-                type="button"
-                onClick={() => setRuleEditorOpen(false)}
-                className="cu-inline-button"
-              >
-                Cancel
-              </button>
+              <button type="button" onClick={() => setRuleEditorOpen(false)} className="cu-inline-button">Cancel</button>
             </div>
 
             <div className="cu-control-grid cu-modal-grid">
-              <label className="cu-field-stack">
-                Sound Rule Name
-                <input
-                  value={ruleDraft.name ?? ""}
-                  onChange={(e) =>
-                    setRuleDraft({ ...ruleDraft, name: e.target.value })
-                  }
-                  placeholder="Example: Pawn capture sound"
-                  className="cu-control-input"
-                />
+              <label className="cu-field-stack">Sound Rule Name
+                <input value={ruleDraft.name ?? ""} onChange={(e) => setRuleDraft({ ...ruleDraft, name: e.target.value })} placeholder="Example: Pawn capture sound" className="cu-control-input" />
               </label>
-              <label className="cu-field-stack">
-                Sound Category
-                <select
-                  value={normalizeCategory(ruleDraft.category)}
-                  onChange={(e) => {
-                    const category = e.target.value;
-                    const nextEvent =
-                      CATEGORY_EVENTS[category]?.[0]?.id ?? ruleDraft.event;
-                    setRuleDraft({ ...ruleDraft, category, event: nextEvent });
-                  }}
-                  className="cu-control-input"
-                >
-                  {FILTERS.filter((category) => category !== "All").map(
-                    (category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ),
-                  )}
-                  {categories
-                    .filter((category) => !FILTERS.includes(category))
-                    .map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
+              <label className="cu-field-stack">Sound Category
+                <select value={normalizeCategory(ruleDraft.category)} onChange={(e) => {
+                  const category = e.target.value;
+                  const nextEvent = CATEGORY_EVENTS[category]?.[0]?.id ?? ruleDraft.event;
+                  setRuleDraft({ ...ruleDraft, category, event: nextEvent });
+                }} className="cu-control-input">
+                  {FILTERS.filter((category) => category !== "All").map((category) => <option key={category} value={category}>{category}</option>)}
+                  {categories.filter((category) => !FILTERS.includes(category)).map((category) => <option key={category} value={category}>{category}</option>)}
                 </select>
               </label>
-              <label className="cu-field-stack">
-                Sound File
+              <label className="cu-field-stack">Sound File
                 <div className="cu-inline-control-grid">
-                  <select
-                    value={ruleDraft.soundId}
-                    onChange={(e) =>
-                      setRuleDraft({ ...ruleDraft, soundId: e.target.value })
-                    }
-                    className="cu-control-input"
-                  >
-                    {library.map((sound) => (
-                      <option key={sound.id} value={sound.id}>
-                        {sound.name}
-                        {sound.fileType === "midi"
-                          ? " (MIDI playback pending)"
-                          : ""}
-                      </option>
-                    ))}
+                  <select value={ruleDraft.soundId} onChange={(e) => setRuleDraft({ ...ruleDraft, soundId: e.target.value })} className="cu-control-input">
+                    {library.map((sound) => <option key={sound.id} value={sound.id}>{sound.name}{sound.fileType === "midi" ? " (MIDI playback pending)" : ""}</option>)}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => playLibrarySound(ruleDraft.soundId)}
-                    disabled={
-                      !ruleDraft.soundId || selectedSound?.fileType === "midi"
-                    }
-                    className="cu-inline-button"
-                  >
-                    Preview
-                  </button>
-                  <button
-                    type="button"
-                    onClick={stopPreview}
-                    className="cu-inline-button"
-                  >
-                    Stop
-                  </button>
+                  <button type="button" onClick={() => playLibrarySound(ruleDraft.soundId)} disabled={!ruleDraft.soundId || selectedSound?.fileType === "midi"} className="cu-inline-button">Preview</button>
+                  <button type="button" onClick={stopPreview} className="cu-inline-button">Stop</button>
                 </div>
               </label>
-              <label className="cu-field-stack">
-                Trigger / Event
-                <select
-                  value={ruleDraft.event}
-                  onChange={(e) =>
-                    setRuleDraft({ ...ruleDraft, event: e.target.value })
-                  }
-                  className="cu-control-input"
-                >
-                  {eventOptions.map((event) => (
-                    <option key={event.id} value={event.id}>
-                      {event.label}
-                    </option>
-                  ))}
+              <label className="cu-field-stack">Trigger / Event
+                <select value={ruleDraft.event} onChange={(e) => setRuleDraft({ ...ruleDraft, event: e.target.value })} className="cu-control-input">
+                  {eventOptions.map((event) => <option key={event.id} value={event.id}>{event.label}</option>)}
                 </select>
               </label>
-              {(normalizeCategory(ruleDraft.category) === "Piece Moves" ||
-                normalizeCategory(ruleDraft.category) === "Captures") && (
+              {(normalizeCategory(ruleDraft.category) === "Piece Moves" || normalizeCategory(ruleDraft.category) === "Captures") && (
                 <>
-                  <label className="cu-field-stack">
-                    Apply To
-                    <select
-                      value={ruleDraft.piece}
-                      onChange={(e) =>
-                        setRuleDraft({ ...ruleDraft, piece: e.target.value })
-                      }
-                      className="cu-control-input"
-                    >
-                      {PIECES.map((piece) => (
-                        <option key={piece} value={piece}>
-                          {pieceNames[piece] ?? piece}
-                        </option>
-                      ))}
+                  <label className="cu-field-stack">Apply To
+                    <select value={ruleDraft.piece} onChange={(e) => setRuleDraft({ ...ruleDraft, piece: e.target.value })} className="cu-control-input">
+                      {PIECES.map((piece) => <option key={piece} value={piece}>{pieceNames[piece] ?? piece}</option>)}
                     </select>
                   </label>
-                  <label className="cu-field-stack">
-                    Side
-                    <select
-                      value={ruleDraft.side}
-                      onChange={(e) =>
-                        setRuleDraft({ ...ruleDraft, side: e.target.value })
-                      }
-                      className="cu-control-input"
-                    >
-                      {SIDES.map((side) => (
-                        <option key={side} value={side}>
-                          {side === "any"
-                            ? "Any side"
-                            : side === "w"
-                              ? "White"
-                              : "Black"}
-                        </option>
-                      ))}
+                  <label className="cu-field-stack">Side
+                    <select value={ruleDraft.side} onChange={(e) => setRuleDraft({ ...ruleDraft, side: e.target.value })} className="cu-control-input">
+                      {SIDES.map((side) => <option key={side} value={side}>{side === "any" ? "Any side" : side === "w" ? "White" : "Black"}</option>)}
                     </select>
                   </label>
                 </>
               )}
-              {(normalizeCategory(ruleDraft.category) === "UI Events" ||
-                normalizeCategory(ruleDraft.category) === "Custom Events") && (
-                <label className="cu-field-stack cu-grid-span-all">
-                  Apply To / Event ID
-                  <input
-                    value={ruleDraft.target ?? ""}
-                    onChange={(e) =>
-                      setRuleDraft({ ...ruleDraft, target: e.target.value })
-                    }
-                    placeholder="panel id, button id, or future custom event id"
-                    className="cu-control-input"
-                  />
+              {(normalizeCategory(ruleDraft.category) === "UI Events" || normalizeCategory(ruleDraft.category) === "Custom Events") && (
+                <label className="cu-field-stack cu-grid-span-all">Apply To / Event ID
+                  <input value={ruleDraft.target ?? ""} onChange={(e) => setRuleDraft({ ...ruleDraft, target: e.target.value })} placeholder="panel id, button id, or future custom event id" className="cu-control-input" />
                 </label>
               )}
             </div>
@@ -696,10 +599,7 @@ const SoundEditorView: React.FC = () => {
                 {[
                   ["allowOverlap", "Allow overlap with other sound effects"],
                   ["playOnceUntilReset", "Play only once until event resets"],
-                  [
-                    "stopOtherSounds",
-                    "Stop other sound effects before playing",
-                  ],
+                  ["stopOtherSounds", "Stop other sound effects before playing"],
                   ["duckMusic", "Lower background music while playing"],
                   ["pauseMusic", "Pause background music while playing"],
                   ["resumeMusicAfter", "Resume music after sound ends"],
@@ -707,89 +607,35 @@ const SoundEditorView: React.FC = () => {
                   ["stopWhenEventEnds", "Stop when event condition ends"],
                 ].map(([key, label]) => (
                   <label key={key} className="cu-checkbox-row">
-                    <input
-                      type="checkbox"
-                      checked={
-                        !!ruleDraft.playback?.[
-                          key as keyof NonNullable<AudioRule["playback"]>
-                        ]
-                      }
-                      onChange={(e) =>
-                        updateDraftPlayback(
-                          key as keyof NonNullable<AudioRule["playback"]>,
-                          e.target.checked,
-                        )
-                      }
-                    />
+                    <input type="checkbox" checked={!!ruleDraft.playback?.[key as keyof NonNullable<AudioRule["playback"]>]} onChange={(e) => updateDraftPlayback(key as keyof NonNullable<AudioRule["playback"]>, e.target.checked)} />
                     {label}
                   </label>
                 ))}
               </div>
-              {(ruleDraft.playback?.loopWhileEventTrue ||
-                ruleDraft.playback?.stopWhenEventEnds) &&
-                ruleDraft.event !== "check" && (
-                  <div className="cu-warning-note">
-                    Stateful stop is currently supported for Check / in-check
-                    events. Other event states are saved for future support.
-                  </div>
-                )}
+              {(ruleDraft.playback?.loopWhileEventTrue || ruleDraft.playback?.stopWhenEventEnds) && ruleDraft.event !== "check" && (
+                <div className="cu-warning-note">Stateful stop is currently supported for Check / in-check events. Other event states are saved for future support.</div>
+              )}
             </section>
 
             <section className="cu-info-note">
-              {normalizeCategory(ruleDraft.category) === "Dynamic Sounds" &&
-                "Dynamic sound groups are saved as rules now. Random/group playback logic is prepared for a future pass."}
-              {normalizeCategory(ruleDraft.category) === "Music" &&
-                "Music rules are prepared for event music and background music handoff. Full routing will use the Audio Controller."}
-              {normalizeCategory(ruleDraft.category) === "Custom Events" &&
-                (selectedCustomEvent
-                  ? `${selectedCustomEvent.name}: ${selectedCustomEventStatus}. ${selectedCustomEventStatus === "Future-only" ? "This rule can be saved, but it will not fire until detection is added." : selectedCustomEvent.category}`
-                  : "Custom event IDs are saved here. Active events can fire now; Future-only tactical events are saved but will not fire until detection is added.")}
-              {selectedSound?.fileType === "midi" &&
-                "MIDI files can be stored and assigned now. Browser MIDI playback support is pending."}
+              {normalizeCategory(ruleDraft.category) === "Dynamic Sounds" && "Dynamic sound groups are saved as rules now. Random/group playback logic is prepared for a future pass."}
+              {normalizeCategory(ruleDraft.category) === "Music" && "Music rules are prepared for event music and background music handoff. Full routing will use the Audio Controller."}
+              {normalizeCategory(ruleDraft.category) === "Custom Events" && (selectedCustomEvent ? `${selectedCustomEvent.name}: ${selectedCustomEventStatus}. ${selectedCustomEventStatus === "Future-only" ? "This rule can be saved, but it will not fire until detection is added." : selectedCustomEvent.category}` : "Custom event IDs are saved here. Active events can fire now; Future-only tactical events are saved but will not fire until detection is added.")}
+              {selectedSound?.fileType === "midi" && "MIDI files can be stored and assigned now. Browser MIDI playback support is pending."}
             </section>
 
             <div className="cu-action-row cu-action-row-end">
-              <button
-                type="button"
-                onClick={() => setRuleEditorOpen(false)}
-                className="cu-inline-button"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={saveRule}
-                disabled={!ruleDraft.soundId}
-                className="cu-inline-button cu-primary-action"
-              >
-                Save Rule
-              </button>
+              <button type="button" onClick={() => setRuleEditorOpen(false)} className="cu-inline-button">Cancel</button>
+              <button type="button" onClick={saveRule} disabled={!ruleDraft.soundId} className="cu-inline-button cu-primary-action">Save Rule</button>
             </div>
           </div>
         </div>
       )}
 
-      <section className="cu-action-row cu-sound-footer">
-        <input
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-          placeholder="New custom category"
-          className="cu-control-input cu-flex-fill"
-        />
-        <button
-          type="button"
-          onClick={addCustomCategory}
-          className="cu-inline-button"
-        >
-          Add Category
-        </button>
-        <button
-          type="button"
-          onClick={() => toggleView("sound-editor")}
-          className="cu-inline-button"
-        >
-          Close
-        </button>
+      <section style={{ ...cardStyle, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New custom category" style={{ ...inputStyle, flex: "1 1 220px" }} />
+        <button type="button" onClick={addCustomCategory} style={smallButtonStyle}>Add Category</button>
+        <button type="button" onClick={() => toggleView("sound-editor")} style={smallButtonStyle}>Close</button>
       </section>
     </div>
   );

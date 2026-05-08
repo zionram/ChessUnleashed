@@ -140,20 +140,50 @@ const mimeExtension = (mimeType: string, fallback = 'bin') => {
   return map[normalized] ?? fallback;
 };
 
-const dataUrlToBlob = (dataUrl: string) => {
+const formatBytes = (bytes: number) => {
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value >= 10 || unitIndex === 0 ? Math.round(value) : value.toFixed(1)} ${units[unitIndex]}`;
+};
+
+const getAssetUrlKind = (url: string) => {
+  if (url.startsWith('data:')) return 'data';
+  if (url.startsWith('blob:')) return 'blob';
+  if (url.startsWith('local-asset://')) return 'local-asset';
+  if (url.startsWith(EXPERIENCE_ASSET_REF_PREFIX)) return 'package';
+  if (/^https?:\/\//i.test(url)) return 'http';
+  return 'unknown';
+};
+
+const dataUrlToAssetFile = (dataUrl: string) => {
   const [header, body] = dataUrl.split(',');
   const mimeType = header.match(/^data:([^;,]+)/)?.[1] || 'application/octet-stream';
   const binary = header.includes(';base64') ? atob(body || '') : decodeURIComponent(body || '');
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return new Blob([bytes], { type: mimeType });
+  return { bytes, mimeType, size: bytes.byteLength };
 };
 
-const urlToBlob = async (url: string) => {
-  if (url.startsWith('data:')) return dataUrlToBlob(url);
+const urlToAssetFile = async (url: string) => {
+  if (url.startsWith('data:')) return dataUrlToAssetFile(url);
+
   const response = await fetch(url);
-  if (!response.ok) throw new Error(`Could not read asset for packaging: ${url}`);
-  return response.blob();
+  if (!response.ok) {
+    throw new Error(`Could not read ${getAssetUrlKind(url)} URL for packaging (${response.status} ${response.statusText}).`);
+  }
+
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return {
+    bytes,
+    mimeType: response.headers.get('content-type') || 'application/octet-stream',
+    size: bytes.byteLength
+  };
 };
 
 const makeAssetReference = (packagePath: string) => `${EXPERIENCE_ASSET_REF_PREFIX}${packagePath}`;
@@ -165,6 +195,19 @@ const getPackageRefPath = (value: unknown) =>
   isPackageAssetRef(value) ? value.replace(EXPERIENCE_ASSET_REF_PREFIX, '') : '';
 
 const getReadablePackageName = (name: string) => sanitizeFilenamePart(name || 'Chess-Unleashed-Package');
+
+const findSessionAssetReferences = (value: unknown, path = '$'): string[] => {
+  if (typeof value === 'string') {
+    return value.startsWith('data:') || value.startsWith('blob:') ? [`${path} (${getAssetUrlKind(value)})`] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => findSessionAssetReferences(item, `${path}[${index}]`));
+  }
+  if (!value || typeof value !== 'object') return [];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, item]) =>
+    findSessionAssetReferences(item, `${path}.${key}`)
+  );
+};
 
 const RUNTIME_GAME_STATE_KEYS = new Set([
   'fen',
@@ -260,43 +303,49 @@ ${warnings.length ? `## Warnings\n\n${warnings.map(warning => `- ${warning}`).jo
 
 const walkTemplateAssetUrls = (
   template: Template | undefined,
-  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, replace: (nextUrl: string) => void) => void
+  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, sourcePath: string, replace: (nextUrl: string) => void) => void
 ) => {
   if (!template) return;
-  const visitPieceConfig = (config: Template['pieceTheme'] | undefined, label: string) => {
+  const visitPieceConfig = (config: Template['pieceTheme'] | undefined, label: string, sourcePath: string) => {
     if (!config) return;
     Object.entries(config.customPieces ?? {}).forEach(([pieceKey, url]) => {
-      visit(url, 'pieces', `${label}-${pieceKey}`, nextUrl => {
+      visit(url, 'pieces', `${label}-${pieceKey}`, `${sourcePath}.customPieces.${pieceKey}`, nextUrl => {
         config.customPieces[pieceKey] = nextUrl;
       });
     });
     Object.entries(config.customVariants ?? {}).forEach(([pieceKey, rules]) => {
       rules.forEach((rule, index) => {
-        visit(rule.image, 'pieces', `${label}-${pieceKey}-variant-${index + 1}`, nextUrl => {
+        visit(rule.image, 'pieces', `${label}-${pieceKey}-variant-${index + 1}`, `${sourcePath}.customVariants.${pieceKey}[${index}].image`, nextUrl => {
           rule.image = nextUrl;
         });
       });
     });
   };
 
-  visitPieceConfig(template.pieceTheme, 'pieces');
-  visitPieceConfig(template.whitePieceTheme, 'white-pieces');
-  visitPieceConfig(template.blackPieceTheme, 'black-pieces');
+  visitPieceConfig(template.pieceTheme, 'pieces', 'contents.template.pieceTheme');
+  visitPieceConfig(template.whitePieceTheme, 'white-pieces', 'contents.template.whitePieceTheme');
+  visitPieceConfig(template.blackPieceTheme, 'black-pieces', 'contents.template.blackPieceTheme');
   const overlay = template.boardOverlay;
   if (overlay) {
-    visit(overlay.image, 'boards', 'board-overlay', nextUrl => { overlay.image = nextUrl; });
+    visit(overlay.image, 'boards', 'board-overlay', 'contents.template.boardOverlay.image', nextUrl => { overlay.image = nextUrl; });
   }
   const background = template.background;
   if (background) {
-    visit(background.image, 'boards', 'background', nextUrl => { background.image = nextUrl; });
+    visit(background.image, 'boards', 'background', 'contents.template.background.image', nextUrl => { background.image = nextUrl; });
+    background.slideshowImages?.forEach((url, index) => {
+      visit(url, 'boards', `background-slideshow-${index + 1}`, `contents.template.background.slideshowImages[${index}]`, nextUrl => {
+        if (!background.slideshowImages) return;
+        background.slideshowImages[index] = nextUrl;
+      });
+    });
   }
   const frameLayer = template.frameLayer;
   if (frameLayer) {
-    visit(frameLayer.image, 'boards', 'frame-layer', nextUrl => { frameLayer.image = nextUrl; });
+    visit(frameLayer.image, 'boards', 'frame-layer', 'contents.template.frameLayer.image', nextUrl => { frameLayer.image = nextUrl; });
   }
   const audioCtrl = template.audioControllerAppearance;
   Object.entries(audioCtrl?.controlImages ?? {}).forEach(([control, url]) => {
-    visit(url || '', 'ui', `audio-controller-${control}`, nextUrl => {
+    visit(url || '', 'ui', `audio-controller-${control}`, `contents.template.audioControllerAppearance.controlImages.${control}`, nextUrl => {
       if (audioCtrl) {
         audioCtrl.controlImages = { ...(audioCtrl.controlImages ?? {}), [control]: nextUrl };
       }
@@ -306,32 +355,32 @@ const walkTemplateAssetUrls = (
 
 const walkAudioAssetUrls = (
   contents: ExperiencePackageContents,
-  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, replace: (nextUrl: string) => void) => void
+  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, sourcePath: string, replace: (nextUrl: string) => void) => void
 ) => {
-  const visitSound = (sound: SoundAsset) => {
-    visit(sound.url, 'audio', sound.name, nextUrl => {
+  const visitSound = (sound: SoundAsset, sourcePath: string) => {
+    visit(sound.url, 'audio', sound.name, `${sourcePath}.url`, nextUrl => {
       sound.url = nextUrl;
     });
   };
-  contents.audio?.library?.forEach(visitSound);
-  contents.soundLibrary?.forEach(visitSound);
+  contents.audio?.library?.forEach((sound, index) => visitSound(sound, `contents.audio.library[${index}]`));
+  contents.soundLibrary?.forEach((sound, index) => visitSound(sound, `contents.soundLibrary[${index}]`));
   if (contents.audio?.bgMusic) {
-    visit(contents.audio.bgMusic, 'audio', contents.audio.bgMusicName || 'background-music', nextUrl => {
+    visit(contents.audio.bgMusic, 'audio', contents.audio.bgMusicName || 'background-music', 'contents.audio.bgMusic', nextUrl => {
       if (contents.audio) contents.audio.bgMusic = nextUrl;
     });
   }
-  contents.audio?.playlist?.forEach(track => {
-    visit(track.url, 'audio', track.name, nextUrl => {
+  contents.audio?.playlist?.forEach((track, index) => {
+    visit(track.url, 'audio', track.name, `contents.audio.playlist[${index}].url`, nextUrl => {
       track.url = nextUrl;
     });
   });
   if (contents.audioPlaylists?.bgMusic) {
-    visit(contents.audioPlaylists.bgMusic, 'audio', contents.audioPlaylists.bgMusicName || 'background-music', nextUrl => {
+    visit(contents.audioPlaylists.bgMusic, 'audio', contents.audioPlaylists.bgMusicName || 'background-music', 'contents.audioPlaylists.bgMusic', nextUrl => {
       if (contents.audioPlaylists) contents.audioPlaylists.bgMusic = nextUrl;
     });
   }
-  contents.audioPlaylists?.playlist?.forEach(track => {
-    visit(track.url, 'audio', track.name, nextUrl => {
+  contents.audioPlaylists?.playlist?.forEach((track, index) => {
+    visit(track.url, 'audio', track.name, `contents.audioPlaylists.playlist[${index}].url`, nextUrl => {
       track.url = nextUrl;
     });
   });
@@ -339,10 +388,10 @@ const walkAudioAssetUrls = (
 
 const walkProfileAssetUrls = (
   contents: ExperiencePackageContents,
-  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, replace: (nextUrl: string) => void) => void
+  visit: (currentUrl: string, category: ExperienceAssetCategory, displayName: string, sourcePath: string, replace: (nextUrl: string) => void) => void
 ) => {
   if (!contents.localProfile?.profileImage) return;
-  visit(contents.localProfile.profileImage, 'ui', 'profile-image', nextUrl => {
+  visit(contents.localProfile.profileImage, 'ui', 'profile-image', 'contents.localProfile.profileImage', nextUrl => {
     if (contents.localProfile) contents.localProfile.profileImage = nextUrl;
   });
 };
@@ -350,58 +399,107 @@ const walkProfileAssetUrls = (
 export const prepareExperiencePackageAssets = async (pkg: ExperiencePackage, options: ExperiencePackageZipOptions = {}) => {
   const packaged = JSON.parse(JSON.stringify(pkg)) as ExperiencePackage;
   const assetManifest: ExperienceAssetManifest = { version: '1.0.0', assets: [] };
-  const assetFiles: Array<{ path: string; blob: Blob }> = [];
-  const refByUrl = new Map<string, string>();
+  const assetFiles: Array<{ path: string; bytes: Uint8Array; mimeType: string; size: number; displayName: string; sourcePath: string; sourceUrl: string; sourceType: string }> = [];
+  const packagedAssetByUrl = new Map<string, { ref: string; packagePath: string; size: number; sourceType: string }>();
 
-  const packageAsset = async (url: string, category: ExperienceAssetCategory, displayName: string) => {
+  const packageAsset = async (url: string, category: ExperienceAssetCategory, displayName: string, sourcePath: string) => {
     if (!isPackableAssetUrl(url)) return url;
-    const existingRef = refByUrl.get(url);
-    if (existingRef) return existingRef;
+    const existingAsset = packagedAssetByUrl.get(url);
+    if (existingAsset) return existingAsset;
 
-    const blob = await urlToBlob(url);
-    const extension = mimeExtension(blob.type, displayName.split('.').pop() || 'bin');
+    const assetFile = await urlToAssetFile(url);
+    const extension = mimeExtension(assetFile.mimeType, displayName.split('.').pop() || 'bin');
     const id = `asset-${assetManifest.assets.length + 1}`;
     const filename = `${sanitizeFilenamePart(displayName)}-${id}.${extension}`;
     const packagePath = `assets/${category}/${filename}`;
     const ref = makeAssetReference(packagePath);
+    const sourceType = getAssetUrlKind(url);
 
     assetManifest.assets.push({
       id,
       filename,
-      mimeType: blob.type || 'application/octet-stream',
+      mimeType: assetFile.mimeType || 'application/octet-stream',
       category,
       packagePath,
-      originalDisplayName: displayName
+      originalDisplayName: displayName,
+      sourceUrl: sourceType
     });
-    assetFiles.push({ path: packagePath, blob });
-    refByUrl.set(url, ref);
-    return ref;
+    assetFiles.push({
+      path: packagePath,
+      bytes: assetFile.bytes,
+      mimeType: assetFile.mimeType || 'application/octet-stream',
+      size: assetFile.size,
+      displayName,
+      sourcePath,
+      sourceUrl: url,
+      sourceType
+    });
+    packagedAssetByUrl.set(url, { ref, packagePath, size: assetFile.size, sourceType });
+    return { ref, packagePath, size: assetFile.size, sourceType };
   };
 
-  const replacements: Array<() => Promise<void>> = [];
-  const visit = (url: string, category: ExperienceAssetCategory, displayName: string, replace: (nextUrl: string) => void) => {
+  const replacements: Array<{
+    url: string;
+    category: ExperienceAssetCategory;
+    displayName: string;
+    sourcePath: string;
+    sourceType: string;
+    replace: (nextUrl: string) => void;
+  }> = [];
+  const visit = (url: string, category: ExperienceAssetCategory, displayName: string, sourcePath: string, replace: (nextUrl: string) => void) => {
     if (!isPackableAssetUrl(url)) return;
-    replacements.push(async () => {
-      replace(await packageAsset(url, category, displayName));
-    });
+    replacements.push({ url, category, displayName, sourcePath, sourceType: getAssetUrlKind(url), replace });
   };
 
   options.onProgress?.({ step: 'gather-settings', message: 'Gathering selected settings' });
   walkTemplateAssetUrls(packaged.contents.template, visit);
   walkAudioAssetUrls(packaged.contents, visit);
   walkProfileAssetUrls(packaged.contents, visit);
+  if (replacements.length > 0) {
+    console.info('[ExperiencePackage] Export input media reference audit', replacements.map((item, index) => ({
+      index: index + 1,
+      total: replacements.length,
+      label: item.displayName,
+      path: item.sourcePath,
+      sourceType: item.sourceType
+    })));
+  }
   for (const [index, replacement] of replacements.entries()) {
     options.onProgress?.({
       step: 'collect-media',
-      message: `Collecting media files (${index + 1}/${replacements.length})`,
+      message: `Collecting media files (${index + 1}/${replacements.length}): ${replacement.displayName}`,
       current: index + 1,
       total: replacements.length
     });
-    await replacement();
+    try {
+      const packagedAsset = await packageAsset(replacement.url, replacement.category, replacement.displayName, replacement.sourcePath);
+      replacement.replace(typeof packagedAsset === 'string' ? packagedAsset : packagedAsset.ref);
+      console.info('[ExperiencePackage] Collected media item', {
+        index: index + 1,
+        total: replacements.length,
+        label: replacement.displayName,
+        path: replacement.sourcePath,
+        sourceType: replacement.sourceType,
+        packagePath: typeof packagedAsset === 'string' ? packagedAsset : packagedAsset.packagePath,
+        bytes: typeof packagedAsset === 'string' ? undefined : packagedAsset.size
+      });
+    } catch (error) {
+      const originalMessage = error instanceof Error ? error.message : String(error);
+      const staleBlobMessage = replacement.sourceType === 'blob'
+        ? ' This blob URL is stale and must be re-imported before it can be packaged.'
+        : '';
+      throw new Error(
+        `Package media collection failed for "${replacement.displayName}" at ${replacement.sourcePath}, item ${index + 1}/${replacements.length} (${replacement.sourceType}): ${originalMessage}.${staleBlobMessage}`
+      );
+    }
     await new Promise(resolve => window.setTimeout(resolve, 0));
   }
 
   if (assetManifest.assets.length > 0) packaged.assetManifest = assetManifest;
+  const sessionReferences = findSessionAssetReferences(packaged);
+  if (sessionReferences.length > 0) {
+    throw new Error(`Package experience.json still contains session media references: ${sessionReferences.slice(0, 8).join(', ')}${sessionReferences.length > 8 ? `, and ${sessionReferences.length - 8} more` : ''}`);
+  }
   return { packaged, assetManifest, assetFiles };
 };
 
@@ -409,21 +507,53 @@ export const createExperiencePackageZip = async (pkg: ExperiencePackage, options
   const { packaged, assetManifest, assetFiles } = await prepareExperiencePackageAssets(pkg, options);
   const zip = new JSZip();
   options.onProgress?.({ step: 'prepare-zip', message: 'Preparing zip manifest' });
+  const totalAssetBytes = assetFiles.reduce((total, asset) => total + asset.size, 0);
+  const experienceJson = JSON.stringify(packaged, null, 2);
+  const sessionReferencePaths = findSessionAssetReferences(packaged);
+  const containsSessionAssetReferences = sessionReferencePaths.length > 0 || /\b(?:blob|data):/.test(experienceJson);
+  if (containsSessionAssetReferences) {
+    throw new Error(`Package experience.json contains blob: or data: references: ${sessionReferencePaths.join(', ') || 'raw JSON string match'}`);
+  }
   zip.file('manifest.json', JSON.stringify({
     format: packaged.format,
     metadata: packaged.metadata,
     assetManifest,
-    categories: Object.keys(packaged.contents)
+    categories: Object.keys(packaged.contents),
+    assetSummary: {
+      count: assetFiles.length,
+      totalBytes: totalAssetBytes,
+      totalDisplaySize: formatBytes(totalAssetBytes)
+    }
   }, null, 2));
-  zip.file('experience.json', JSON.stringify(packaged, null, 2));
+  zip.file('experience.json', experienceJson);
+  zip.file('PACKAGE_ASSET_AUDIT.json', JSON.stringify({
+    assetCount: assetFiles.length,
+    count: assetFiles.length,
+    totalBytes: totalAssetBytes,
+    totalDisplaySize: formatBytes(totalAssetBytes),
+    experienceJsonCheck: {
+      containsBlobOrDataReferences: containsSessionAssetReferences,
+      blobOrDataReferencePaths: sessionReferencePaths
+    },
+    assets: assetFiles.map(asset => ({
+      path: asset.path,
+      displayName: asset.displayName,
+      mimeType: asset.mimeType,
+      bytes: asset.size,
+      displaySize: formatBytes(asset.size),
+      sourceLabel: asset.displayName,
+      sourcePath: asset.sourcePath,
+      sourceType: asset.sourceType
+    }))
+  }, null, 2));
   assetFiles.forEach((asset, index) => {
     options.onProgress?.({
       step: 'prepare-zip',
-      message: `Adding media files to zip (${index + 1}/${assetFiles.length})`,
+      message: `Adding media files to zip (${index + 1}/${assetFiles.length}) - ${formatBytes(asset.size)}`,
       current: index + 1,
       total: assetFiles.length
     });
-    zip.file(asset.path, asset.blob);
+    zip.file(asset.path, asset.bytes, { binary: true, date: new Date() });
   });
   const blob = await zip.generateAsync({ type: 'blob' }, metadata => {
     options.onProgress?.({
@@ -454,7 +584,7 @@ export const loadExperiencePackageAssetsFromZip = async (pkg: ExperiencePackage,
     urlByRef.set(makeAssetReference(asset.packagePath), URL.createObjectURL(blob));
   }));
 
-  const replaceRef = (url: string, _category: ExperienceAssetCategory, _displayName: string, replace: (nextUrl: string) => void) => {
+  const replaceRef = (url: string, _category: ExperienceAssetCategory, _displayName: string, _sourcePath: string, replace: (nextUrl: string) => void) => {
     if (!isPackageAssetRef(url)) return;
     const objectUrl = urlByRef.get(url);
     if (objectUrl) replace(objectUrl);
@@ -515,7 +645,7 @@ export const persistExperiencePackageAssetsFromZip = async (pkg: ExperiencePacka
   });
   const durable = JSON.parse(JSON.stringify(pkg)) as ExperiencePackage;
 
-  const replaceRef = (url: string, _category: ExperienceAssetCategory, _displayName: string, replace: (nextUrl: string) => void) => {
+  const replaceRef = (url: string, _category: ExperienceAssetCategory, _displayName: string, _sourcePath: string, replace: (nextUrl: string) => void) => {
     if (!isPackageAssetRef(url)) return;
     const localRef = saved.refs[url];
     if (localRef) replace(localRef);

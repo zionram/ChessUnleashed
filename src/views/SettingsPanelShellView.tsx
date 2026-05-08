@@ -277,8 +277,9 @@ const SettingsPanelShellView: React.FC = () => {
       setPreparedPackageBlob(blob);
       setPackagePrepareStatus(`Package ready (${(blob.size / (1024 * 1024)).toFixed(2)} MB).`);
     } catch (error) {
+      const details = error instanceof Error ? error.message : 'Failed to prepare package assets.';
       console.warn('ExperiencePackage asset export blocked:', error);
-      setPackagePrepareStatus('Package preparation failed. Try fewer categories or smaller media files.');
+      setPackagePrepareStatus(`Package preparation failed. Try fewer categories or smaller media files. Details: ${details}`);
       return;
     } finally {
       setIsPreparingPackage(false);

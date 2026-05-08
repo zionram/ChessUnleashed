@@ -170,6 +170,21 @@ type PersistedAudioProfilePayload = {
   profile: AudioProfile;
 };
 
+const stripBlobUrls = <T,>(value: T): T => {
+  if (typeof value === 'string') return (value.startsWith('blob:') ? '' : value) as T;
+  if (Array.isArray(value)) return value.map(stripBlobUrls) as T;
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const key of Object.keys(value as object)) {
+      out[key] = stripBlobUrls((value as Record<string, unknown>)[key]);
+    }
+    return out as T;
+  }
+  return value;
+};
+
+const sanitizeAudioProfile = (profile: AudioProfile): AudioProfile => stripBlobUrls(profile);
+
 const loadPersistedAudioProfile = (): Partial<AudioProfile> => {
   if (typeof window === 'undefined') return {};
 
@@ -178,7 +193,11 @@ const loadPersistedAudioProfile = (): Partial<AudioProfile> => {
     if (!stored) return {};
     const parsed = JSON.parse(stored) as PersistedAudioProfilePayload;
     if (parsed.version !== AUDIO_PROFILE_STORAGE_VERSION || !parsed.profile) return {};
-    return parsed.profile;
+    const sanitized = sanitizeAudioProfile(parsed.profile);
+    if (JSON.stringify(sanitized) !== JSON.stringify(parsed.profile)) {
+      window.localStorage.setItem(AUDIO_PROFILE_STORAGE_KEY, JSON.stringify({ ...parsed, profile: sanitized }));
+    }
+    return sanitized;
   } catch (error) {
     console.warn('Failed to load persisted Chess Unleashed audio profile:', error);
     return {};
@@ -551,25 +570,26 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
 
   const applyProfile = (p: AudioProfile) => {
-    if (p.masterVolume !== undefined) setMasterVolume(p.masterVolume);
-    if (p.musicVolume !== undefined) setMusicVolume(p.musicVolume);
-    if (p.sfxVolume !== undefined) setSfxVolume(p.sfxVolume);
-    if (p.bgMusic !== undefined) setBgMusic(p.bgMusic);
-    if (p.bgMusicName !== undefined) setBgMusicName(p.bgMusicName);
-    if (p.playlistName !== undefined) setPlaylistName(p.playlistName);
-    if (p.playlist) setPlaylist(p.playlist);
-    if (p.currentTrackIndex !== undefined) setCurrentTrackIndex(p.currentTrackIndex);
-    if (p.playbackMode) setPlaybackMode(p.playbackMode);
-    if (p.library) setLibrary(p.library);
-    if (p.rules) setRules(p.rules);
-    if (p.ruleCategories) setRuleCategories([...DEFAULT_RULE_CATEGORIES, ...p.ruleCategories.filter(category => !DEFAULT_RULE_CATEGORIES.includes(category))]);
-    if (p.controller) {
+    const sanitized = sanitizeAudioProfile(p);
+    if (sanitized.masterVolume !== undefined) setMasterVolume(sanitized.masterVolume);
+    if (sanitized.musicVolume !== undefined) setMusicVolume(sanitized.musicVolume);
+    if (sanitized.sfxVolume !== undefined) setSfxVolume(sanitized.sfxVolume);
+    if (sanitized.bgMusic !== undefined) setBgMusic(sanitized.bgMusic);
+    if (sanitized.bgMusicName !== undefined) setBgMusicName(sanitized.bgMusicName);
+    if (sanitized.playlistName !== undefined) setPlaylistName(sanitized.playlistName);
+    if (sanitized.playlist) setPlaylist(sanitized.playlist);
+    if (sanitized.currentTrackIndex !== undefined) setCurrentTrackIndex(sanitized.currentTrackIndex);
+    if (sanitized.playbackMode) setPlaybackMode(sanitized.playbackMode);
+    if (sanitized.library) setLibrary(sanitized.library);
+    if (sanitized.rules) setRules(sanitized.rules);
+    if (sanitized.ruleCategories) setRuleCategories([...DEFAULT_RULE_CATEGORIES, ...sanitized.ruleCategories.filter(category => !DEFAULT_RULE_CATEGORIES.includes(category))]);
+    if (sanitized.controller) {
       setController({
         ...DEFAULT_CONTROLLER,
-        ...p.controller,
+        ...sanitized.controller,
         categories: {
           ...DEFAULT_CONTROLLER.categories,
-          ...(p.controller.categories || {})
+          ...(sanitized.controller.categories || {})
         }
       });
     }
@@ -579,7 +599,7 @@ export const AudioProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     try {
       const payload: PersistedAudioProfilePayload = {
         version: AUDIO_PROFILE_STORAGE_VERSION,
-        profile: getCurrentProfile()
+        profile: sanitizeAudioProfile(getCurrentProfile())
       };
       window.localStorage.setItem(AUDIO_PROFILE_STORAGE_KEY, JSON.stringify(payload));
     } catch (error) {

@@ -4,6 +4,7 @@ import type { TimeControlConfig } from '../timer/TimerTypes';
 import type { CustomRuleset } from '../rules/RulePackages';
 import { eventBus } from '../events/EventBus';
 import type { ImportedAssetRegistryEntry } from '../electron-assets';
+import type { TriggerGroup } from '../events/TriggerGroups';
 
 export type BotDifficulty = 'Easy' | 'Casual' | 'Intermediate' | 'Advanced' | 'Expert' | 'Master' | 'Grandmaster';
 export type BotPersonality = string;
@@ -303,6 +304,7 @@ export interface UIAppearanceSettings {
 
 
 export interface MoveAssistSettings {
+  showEngineAssistPanel: boolean;
   hoverPieceIdentity: boolean;
   hoverPieceIdentityOnlineOnly: boolean;
   hoverPieceGlow: boolean;
@@ -396,6 +398,7 @@ export interface SettingsState {
   customEvents: CustomEventDefinition[];
   animationDefinitions: AnimationDefinition[];
   animationRules: AnimationRule[];
+  triggerGroups: TriggerGroup[];
   importedAssets: ImportedAssetRegistryEntry[];
   trustedAssetDomains: string[];
 }
@@ -410,6 +413,7 @@ export type ImportableSettingsCategories = Partial<Pick<
   | 'customEvents'
   | 'animationDefinitions'
   | 'animationRules'
+  | 'triggerGroups'
   | 'importedAssets'
 >>;
 
@@ -445,6 +449,9 @@ interface SettingsContextType {
   createAnimationRule: (rule: AnimationRule) => void;
   updateAnimationRule: (id: string, updates: Partial<AnimationRule>) => void;
   deleteAnimationRule: (id: string) => void;
+  createTriggerGroup: (group: TriggerGroup) => void;
+  updateTriggerGroup: (id: string, updates: Partial<TriggerGroup>) => void;
+  deleteTriggerGroup: (id: string) => void;
   importSettingsCategories: (updates: ImportableSettingsCategories) => void;
   updateTrustedAssetDomains: (domains: string[]) => void;
   setThemeDraft: (t: Template | null) => void;
@@ -533,6 +540,7 @@ const createDefaultSettings = (): SettingsState => ({
       ]
     },
     moveAssistSettings: {
+      showEngineAssistPanel: true,
       hoverPieceIdentity: true,
       hoverPieceIdentityOnlineOnly: false,
       hoverPieceGlow: true
@@ -574,6 +582,7 @@ const createDefaultSettings = (): SettingsState => ({
     customEvents: [],
     animationDefinitions: DEFAULT_ANIMATION_DEFINITIONS,
     animationRules: [],
+    triggerGroups: [],
     importedAssets: [],
     trustedAssetDomains: ['raw.githubusercontent.com', 'upload.wikimedia.org', 'cdn.pixabay.com', 'freesound.org']
 });
@@ -678,6 +687,7 @@ const mergePersistedSettings = (saved: Partial<SettingsState>): SettingsState =>
     customEvents: saved.customEvents ?? defaults.customEvents,
     animationDefinitions: mergeDefaultAnimations(saved.animationDefinitions ?? defaults.animationDefinitions),
     animationRules: saved.animationRules ?? defaults.animationRules,
+    triggerGroups: saved.triggerGroups ?? defaults.triggerGroups,
     importedAssets: saved.importedAssets ?? defaults.importedAssets,
     trustedAssetDomains: saved.trustedAssetDomains ?? defaults.trustedAssetDomains,
     registeredBots: mergeDefaultRegisteredBots(saved.registeredBots?.length ? saved.registeredBots : defaults.registeredBots),
@@ -784,7 +794,8 @@ const toCompactPersistedSettings = (settings: SettingsState): Partial<SettingsSt
       activeViews: settings.activeViews.filter(id => id !== 'theme-editor'),
       importedAssets: [],
       customEvents: [],
-      animationRules: []
+      animationRules: [],
+      triggerGroups: []
     }, true),
     settings
   );
@@ -982,6 +993,20 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     ...s,
     animationRules: s.animationRules.filter(rule => rule.id !== id)
   }));
+  const createTriggerGroup = (group: TriggerGroup) => setSettings(s => ({
+    ...s,
+    triggerGroups: s.triggerGroups.some(existing => existing.id === group.id)
+      ? s.triggerGroups
+      : [...s.triggerGroups, group]
+  }));
+  const updateTriggerGroup = (id: string, updates: Partial<TriggerGroup>) => setSettings(s => ({
+    ...s,
+    triggerGroups: s.triggerGroups.map(group => group.id === id ? { ...group, ...updates, id: group.id } : group)
+  }));
+  const deleteTriggerGroup = (id: string) => setSettings(s => ({
+    ...s,
+    triggerGroups: s.triggerGroups.filter(group => group.id !== id)
+  }));
   const mergeById = <T extends { id: string }>(existing: T[], incoming: T[]) => {
     const next = [...existing];
     incoming.forEach(item => {
@@ -1001,6 +1026,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     ...(updates.customEvents ? { customEvents: mergeById(s.customEvents, updates.customEvents) } : {}),
     ...(updates.animationDefinitions ? { animationDefinitions: mergeById(s.animationDefinitions, updates.animationDefinitions) } : {}),
     ...(updates.animationRules ? { animationRules: mergeById(s.animationRules, updates.animationRules) } : {}),
+    ...(updates.triggerGroups ? { triggerGroups: mergeById(s.triggerGroups, updates.triggerGroups) } : {}),
     ...(updates.importedAssets ? { importedAssets: mergeById(s.importedAssets, updates.importedAssets) } : {})
   }));
   const updateTrustedAssetDomains = (trustedAssetDomains: string[]) => setSettings(s => ({ ...s, trustedAssetDomains }));
@@ -1021,7 +1047,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
   });
 
   return (
-    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updateMoveAssistSettings, updatePieceAnimations, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationDefinition, updateAnimationDefinition, deleteAnimationDefinition, createAnimationRule, updateAnimationRule, deleteAnimationRule, importSettingsCategories, updateTrustedAssetDomains, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
+    <SettingsContext.Provider value={{ settings, updateTemplate, updateThemeDraft, updateBotSettings, updateChatSettings, updateUIAppearance, updateMoveAssistSettings, updatePieceAnimations, updateTimeControl, updateMultiplayerServer, updatePersonalityProfile, renamePersonalityProfile, createPersonalityProfile, setActiveEngineId, registerBot, updateBot, removeBot, updateLocalProfile, regenerateGuestId, createCustomRuleset, updateCustomRuleset, deleteCustomRuleset, createCustomEvent, updateCustomEvent, deleteCustomEvent, createAnimationDefinition, updateAnimationDefinition, deleteAnimationDefinition, createAnimationRule, updateAnimationRule, deleteAnimationRule, createTriggerGroup, updateTriggerGroup, deleteTriggerGroup, importSettingsCategories, updateTrustedAssetDomains, setThemeDraft, toggleView, setTrainingWheels, setGameMode, setThemeEditorMode }}>
       {children}
     </SettingsContext.Provider>
   );

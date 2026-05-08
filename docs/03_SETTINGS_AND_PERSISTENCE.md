@@ -10,6 +10,7 @@ Verified or referenced in `SettingsContext` and package category handling:
 
 - Visual/template settings
 - UI appearance and platform UI settings
+- Workspace visual chrome defaults where persisted as template/settings data
 - Timer settings
 - Chat settings
 - Audio settings
@@ -27,6 +28,7 @@ Verified or referenced in `SettingsContext` and package category handling:
 - Animation definitions
 - Animation rules
 - Imported asset registry metadata
+- Move Assist settings, including hover helpers and the board-side assist panel visibility setting
 
 ## Persistence Boundary
 
@@ -45,6 +47,13 @@ Temporary drafts:
 - should not overwrite applied settings unless the existing apply flow is used.
 - should not create stale unsaved-warning behavior after refresh unless intentionally restored.
 
+## Built-In Theme Defaults
+
+- Built-in default theme data should come from `src/assets/default-themes/<theme-id>/experience.json`.
+- `src/assets/default-themes/obsidianDefaultTheme.ts` should load and normalize the Obsidian theme source, not define an independent hardcoded theme.
+- Reset/default behavior should not merge stale saved localStorage layer values over the built-in default theme.
+- Asset path normalization must not double-prefix already-correct `/src/assets/default-themes/obsidian/...` paths.
+
 ## Imported Asset Metadata
 
 Imported assets should persist as metadata only in settings:
@@ -59,8 +68,9 @@ Binary media must not be stored directly in settings/localStorage.
 ## Related Files
 
 - `src/context/SettingsContext.tsx`
+- `src/assets/default-themes/obsidian/experience.json`
+- `src/assets/default-themes/obsidianDefaultTheme.ts`
 - `src/packages/ExperiencePackage.ts`
 - `src/runtime/GameSnapshot.ts`
 - `electron/main.js`
 - `electron/preload.js`
-

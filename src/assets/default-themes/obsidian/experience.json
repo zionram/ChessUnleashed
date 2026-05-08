@@ -1,0 +1,807 @@
+{
+  "format": "chess-unleashed-experience",
+  "metadata": {
+    "name": "Chess Unleashed Experience",
+    "version": "1.0.0"
+  },
+  "contents": {
+    "template": {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "boardColors": {
+        "light": "#f0d9b5",
+        "dark": "#b58863",
+        "selected": "#ffeb3b",
+        "moveTarget": "#c8e6c9"
+      },
+      "pieceThemeMode": "unified",
+      "pieceTheme": {
+        "type": "builtin",
+        "builtinSet": "fresca",
+        "customPieces": {},
+        "customVariants": {}
+      },
+      "whitePieceTheme": {
+        "type": "builtin",
+        "builtinSet": "cburnett",
+        "customPieces": {
+          "wp": "",
+          "wn": "",
+          "wb": "",
+          "wr": "",
+          "wq": "",
+          "wk": "",
+          "bp": "",
+          "bn": "",
+          "bb": "",
+          "br": "",
+          "bq": "",
+          "bk": ""
+        },
+        "customVariants": {}
+      },
+      "blackPieceTheme": {
+        "type": "builtin",
+        "builtinSet": "cburnett",
+        "customPieces": {
+          "wp": "",
+          "wn": "",
+          "wb": "",
+          "wr": "",
+          "wq": "",
+          "wk": "",
+          "bp": "",
+          "bn": "",
+          "bb": "",
+          "br": "",
+          "bq": "",
+          "bk": ""
+        },
+        "customVariants": {}
+      },
+      "pieceSet": "cburnett",
+      "pathStyle": {
+        "icon": "dot",
+        "colors": {
+          "p": "#9e9e9e",
+          "n": "#2196f3",
+          "b": "#9c27b0",
+          "r": "#f44336",
+          "q": "#ffc107",
+          "k": "#ffffff"
+        }
+      },
+      "badgeColors": {
+        "defender": "#4caf50",
+        "attacker": "#f44336"
+      },
+      "boardOverlay": {
+        "image": "/src/assets/default-themes/obsidian/images/boards/board75.png",
+        "opacity": 1,
+        "color": "#4169e1",
+        "colorEnabled": false,
+        "colorOpacity": 0.25
+      },
+      "background": {
+        "color": "#f5f5f5",
+        "image": "/src/assets/default-themes/obsidian/images/backgrounds/background.png",
+        "opacity": 1,
+        "repeat": "no-repeat",
+        "size": "cover",
+        "xOffset": 0,
+        "yOffset": 0,
+        "scale": 100,
+        "category": "image",
+        "slideshowEnabled": false,
+        "slideshowImages": [],
+        "slideshowIntervalSeconds": 30,
+        "slideshowTransition": "fade"
+      },
+      "frameLayer": {
+        "color": "transparent",
+        "image": "",
+        "opacity": 0,
+        "repeat": "no-repeat",
+        "size": "auto",
+        "xOffset": 0,
+        "yOffset": 0,
+        "scale": 100,
+        "category": "image",
+        "slideshowEnabled": false,
+        "slideshowImages": [],
+        "slideshowIntervalSeconds": 30,
+        "slideshowTransition": "fade",
+        "lockToBoard": false,
+        "frameSizeMode": "responsive"
+      },
+      "timerAppearance": {
+        "face": "digital",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "fontSize": 16,
+        "activeColor": "#2c3e50",
+        "inactiveColor": "#7f8c8d",
+        "backgroundColor": "#ffffff",
+        "borderColor": "#dcdde1"
+      },
+      "audioControllerAppearance": {
+        "layout": "compact",
+        "shape": "rounded",
+        "accentColor": "#3498db",
+        "backgroundColor": "#ffffff",
+        "textColor": "#2c3e50",
+        "sliderColor": "#3498db",
+        "barStyle": "bars",
+        "controlStyle": "buttons",
+        "controlImages": {}
+      },
+      "backgroundColor": "#f5f5f5",
+      "workspaceChrome": {
+        "zIndex": {
+          "hud": 320,
+          "sidePanels": 200,
+          "launcherBase": 2600,
+          "launcherDragPreview": 9999,
+          "overlay": 3000
+        },
+        "safeAreas": {
+          "outerMargin": 18,
+          "panelGap": 14,
+          "bottomInset": 72
+        },
+        "leftPanel": {
+          "defaultPosition": {
+            "x": 12,
+            "y": 12
+          },
+          "defaultWidth": 280,
+          "collapsedWidth": 72,
+          "minWidth": 120,
+          "maxWidth": 320,
+          "defaultHeight": 520,
+          "minHeight": 240
+        },
+        "rightPanel": {
+          "defaultWidth": 320,
+          "minWidth": 250,
+          "maxWidth": 600
+        },
+        "board": {
+          "defaultScale": 100,
+          "minScale": 75,
+          "maxScale": 125,
+          "scaleStep": 5,
+          "defaultOffset": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        "hud": {
+          "activity": {
+            "visible": true,
+            "anchor": "bottom-left",
+            "offset": {
+              "x": 0,
+              "y": 0
+            }
+          },
+          "meta": {
+            "visible": true,
+            "anchor": "bottom-right",
+            "offset": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        },
+        "launcher": {
+          "defaultSize": {
+            "width": 520,
+            "height": 420
+          },
+          "spawnOffset": {
+            "x": 14,
+            "y": 42
+          },
+          "cascadeOffset": {
+            "x": 0,
+            "y": 24
+          }
+        }
+      }
+    },
+    "uiAppearance": {
+      "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      "baseFontSize": 13,
+      "accentColor": "#38bdf8",
+      "density": "compact",
+      "showTipsBoard": true,
+      "tipsRotationSeconds": 12,
+      "welcomePanelColor": "#07111f",
+      "welcomePanelFrameColor": "#38bdf8",
+      "welcomePanelFrameMode": "accent",
+      "welcomeSidebarContainerColor": "#07111f",
+      "welcomeSidebarContainerFrameColor": "#38bdf8",
+      "welcomeSidebarContainerFrameMode": "accent",
+      "panelOpacity": 76,
+      "panelBackdropBlur": 14,
+      "overlayBackdropOpacity": 64,
+      "overlayContentBlur": 18,
+      "buttonStyle": "square",
+      "sidebarStyle": "glass",
+      "panelBackgroundColor": "#07111f",
+      "appBackgroundColor": "#020617",
+      "toolbarBackgroundColor": "#050a12",
+      "tipsMessages": [
+        "Tip: Use Let's Play to start a bot, local, or multiplayer game.",
+        "Did you know? Knights are the only pieces that can jump.",
+        "Try importing custom pieces from Environment -> Look -> Pieces.",
+        "Chess fact: Castling is the only move where two pieces move at once.",
+        "Tip: Save your favorite setup as an ExperiencePackage."
+      ]
+    },
+    "timeControl": {
+      "enabled": false,
+      "initialTimeSeconds": 300,
+      "incrementSeconds": 0,
+      "mode": "standard",
+      "placement": "right",
+      "manualClockPress": false,
+      "behavior": "static",
+      "draggablePosition": {
+        "x": 24,
+        "y": 24
+      }
+    },
+    "chatSettings": {
+      "position": "bottom",
+      "lineCount": 10,
+      "floatingPos": {
+        "x": 2,
+        "y": 216
+      },
+      "style": {
+        "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "fontSize": 15,
+        "messageSpacing": 6,
+        "transparent": false,
+        "textColor": "#dbeafe",
+        "selfTextColor": "#7dd3fc",
+        "otherTextColor": "#f8fafc",
+        "systemTextColor": "#fbbf24",
+        "backgroundColor": "#07111f",
+        "selfBubbleColor": "#0f2f48",
+        "otherBubbleColor": "#172033",
+        "systemBubbleColor": "#06223a",
+        "defaultBubbleColor": "#111827",
+        "selfBubbleTransparent": false,
+        "otherBubbleTransparent": false,
+        "systemBubbleTransparent": true,
+        "defaultBubbleTransparent": true,
+        "selfFontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "otherFontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "systemFontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "defaultFontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        "selfBold": false,
+        "selfItalic": false,
+        "otherBold": false,
+        "otherItalic": false,
+        "systemBold": true,
+        "systemItalic": false,
+        "defaultBold": false,
+        "defaultItalic": false
+      }
+    },
+    "rules": {
+      "gameMode": "standard",
+      "trainingWheels": true
+    },
+    "audioSettings": {
+      "masterVolume": 0.5,
+      "musicVolume": 0.47,
+      "sfxVolume": 0.45,
+      "controller": {
+        "muted": false,
+        "floating": false,
+        "floatingPos": {
+          "x": 508,
+          "y": 136.9375
+        },
+        "categories": {
+          "move": {
+            "enabled": true,
+            "volume": 1
+          },
+          "capture": {
+            "enabled": true,
+            "volume": 1
+          },
+          "check": {
+            "enabled": true,
+            "volume": 1
+          },
+          "gameStart": {
+            "enabled": true,
+            "volume": 1
+          },
+          "checkmate": {
+            "enabled": true,
+            "volume": 1
+          }
+        }
+      },
+      "playbackMode": "sequence"
+    },
+    "soundLibrary": [
+      {
+        "id": "eZl48cR0FXiUfGAmFblVQ",
+        "name": "smbJump",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "vYNevHsem8x0_2R-T-Akc",
+        "name": "mario-falling-waaa",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "Udi-WgtUSGwnwxgYM1qAd",
+        "name": "10-mario-died",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "IV-cPgY2CJ3BD2e0kadAa",
+        "name": "sm64_bowser_laugh-online-audio-converter",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "LXOaQGJF3hYGccVsWNWoo",
+        "name": "smbJump",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "zsx0d4j4ye8JxsFmtY_3W",
+        "name": "smb-promotion",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "OD9U_1Q_ltPJlTq0YqV3M",
+        "name": "smbwins",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "nl9dEEtVLdGCI8O9UUvMb",
+        "name": "yeahoo",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "DnESHhgtyZ9urvewX6-tv",
+        "name": "untitled_3",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "pktJVv1IGcshMEfTwuMp8",
+        "name": "1-07 Inside The Castle Walls",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "0HhyADXf55CUpb3xiG1RW",
+        "name": "1-32 Ultimate Koopa",
+        "url": "",
+        "fileType": "audio"
+      },
+      {
+        "id": "g55PhsoGWRHXW-21AN3CI",
+        "name": "1-30 Koopa's Theme",
+        "url": "",
+        "fileType": "audio"
+      }
+    ],
+    "soundRules": [
+      {
+        "event": "move",
+        "piece": "any",
+        "side": "any",
+        "mode": "any",
+        "soundId": "LXOaQGJF3hYGccVsWNWoo",
+        "category": "Piece Moves",
+        "id": "v1UML0INQ5Xh3T7UfEI4t",
+        "name": "Standard Piece Move",
+        "target": "any",
+        "playback": {
+          "allowOverlap": true,
+          "playOnceUntilReset": true,
+          "stopOtherSounds": false,
+          "duckMusic": false,
+          "pauseMusic": false,
+          "resumeMusicAfter": false,
+          "loopWhileEventTrue": false,
+          "stopWhenEventEnds": false
+        }
+      },
+      {
+        "event": "capture",
+        "piece": "any",
+        "side": "any",
+        "mode": "any",
+        "soundId": "Udi-WgtUSGwnwxgYM1qAd",
+        "category": "Captures",
+        "id": "dyRAwCTUTMvp1ZGQr5_-j",
+        "name": "Piece Capture",
+        "target": "any",
+        "playback": {
+          "allowOverlap": true,
+          "playOnceUntilReset": false,
+          "stopOtherSounds": false,
+          "duckMusic": false,
+          "pauseMusic": false,
+          "resumeMusicAfter": false,
+          "loopWhileEventTrue": false,
+          "stopWhenEventEnds": false
+        }
+      },
+      {
+        "event": "promotion",
+        "piece": "any",
+        "side": "any",
+        "mode": "any",
+        "soundId": "zsx0d4j4ye8JxsFmtY_3W",
+        "category": "Game Events",
+        "id": "gfY6Ju-YjhcrZKZqwkts_",
+        "name": "Pawn Promotion",
+        "target": "any",
+        "playback": {
+          "allowOverlap": true,
+          "playOnceUntilReset": true,
+          "stopOtherSounds": false,
+          "duckMusic": false,
+          "pauseMusic": false,
+          "resumeMusicAfter": true
+        }
+      },
+      {
+        "name": "In Check",
+        "event": "check",
+        "piece": "any",
+        "side": "any",
+        "mode": "any",
+        "soundId": "g55PhsoGWRHXW-21AN3CI",
+        "category": "Piece Moves",
+        "target": "any",
+        "playback": {
+          "allowOverlap": false,
+          "playOnceUntilReset": false,
+          "stopOtherSounds": true,
+          "duckMusic": false,
+          "pauseMusic": true,
+          "resumeMusicAfter": true,
+          "loopWhileEventTrue": false,
+          "stopWhenEventEnds": true
+        },
+        "id": "x1QSYvaiPNNAmfIJEZw2e"
+      }
+    ],
+    "audioPlaylists": {
+      "bgMusic": null,
+      "bgMusicName": null,
+      "playlistName": null,
+      "playlist": [],
+      "currentTrackIndex": 0,
+      "playbackMode": "sequence"
+    },
+    "botSettings": {
+      "personality": "Balanced",
+      "personalityTraits": {
+        "aggression": 0.5,
+        "caution": 0.5,
+        "randomness": 0.4,
+        "trickiness": 0.3,
+        "consistency": 0.7
+      },
+      "difficulty": "Intermediate",
+      "depth": 1,
+      "randomness": 0.3,
+      "capturePriority": 1,
+      "checkPriority": 1,
+      "avoidRepetition": true,
+      "thinkTime": 600,
+      "showMoveExplanation": true,
+      "botChatEnabled": true
+    },
+    "registeredBots": [
+      {
+        "id": "standard",
+        "name": "Training Bot (Standard)",
+        "type": "mock",
+        "path": "internal",
+        "builtin": true
+      },
+      {
+        "id": "random",
+        "name": "Random Bot",
+        "type": "mock",
+        "path": "internal",
+        "builtin": true
+      },
+      {
+        "id": "stockfish-18-lite-bundled",
+        "name": "Stockfish 18 Lite",
+        "type": "worker",
+        "path": "engines/stockfish/stockfish-18-lite-single.js",
+        "builtin": true
+      }
+    ],
+    "personalityProfiles": {
+      "Beginner": {
+        "name": "Beginner",
+        "description": "Loose, unpredictable play with simple tactical priorities.",
+        "settings": {
+          "personalityTraits": {
+            "aggression": 0.3,
+            "caution": 0.2,
+            "randomness": 0.8,
+            "trickiness": 0.2,
+            "consistency": 0.2
+          },
+          "difficulty": "Easy",
+          "depth": 1,
+          "randomness": 0.7,
+          "capturePriority": 0.7,
+          "checkPriority": 0.5,
+          "avoidRepetition": false,
+          "thinkTime": 400,
+          "showMoveExplanation": true,
+          "botChatEnabled": true
+        },
+        "chatReactions": {
+          "gameStart": [
+            "Good luck!",
+            "I am still learning."
+          ],
+          "botCapture": [
+            "I got one!",
+            "That worked!"
+          ],
+          "botCaptured": [
+            "Oops.",
+            "I missed that."
+          ],
+          "check": [
+            "Check!",
+            "Is that check?"
+          ],
+          "checkmate": [
+            "Did I win?",
+            "Checkmate!"
+          ],
+          "draw": [
+            "Fair game.",
+            "A draw works."
+          ]
+        },
+        "builtin": true
+      },
+      "Aggressive": {
+        "name": "Aggressive",
+        "description": "Forces captures and checks whenever pressure is available.",
+        "settings": {
+          "personalityTraits": {
+            "aggression": 1,
+            "caution": 0.2,
+            "randomness": 0.2,
+            "trickiness": 0.3,
+            "consistency": 0.7
+          },
+          "difficulty": "Advanced",
+          "depth": 2,
+          "randomness": 0.2,
+          "capturePriority": 2.5,
+          "checkPriority": 2.5,
+          "avoidRepetition": true,
+          "thinkTime": 600,
+          "showMoveExplanation": true,
+          "botChatEnabled": true
+        },
+        "chatReactions": {
+          "gameStart": [
+            "No quiet game today.",
+            "I am coming forward."
+          ],
+          "botCapture": [
+            "Mine.",
+            "Pressure pays."
+          ],
+          "botCaptured": [
+            "I will get it back.",
+            "Temporary loss."
+          ],
+          "check": [
+            "Check.",
+            "Your king is exposed."
+          ],
+          "checkmate": [
+            "Finished.",
+            "No escape."
+          ],
+          "draw": [
+            "You survived.",
+            "I wanted more."
+          ]
+        },
+        "builtin": true
+      },
+      "Defensive": {
+        "name": "Defensive",
+        "description": "Careful play that avoids uneven trades and repeated mistakes.",
+        "settings": {
+          "personalityTraits": {
+            "aggression": 0.2,
+            "caution": 1,
+            "randomness": 0.1,
+            "trickiness": 0.1,
+            "consistency": 0.9
+          },
+          "difficulty": "Expert",
+          "depth": 3,
+          "randomness": 0.1,
+          "capturePriority": 0.6,
+          "checkPriority": 1.2,
+          "avoidRepetition": true,
+          "thinkTime": 900,
+          "showMoveExplanation": true,
+          "botChatEnabled": true
+        },
+        "chatReactions": {
+          "gameStart": [
+            "Careful moves win games.",
+            "I will keep this solid."
+          ],
+          "botCapture": [
+            "Clean trade.",
+            "That was safe."
+          ],
+          "botCaptured": [
+            "I will stabilize.",
+            "Not ideal."
+          ],
+          "check": [
+            "Check, with control.",
+            "Your king has a problem."
+          ],
+          "checkmate": [
+            "Technique decides it.",
+            "Checkmate."
+          ],
+          "draw": [
+            "Balanced result.",
+            "Solid defense."
+          ]
+        },
+        "builtin": true
+      },
+      "Trickster": {
+        "name": "Trickster",
+        "description": "Surprising, irregular choices with extra randomness.",
+        "settings": {
+          "personalityTraits": {
+            "aggression": 0.5,
+            "caution": 0.1,
+            "randomness": 1,
+            "trickiness": 1,
+            "consistency": 0.1
+          },
+          "difficulty": "Casual",
+          "depth": 1,
+          "randomness": 0.9,
+          "capturePriority": 1.1,
+          "checkPriority": 1.8,
+          "avoidRepetition": false,
+          "thinkTime": 500,
+          "showMoveExplanation": true,
+          "botChatEnabled": true
+        },
+        "chatReactions": {
+          "gameStart": [
+            "Expect weird moves.",
+            "Let us make this messy."
+          ],
+          "botCapture": [
+            "Surprise.",
+            "Did you see that?"
+          ],
+          "botCaptured": [
+            "Part of the plan.",
+            "Maybe bait."
+          ],
+          "check": [
+            "Tricky check.",
+            "Look over there."
+          ],
+          "checkmate": [
+            "The trap closes.",
+            "Gotcha."
+          ],
+          "draw": [
+            "Strange, but fair.",
+            "Nobody saw that coming."
+          ]
+        },
+        "builtin": true
+      },
+      "Balanced": {
+        "name": "Balanced",
+        "description": "Stable all-around play with moderate tactical bias.",
+        "settings": {
+          "personalityTraits": {
+            "aggression": 0.5,
+            "caution": 0.5,
+            "randomness": 0.4,
+            "trickiness": 0.3,
+            "consistency": 0.7
+          },
+          "difficulty": "Intermediate",
+          "depth": 1,
+          "randomness": 0.3,
+          "capturePriority": 1,
+          "checkPriority": 1,
+          "avoidRepetition": true,
+          "thinkTime": 600,
+          "showMoveExplanation": true,
+          "botChatEnabled": true
+        },
+        "chatReactions": {
+          "gameStart": [
+            "Good game.",
+            "Let us play."
+          ],
+          "botCapture": [
+            "Good capture.",
+            "I will take that."
+          ],
+          "botCaptured": [
+            "Nice move.",
+            "I need to adjust."
+          ],
+          "check": [
+            "Check.",
+            "Careful now."
+          ],
+          "checkmate": [
+            "Checkmate.",
+            "Good finish."
+          ],
+          "draw": [
+            "Draw agreed.",
+            "Even game."
+          ]
+        },
+        "builtin": true
+      }
+    },
+    "localProfile": {
+      "displayName": "Guest Player",
+      "profileImage": "",
+      "guestId": "guest-8c66c641-60f8-4308-9b9d-11e612ff92e5",
+      "profileType": "guest",
+      "isGuest": true,
+      "officialId": null
+    },
+    "multiplayerServer": {
+      "mode": "home",
+      "homeUrl": "localhost",
+      "customUrl": ""
+    },
+    "customEvents": [],
+    "animationDefinitions": [],
+    "animationRules": [],
+    "customRulesets": []
+  }
+}

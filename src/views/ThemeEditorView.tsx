@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useSettings } from "../context/SettingsContext";
 import { useGame } from "../context/GameContext";
 import { type PieceThemeConfig } from "../templates";
-import { SettingsFieldRenderer } from "../components/settings/SettingsFieldRenderer";
 import { getRegisteredSettingsField } from "../registry/SettingsRegistry";
 import {
   createExperiencePackageZip,
@@ -30,7 +29,6 @@ const ThemeEditorView: React.FC = () => {
     updateTemplate,
     updateThemeDraft,
     setThemeDraft,
-    setThemeEditorMode,
   } = useSettings();
   const { multiplayer, syncTheme } = useGame();
   const { template: liveTemplate, themeDraft: draft } = settings;

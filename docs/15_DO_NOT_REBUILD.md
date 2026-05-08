@@ -1,6 +1,6 @@
 # Do Not Rebuild
 
-Status: Active project rule.
+Status: Active project rule
 
 Chess Unleashed is existing functioning software. Future work should be small, scoped, and compatible with current ownership boundaries.
 
@@ -17,6 +17,8 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Use in-app panels/modals instead of browser/window prompts.
 - Do not add duplicate panel titles.
 - Use center-panel tools for complex workflows.
+- Never generate a replacement `App.tsx` or other source file from an older/stale copy when a newer current file is in play.
+- When a source-of-truth file exists, preserve it.
 
 ## Ownership Boundaries
 
@@ -24,7 +26,9 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - `SettingsRegistry` owns metadata only.
 - `SettingsTemplateRegistry` owns layout/navigation metadata only.
 - `ConfigValidation` owns validation only.
-- Template system owns game visuals only.
+- Template system owns game visuals and template-owned visual layout defaults.
+- `WorkspaceActionRegistry` owns actionId -> view/component mapping and workspace view registration.
+- Shared floating/docked window shell owns Dock/Undock/Close behavior.
 - `ExperiencePackage` owns reusable setup/config/assets/rules/events/sounds.
 - Game Snapshot owns live game-in-progress state.
 - Event Log records gameplay/system actions.
@@ -34,7 +38,6 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - Animation Builder manages reusable named animations.
 - Animation Rules connect events to animations.
 - Sound Rules connect events to sounds.
-- Online service adapters/translators own provider-specific command/state translation.
 
 ## Systems Not To Replace
 
@@ -44,20 +47,11 @@ Chess Unleashed is existing functioning software. Future work should be small, s
 - ExperiencePackage format and category routing.
 - Electron packaging from scratch.
 - UCI worker adapter / bot architecture.
-- FICS adapter/translator architecture.
-- Floating window / launcher / docked workspace architecture.
 - Sound Editor and AudioContext architecture.
 - Event Builder and CustomEventRuntime architecture.
 - Animation Builder and movement animation path.
 - Theme/Piece template data model.
-
-## FICS / Online Rules
-
-- Do not change `ChessBoard.tsx` to match FICS syntax. The board sends generic move intent.
-- FICS command syntax belongs in `FicsGameTranslator.ts`.
-- FICS socket/session handling belongs in `FicsAdapter.ts` and Electron IPC/preload boundaries.
-- FICS must not own visuals, templates, pieces, or package/theme systems.
-- Browser mode cannot use raw FICS TCP unless a future relay server is added.
+- WorkspaceActionRegistry after it has been introduced.
 
 ## Package Rule
 
@@ -66,3 +60,13 @@ Do not mix runtime Game Snapshot state into ExperiencePackage exports by default
 ## Media Rule
 
 Do not put GIF/PNG/MP3/WAV/MIDI binary data into JSON/localStorage as giant base64 strings. Use package assets, durable asset storage, or file references through the existing helpers.
+
+## Stale-File Rule
+
+If a patch touches `App.tsx` after `WorkspaceActionRegistry` exists:
+
+- verify the current `App.tsx` imports/uses `WorkspaceActionRegistry`;
+- preserve registry-driven view embedding;
+- do not restore old inline action/view mappings;
+- do not reintroduce direct view rendering that bypasses the registry unless the current code proves it is still required;
+- prefer targeted diffs or exact file replacements from the latest current file only.

@@ -20,6 +20,11 @@ export interface LayerConfig {
   xOffset?: number;
   yOffset?: number;
   scale?: number;
+  category?: 'color' | 'image' | 'slideshow';
+  slideshowEnabled?: boolean;
+  slideshowImages?: string[];
+  slideshowIntervalSeconds?: number;
+  slideshowTransition?: 'fade' | 'none';
   lockToBoard?: boolean;
   frameSizeMode?: 'responsive' | 'match-board' | 'fixed';
   fixedWidth?: number;
@@ -110,7 +115,12 @@ const defaultLayer: LayerConfig = {
   size: 'cover',
   xOffset: 0,
   yOffset: 0,
-  scale: 100
+  scale: 100,
+  category: 'image',
+  slideshowEnabled: false,
+  slideshowImages: [],
+  slideshowIntervalSeconds: 30,
+  slideshowTransition: 'fade'
 };
 
 const defaultTimerAppearance: TimerAppearanceConfig = {
